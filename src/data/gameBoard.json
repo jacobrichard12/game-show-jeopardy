@@ -1,0 +1,62 @@
+{
+    "feud": {
+        "categoryRoute": "feud",
+        "categoryName": "Family Feud",
+        "points": [
+            100,
+            200,
+            300,
+            400,
+            500
+        ],
+        "answered": []
+    },
+    "millionaire":{
+        "categoryRoute": "millionaire",
+        "categoryName": "Who Wants to be a Millionaire",
+        "points": [
+            100,
+            200,
+            300,
+            400,
+            500
+        ],
+        "answered": []
+    },
+    "minute": {
+        "categoryRoute": "minute",
+        "categoryName": "Minute To Win It",
+        "points": [
+            100,
+            200,
+            300,
+            400,
+            500
+        ],
+        "answered": []
+    },
+    "singing": {
+        "categoryRoute": "singing",
+        "categoryName": "The Singing Bee",
+        "points": [
+            100,
+            200,
+            300,
+            400,
+            500
+        ],
+        "answered": []
+    },
+    "gaming": {
+        "categoryRoute": "gaming",
+        "categoryName": "Wii Sports Battle",
+        "points": [
+            100,
+            200,
+            300,
+            400,
+            500
+        ],
+        "answered": []
+    }
+}

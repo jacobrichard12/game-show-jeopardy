@@ -1,0 +1,53 @@
+{
+    "100": {
+        "prompt": "Name a popular fruit.",
+        "answers": [
+            "Apple",
+            "Banana",
+            "Orange",
+            "Grape",
+            "Pineapple"
+        ]
+    },
+    "200": {
+        "prompt": "Name a common pet.",
+        "answers": [
+            "Dog",
+            "Cat",
+            "Bird",
+            "Fish",
+            "Hamster",
+            "bob the builder"
+        ]
+    },
+    "300": {
+        "prompt": "Name a type of transportation.",
+        "answers": [
+            "Car",
+            "Bus",
+            "Bicycle",
+            "Train",
+            "Airplane"
+        ]
+    },
+    "400": {
+        "prompt": "Name a room in a house.",
+        "answers": [
+            "Kitchen",
+            "Bedroom",
+            "Bathroom",
+            "Living Room",
+            "Garage"
+        ]
+    },
+    "500": {
+        "prompt": "Name a type of weather.",
+        "answers": [
+            "Sunny",
+            "Rainy",
+            "Snowy",
+            "Windy",
+            "Cloudy"
+        ]
+    }
+}
