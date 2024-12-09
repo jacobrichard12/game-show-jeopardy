@@ -1,53 +1,112 @@
 {
     "100": {
-        "prompt": "Name a popular fruit.",
+        "prompt": "Name something People Try To Recite Lines From",
         "answers": [
-            "Apple",
-            "Banana",
-            "Orange",
-            "Grape",
-            "Pineapple"
+            "Movies",
+            "Poetry",
+            "Play",
+            "Religious Scripture",
+            "Songs"
+        ]
+    },"101": {
+        "prompt": "Name A Baby Farm Animal That A Child Would Probably Want To Keep As A Pet",
+        "answers": [
+            "Piglet",
+            "Lamb",
+            "Chick",
+            "Kid/Goat",
+            "Bunny"
         ]
     },
     "200": {
-        "prompt": "Name a common pet.",
+        "prompt": "Name A Breed Of Dog That Everyone Has Heard Of",
         "answers": [
-            "Dog",
-            "Cat",
-            "Bird",
-            "Fish",
-            "Hamster",
-            "bob the builder"
+            "Poodle",
+            "Pit Bull",
+            "German Shepherd",
+            "Labrador",
+            "Collie",
+            "Dalmation"
+        ]
+    },
+    "201": {
+        "prompt": "Name A Canned Food That You'd Never Eat Directly From The Can",
+        "answers": [
+            "Tuna",
+            "Soup",
+            "Beans",
+            "Corn",
+            "Spam",
+            "Pet Food"
         ]
     },
     "300": {
-        "prompt": "Name a type of transportation.",
+        "prompt": "In Movie Endings Name A Place The Main Character Goes To Catch Her Crush Before It's Too Late",
+        "answers": [
+            "Airport",
+            "Wedding/Church",
+            "Train Station/Bus Depot",
+            "Beach",
+            "Bridge",
+            "Park"
+        ]
+    },
+    "301": {
+        "prompt": "Name Something People Want For Christmas That Can't Be Put In A Box",
         "answers": [
             "Car",
-            "Bus",
-            "Bicycle",
-            "Train",
-            "Airplane"
+            "Love",
+            "Bike",
+            "Pet",
+            "House",
+            "World Peace"
         ]
     },
     "400": {
-        "prompt": "Name a room in a house.",
+        "prompt": "Name A Food Someone Might Use More Than One Hand To Eat",
         "answers": [
-            "Kitchen",
-            "Bedroom",
-            "Bathroom",
-            "Living Room",
-            "Garage"
+            "Pizza",
+            "Chicken",
+            "Hambugers",
+            "Ribs Room",
+            "Corn On The Cob",
+            "Watermelon",
+            "Sandwich"
+        ]
+    },
+    "401": {
+        "prompt": "Name A Job Which Is Busiest In The Summer Time",
+        "answers": [
+            "Lifeguard",
+            "Gardening",
+            "Theme Park Employees",
+            "Ice Cream Vendor",
+            "Construction",
+            "Painter"
         ]
     },
     "500": {
-        "prompt": "Name a type of weather.",
+        "prompt": "Name Something You Might Do On Vacation In Florida",
         "answers": [
-            "Sunny",
-            "Rainy",
-            "Snowy",
-            "Windy",
-            "Cloudy"
+            "Swim",
+            "Go To Disney World",
+            "Relax",
+            "Play Golf",
+            "Visit The Everglades",
+            "Go to Beach",
+            "Fish"
+        ]
+    },
+    "501": {
+        "prompt": "Name a Smell Typically Associated with Christmas",
+        "answers": [
+            "Evergreen/Pine",
+            "Cinnamon",
+            "Cookies",
+            "Turkey",
+            "Peppermint",
+            "Ham",
+            "Apples"
         ]
     }
 }

@@ -1,12 +1,9 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { GameState, Team } from "../App";
-import { GameName } from "../types/common";
+import React from "react";
+import { GameName, GameState } from "../types/common";
 
-// Define the structure of the game data
 export interface GameBoardData {
-  categoryRoute: string;
-  categoryName: string;
+  gameName: string;
+  gameTitle: string;
   points: number[];
 }
 
@@ -16,44 +13,38 @@ interface GameBoardProps {
   handleUpdateCurrentGame: (newGame: GameName, value: number) => void;
 }
 
-const GameBoard: React.FC<GameBoardProps> = ({ gameState, gameBoardData, handleUpdateCurrentGame }) => {
-  const navigate = useNavigate();
-  const [animatingTile, setAnimatingTile] = useState<{
-    category: string;
-    value: number;
-  } | null>(null);
-
-  const handleClick = (categoryRoute: string, value: number) => {
-    handleUpdateCurrentGame(categoryRoute as GameName, value);
-    navigate(`/${categoryRoute}/${value}`);
-    
-    // setAnimatingTile({ category: categoryRoute, value });
-    // setTimeout(() => {
-    //   navigate(`/${categoryRoute}/${value}`);
-    //   setAnimatingTile(null);
-    // }, 1000); // Animation duration
-  };
-
+const GameBoard: React.FC<GameBoardProps> = ({
+  gameState,
+  gameBoardData,
+  handleUpdateCurrentGame,
+}) => {
   // Check if the question has already been answered
   const hasQuestionBeenAnswered = (categoryRoute: string, value: number) => {
     return gameState.answered[categoryRoute]?.includes(value) ?? false;
   };
 
+  // Get whether it's Double Jeopardy
+  const isDoubleJeopardy = gameState.isDoubleJeopardy;
+
   return (
-    <div className="p-4">
+    <div className={`p-4 ${isDoubleJeopardy ? "bg-gray-800 text-white" : ""}`}>
       {/* Game board */}
       <div className="overflow-x-auto mb-6">
-        <table className="table-auto border-collapse w-full">
+        <table
+          className={`table-auto border-collapse w-full ${isDoubleJeopardy ? "bg-gray-700" : ""}`}
+        >
           <thead>
             <tr>
               {Object.keys(gameBoardData).map((categoryKey) => {
                 const category = gameBoardData[categoryKey];
                 return (
                   <th
-                    key={category.categoryRoute}
-                    className="p-4 text-lg font-bold border-b text-center bg-gray-200"
+                    key={category.gameName}
+                    className={`p-4 text-lg font-bold border-b text-center ${
+                      isDoubleJeopardy ? "bg-gray-600 text-white" : "bg-gray-200"
+                    }`}
                   >
-                    {category.categoryName}
+                    {category.gameTitle}
                   </th>
                 );
               })}
@@ -65,32 +56,35 @@ const GameBoard: React.FC<GameBoardProps> = ({ gameState, gameBoardData, handleU
                 <tr key={rowIndex}>
                   {Object.keys(gameBoardData).map((categoryKey) => {
                     const category = gameBoardData[categoryKey];
-                    const pointValue = category.points[rowIndex];
-                    const isAnimating =
-                      animatingTile?.category === category.categoryRoute &&
-                      animatingTile?.value === pointValue;
+                    let pointValue = category.points[rowIndex];
+
+                    // If Double Jeopardy, double the point value
+                    if (isDoubleJeopardy) {
+                      pointValue = pointValue * 2;
+                    }
 
                     return (
                       <td
-                        key={`${category.categoryName}-${rowIndex}`}
-                        className="p-4 text-center border"
+                        key={`${category.gameName}-${rowIndex}`}
+                        className={`p-4 text-center border ${
+                          isDoubleJeopardy ? "border-gray-600" : "border-gray-300"
+                        }`}
                       >
                         <button
-                          className={`text-lg font-semibold p-3 rounded-lg ${
-                            isAnimating
-                              ? "animate-spin"
-                              : hasQuestionBeenAnswered(
-                                  category.categoryRoute,
-                                  pointValue
-                                )
+                          className={`text-xl font-semibold p-5 rounded-lg ${
+                            hasQuestionBeenAnswered(
+                              category.gameName,
+                              pointValue
+                            )
                               ? "bg-gray-400 cursor-not-allowed"
                               : "bg-blue-500 hover:bg-blue-600"
                           } text-white focus:outline-none focus:ring-2 focus:ring-blue-500`}
-                          onClick={() =>
-                            handleClick(category.categoryRoute, pointValue)
-                          }
+                          onClick={() => handleUpdateCurrentGame(
+                            category.gameName as GameName,
+                            pointValue
+                          )}
                           disabled={hasQuestionBeenAnswered(
-                            category.categoryRoute,
+                            category.gameName,
                             pointValue
                           )}
                         >
@@ -104,26 +98,6 @@ const GameBoard: React.FC<GameBoardProps> = ({ gameState, gameBoardData, handleU
             )}
           </tbody>
         </table>
-      </div>
-
-      {/* Scoreboard */}
-      <div className="flex justify-around items-center">
-        <div className="p-4 border rounded-lg shadow-md bg-white w-1/4 text-center">
-          <h3 className="text-lg font-bold mb-2">
-            {gameState[Team.TeamA].name}
-          </h3>
-          <p className="text-2xl font-semibold">
-            {gameState[Team.TeamA].score}
-          </p>
-        </div>
-        <div className="p-4 border rounded-lg shadow-md bg-white w-1/4 text-center">
-          <h3 className="text-lg font-bold mb-2">
-            {gameState[Team.TeamB].name}
-          </h3>
-          <p className="text-2xl font-semibold">
-            {gameState[Team.TeamB].score}
-          </p>
-        </div>
       </div>
     </div>
   );

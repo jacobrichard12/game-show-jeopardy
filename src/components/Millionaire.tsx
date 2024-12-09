@@ -13,10 +13,7 @@ interface Question {
   };
 }
 
-const Millionaire: React.FC = () => {
-  const { category, value } = useParams<{ category: string; value: string }>();
-  const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
-  const [isAnswered, setIsAnswered] = useState(false);
+const Millionaire: React.FC= () => {
 
   return (
     <div className="max-w-4xl mx-auto">

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { GameState, Team } from "../App";
+import { GameState, Team } from "../types/common";
 
 interface SettingsModalProps {
   isOpen: boolean;

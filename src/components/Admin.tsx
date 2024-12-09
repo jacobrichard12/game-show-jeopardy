@@ -1,38 +1,46 @@
 import React, { useEffect, useState } from "react";
 import { io, Socket } from "socket.io-client";
-import { GameState, Team } from "../App";
-import { GameName, GameName as GameType } from "../types/common";
+import {
+  FamilyFeudQuestionState,
+  GameName,
+  GameState,
+  GameName as GameType,
+  getGameTitle,
+  MinuteQuestionState,
+  Team,
+} from "../types/common";
 import AdminPageWrapper from "./AdminPageWrapper";
+import { useSocket } from "./SocketContext";
+import wowSound from "../assets/wow.mp3";
+import { useLocation } from "react-router-dom";
+import SettingsModal from "./SettingsModal";
 
 interface AdminProps {
   gameState: GameState;
 }
 
 const Admin: React.FC<AdminProps> = ({ gameState }) => {
-  const [socket, setSocket] = useState<Socket | null>(null);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const socket = useSocket();
+
+  // Set up socket listener to update the game state when the server sends updates
+  useEffect(() => {
+    if (!socket) return; // Ensure socket is connected
+
+    const handleGameStateUpdate = (data: { gameState: GameState }) => {
+      setCurrentGameState(data.gameState); // Update the game state with the data from the server
+    };
+
+    socket.on("gameStateUpdate", handleGameStateUpdate);
+
+    // Clean up the listener when the component is unmounted
+    return () => {
+      socket.off("gameStateUpdate", handleGameStateUpdate);
+    };
+  }, [socket]);
+
   const [currentGameState, setCurrentGameState] =
     useState<GameState>(gameState);
-
-  // Establish Socket.IO connection
-  useEffect(() => {
-    const socketIo = io("http://localhost:4000");
-    socketIo.on("connect", () => {
-      console.log("Connected to Socket.IO server");
-    });
-    socketIo.on("gameStateUpdate", (data: { gameState: GameState }) => {
-      setCurrentGameState(data.gameState); // Update the game state when the server sends an update
-    });
-    socketIo.on("disconnect", () => {
-      console.log("Disconnected from Socket.IO server");
-    });
-    setSocket(socketIo);
-    // Clean up on component unmount
-    return () => {
-      if (socketIo) {
-        socketIo.disconnect();
-      }
-    };
-  }, []);
 
   // Send game state update to Socket.IO server
   const sendGameStateToServer = (updatedGameState: GameState) => {
@@ -41,17 +49,108 @@ const Admin: React.FC<AdminProps> = ({ gameState }) => {
     }
   };
 
-  const handleAddPoints = (team: Team, points: number, gameName: GameName) => {
+  const handleSaveSettings = (gameState: GameState) => {
+    setCurrentGameState(gameState);
+    sendGameStateToServer(gameState); // Send updated settings to Socket.IO server
+  };
+
+  const handleReset = () => {
+    const resetState: GameState = {
+      [Team.TeamA]: { name: "Team A", score: 0 },
+      [Team.TeamB]: { name: "Team B", score: 0 },
+      answered: {},
+      currentGame: {
+        gameName: GameName.BOARD,
+        gameTitle: "GameBoard",
+        value: 0,
+        questionState: {
+          questionVisible: false,
+        },
+      },
+      isDoubleJeopardy: false,
+    };
+    setCurrentGameState(resetState);
+    sendGameStateToServer(resetState); // Send reset state to Socket.IO server
+  };
+
+  const handleUpdateCurrentGame = (newGame: GameName, points: number) => {
+    console.log("Updating current game");
+    const updatedGameState = { ...gameState };
+
+    switch (newGame) {
+      case GameName.FAMILY_FEUD: {
+        const questionState: FamilyFeudQuestionState = {
+          questionVisible: false,
+          revealedAnswers: [],
+          wrongGuesses: 0,
+        };
+        updatedGameState.currentGame = {
+          gameName: newGame,
+          gameTitle: getGameTitle(newGame),
+          value: points,
+          questionState: questionState,
+        };
+        break;
+      }
+      case GameName.MINUTE: {
+        const questionState: MinuteQuestionState = {
+          questionVisible: false,
+          readyTimer: false,
+        };
+        updatedGameState.currentGame = {
+          gameName: newGame,
+          gameTitle: getGameTitle(newGame),
+          value: points,
+          questionState: questionState,
+        };
+        break;
+      }
+      default:
+        updatedGameState.currentGame = {
+          gameName: newGame,
+          gameTitle: getGameTitle(newGame),
+          value: points,
+          questionState: { questionVisible: false },
+        };
+        break;
+    }
+
+    setCurrentGameState(updatedGameState);
+    sendGameStateToServer(updatedGameState); // Send update to Socket.IO server
+  };
+
+  const handleAddPoints = (team: Team, points: number, gameName: GameName, noPointsOverride: boolean) => {
     if (!currentGameState || !socket) return;
 
     const updatedGameState = { ...currentGameState };
-    updatedGameState[team].score += points;
+    if (!noPointsOverride) {
+      updatedGameState[team].score += points;
+    }
     if (!updatedGameState.answered[gameName]) {
       updatedGameState.answered[gameName] = [];
     }
     updatedGameState.answered[gameName].push(points);
 
-    // Update local state
+    //const audio = new Audio(wowSound);
+    //audio.play();
+
+    setCurrentGameState(updatedGameState);
+    sendGameStateToServer(updatedGameState);
+  };
+
+  const handleBackButton = () => {
+    if (!currentGameState || !socket) return;
+
+    const updatedGameState = { ...currentGameState };
+    updatedGameState.currentGame = {
+      gameName: GameType.BOARD,
+      gameTitle: "GameBoard",
+      value: 0,
+      questionState: {
+        questionVisible: false,
+      },
+    };
+
     setCurrentGameState(updatedGameState);
     sendGameStateToServer(updatedGameState);
   };
@@ -59,18 +158,41 @@ const Admin: React.FC<AdminProps> = ({ gameState }) => {
   const handleRevealQuestion = () => {
     if (!currentGameState || !socket) return;
     const updatedGameState = { ...currentGameState };
-    updatedGameState.currentGame.questionVisibile = true;
-    // Update local state
+    updatedGameState.currentGame.questionState.questionVisible = true;
+
     setCurrentGameState(updatedGameState);
     sendGameStateToServer(updatedGameState);
   };
 
+  const location = useLocation(); // Get the current location
+
   return (
     <div className="admin-container">
+      {/* Conditionally show the settings button only on the home page */}
+      {location.pathname === "/admin" && (
+        <button
+          onClick={() => setIsSettingsOpen(true)}
+          className="fixed top-4 right-4 p-2 bg-blue-500 text-white rounded"
+        >
+          Settings
+        </button>
+      )}
+
+      <SettingsModal
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
+        onSave={handleSaveSettings}
+        onReset={handleReset}
+        gameState={gameState}
+      />
+      
       <AdminPageWrapper
         gameState={gameState}
+        handleUpdateCurrentGame={handleUpdateCurrentGame}
         handleAddPoints={handleAddPoints}
         handleRevealQuestion={handleRevealQuestion}
+        handleBackButon={handleBackButton}
+        sendGameStateToServer={sendGameStateToServer}
       ></AdminPageWrapper>
     </div>
   );

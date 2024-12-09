@@ -1,7 +1,7 @@
 {
     "feud": {
-        "categoryRoute": "feud",
-        "categoryName": "Family Feud",
+        "gameName": "feud",
+        "gameTitle": "Family Feud",
         "points": [
             100,
             200,
@@ -12,8 +12,8 @@
         "answered": []
     },
     "millionaire":{
-        "categoryRoute": "millionaire",
-        "categoryName": "Who Wants to be a Millionaire",
+        "gameName": "millionaire",
+        "gameTitle": "Who Wants to be a Millionaire",
         "points": [
             100,
             200,
@@ -24,8 +24,8 @@
         "answered": []
     },
     "minute": {
-        "categoryRoute": "minute",
-        "categoryName": "Minute To Win It",
+        "gameName": "minute",
+        "gameTitle": "Minute To Win It",
         "points": [
             100,
             200,
@@ -36,20 +36,8 @@
         "answered": []
     },
     "singing": {
-        "categoryRoute": "singing",
-        "categoryName": "The Singing Bee",
-        "points": [
-            100,
-            200,
-            300,
-            400,
-            500
-        ],
-        "answered": []
-    },
-    "gaming": {
-        "categoryRoute": "gaming",
-        "categoryName": "Wii Sports Battle",
+        "gameName": "singing",
+        "gameTitle": "The Singing Bee",
         "points": [
             100,
             200,
