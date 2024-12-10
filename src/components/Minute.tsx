@@ -47,7 +47,7 @@ const Minute: React.FC<MinuteProps> = ({
     const updatedGameState = { ...gameState };
     const updatedQuestionState = updatedGameState.currentGame.questionState as MinuteQuestionState;
 
-    updatedQuestionState.readyTimer = true; // Set readyTimer to true
+    updatedQuestionState.readyTimer = !updatedQuestionState.readyTimer ;
     sendGameStateToServer(updatedGameState); // Send the updated game state to the server
   };
 
@@ -91,13 +91,13 @@ const Minute: React.FC<MinuteProps> = ({
       </div>
 
       {/* Button to trigger readyTimer */}
-      {isAdmin && !questionState.readyTimer && (
+      {isAdmin && (
         <div className="text-center mt-4">
           <button
             onClick={handleReadyTimer}
             className="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600"
           >
-            Ready Timer
+            Toggle Timer
           </button>
         </div>
       )}

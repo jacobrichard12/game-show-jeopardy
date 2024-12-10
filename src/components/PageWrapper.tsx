@@ -6,6 +6,7 @@ import { GameName, GameState } from "../types/common";
 import ScoreBoard from "./Scoreboard";
 import QuestionWrapper from "./QuestionWrapper";
 import Minute from "./Minute";
+import HeadToHead from "./HeadToHead";
 
 interface PageWrapperProps {
   gameState: GameState;
@@ -49,6 +50,19 @@ const PageWrapper: React.FC<PageWrapperProps> = ({
             gameState={gameState}
             question={
               <Minute
+                isAdmin={false}
+                gameState={gameState}
+                sendGameStateToServer={() => {}}
+              />
+            }
+          />
+        );
+      case GameName.HEAD_TO_HEAD:
+        return (
+          <QuestionWrapper
+            gameState={gameState}
+            question={
+              <HeadToHead
                 isAdmin={false}
                 gameState={gameState}
                 sendGameStateToServer={() => {}}

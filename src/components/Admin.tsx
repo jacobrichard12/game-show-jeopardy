@@ -6,6 +6,7 @@ import {
   GameState,
   GameName as GameType,
   getGameTitle,
+  HeadToHeadQuestionState,
   MinuteQuestionState,
   Team,
 } from "../types/common";
@@ -96,6 +97,19 @@ const Admin: React.FC<AdminProps> = ({ gameState }) => {
         const questionState: MinuteQuestionState = {
           questionVisible: false,
           readyTimer: false,
+        };
+        updatedGameState.currentGame = {
+          gameName: newGame,
+          gameTitle: getGameTitle(newGame),
+          value: points,
+          questionState: questionState,
+        };
+        break;
+      }
+      case GameName.HEAD_TO_HEAD: {
+        const questionState: HeadToHeadQuestionState = {
+          questionVisible: false,
+          showTitle: false,
         };
         updatedGameState.currentGame = {
           gameName: newGame,

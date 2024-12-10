@@ -4,6 +4,7 @@ import gameBoardData from "../data/gameBoard.json";
 import GameBoard from "./GameBoard";
 import FamilyFeud from "./FamilyFeud";
 import Minute from "./Minute";
+import HeadToHead from "./HeadToHead";
 
 interface AdminPageWrapperProps {
   gameState: GameState;
@@ -64,6 +65,14 @@ const AdminPageWrapper: React.FC<AdminPageWrapperProps> = ({
       case GameName.MINUTE:
         return (
           <Minute
+            isAdmin={true}
+            gameState={gameState}
+            sendGameStateToServer={sendGameStateToServer}
+          />
+        );
+      case GameName.HEAD_TO_HEAD:
+        return (
+          <HeadToHead
             isAdmin={true}
             gameState={gameState}
             sendGameStateToServer={sendGameStateToServer}

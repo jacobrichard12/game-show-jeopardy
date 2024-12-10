@@ -46,5 +46,17 @@
             500
         ],
         "answered": []
+    },
+    "head": {
+        "gameName": "head",
+        "gameTitle": "Head to Head",
+        "points": [
+            100,
+            200,
+            300,
+            400,
+            500
+        ],
+        "answered": []
     }
 }
