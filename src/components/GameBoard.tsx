@@ -24,7 +24,13 @@ const GameBoard: React.FC<GameBoardProps> = ({
 }) => {
   // Check if the question has already been answered
   const hasQuestionBeenAnswered = (gameName: string, value: number) => {
-    return gameState.answered[gameName]?.includes(value) ?? false;
+    if (gameState.isDoubleJeopardy) {
+      return (
+        gameState.doubleJeopardyAnswered[gameName]?.includes(value) ?? false
+      );
+    } else {
+      return gameState.answered[gameName]?.includes(value) ?? false;
+    }
   };
 
   // Get whether it's Double Jeopardy
@@ -33,17 +39,27 @@ const GameBoard: React.FC<GameBoardProps> = ({
   // Function to toggle the disabled state of a tile
   const toggleEnableDisableState = (gameName: string, pointValue: number) => {
     if (!isAdmin) return;
-
     const updatedGameState = { ...gameState };
-    if (!updatedGameState.answered[gameName]) {
-      updatedGameState.answered[gameName] = [];
-      updatedGameState.answered[gameName].push(pointValue);
-    } else if (updatedGameState.answered[gameName].includes(pointValue)) {
-      updatedGameState.answered[gameName] = updatedGameState.answered[
-        gameName
-      ].filter((value) => value !== pointValue);
+
+    const answered = updatedGameState.isDoubleJeopardy
+      ? updatedGameState.doubleJeopardyAnswered
+      : updatedGameState.answered;
+
+    if (!answered[gameName]) {
+      answered[gameName] = [];
+      answered[gameName].push(pointValue);
+    } else if (answered[gameName].includes(pointValue)) {
+      answered[gameName] = answered[gameName].filter(
+        (value) => value !== pointValue
+      );
     } else {
-      updatedGameState.answered[gameName].push(pointValue);
+      answered[gameName].push(pointValue);
+    }
+
+    if (gameState.isDoubleJeopardy) {
+      updatedGameState.doubleJeopardyAnswered = answered;
+    } else {
+      updatedGameState.answered = answered;
     }
 
     // Update the game state with the modified board data
@@ -55,7 +71,9 @@ const GameBoard: React.FC<GameBoardProps> = ({
       {/* Game board */}
       <div className="overflow-x-auto mb-6">
         <table
-          className={`table-auto border-collapse w-full ${isDoubleJeopardy ? "bg-gray-700" : ""}`}
+          className={`table-auto border-collapse w-full ${
+            isDoubleJeopardy ? "bg-gray-700" : ""
+          }`}
         >
           <thead>
             <tr>
@@ -65,7 +83,9 @@ const GameBoard: React.FC<GameBoardProps> = ({
                   <th
                     key={category.gameName}
                     className={`p-4 text-lg font-bold border-b text-center ${
-                      isDoubleJeopardy ? "bg-gray-600 text-white" : "bg-gray-200"
+                      isDoubleJeopardy
+                        ? "bg-gray-600 text-white"
+                        : "bg-gray-200"
                     }`}
                   >
                     {category.gameTitle}
@@ -91,7 +111,9 @@ const GameBoard: React.FC<GameBoardProps> = ({
                       <td
                         key={`${category.gameName}-${rowIndex}`}
                         className={`p-4 text-center border ${
-                          isDoubleJeopardy ? "border-gray-600" : "border-gray-300"
+                          isDoubleJeopardy
+                            ? "border-gray-600"
+                            : "border-gray-300"
                         }`}
                       >
                         <div className="flex items-center justify-center">
@@ -103,9 +125,9 @@ const GameBoard: React.FC<GameBoardProps> = ({
                               )
                                 ? "bg-gray-400 cursor-not-allowed"
                                 : hasQuestionBeenAnswered(
-                                  category.gameName,
-                                  pointValue
-                                )
+                                    category.gameName,
+                                    pointValue
+                                  )
                                 ? "bg-gray-500 cursor-not-allowed"
                                 : "bg-blue-500 hover:bg-blue-600"
                             } text-white focus:outline-none focus:ring-2 focus:ring-blue-500`}
@@ -115,23 +137,36 @@ const GameBoard: React.FC<GameBoardProps> = ({
                                 pointValue
                               )
                             }
-                            disabled={hasQuestionBeenAnswered(category.gameName, pointValue) || hasQuestionBeenAnswered(
-                              category.gameName,
-                              pointValue
-                            )}
+                            disabled={
+                              hasQuestionBeenAnswered(
+                                category.gameName,
+                                pointValue
+                              ) ||
+                              hasQuestionBeenAnswered(
+                                category.gameName,
+                                pointValue
+                              )
+                            }
                           >
                             ${pointValue}
                           </button>
                           {/* Toggle disable/enable button */}
                           {isAdmin && (
                             <button
-                              onClick={() => toggleEnableDisableState(category.gameName, pointValue)}
+                              onClick={() =>
+                                toggleEnableDisableState(
+                                  category.gameName,
+                                  pointValue
+                                )
+                              }
                               className="ml-2 p-1 bg-red-500 text-white rounded hover:bg-red-600 focus:outline-none"
                             >
                               {hasQuestionBeenAnswered(
                                 category.gameName,
                                 pointValue
-                              ) ? "Enable" : "Disable"}
+                              )
+                                ? "Enable"
+                                : "Disable"}
                             </button>
                           )}
                         </div>

@@ -2,37 +2,67 @@
     "100": {
         "questions": [
             {
-                "question": "What is the capital of France?",
-                "answers": ["Berlin", "Madrid", "Paris", "Rome"],
+                "question": "Which planet is known as the Red Planet?",
+                "answers": [
+                    "Earth",
+                    "Venus",
+                    "Mars",
+                    "Jupiter"
+                ],
                 "correctAnswerIdx": 2
             },
             {
-                "question": "What is 2 + 2?",
-                "answers": ["3", "4", "5", "6"],
-                "correctAnswerIdx": 1
+                "question": "What is the square root of 144?",
+                "answers": [
+                    "10",
+                    "11",
+                    "12",
+                    "13"
+                ],
+                "correctAnswerIdx": 2
             },
             {
-                "question": "What is the color of the sky on a clear day?",
-                "answers": ["Blue", "Green", "Red", "Yellow"],
-                "correctAnswerIdx": 0
+                "question": "Which continent is known as the birthplace of humanity?",
+                "answers": [
+                    "Asia",
+                    "Africa",
+                    "Europe",
+                    "South America"
+                ],
+                "correctAnswerIdx": 1
             }
         ]
     },
     "200": {
         "questions": [
             {
-                "question": "Which planet is known as the Red Planet?",
-                "answers": ["Earth", "Venus", "Mars", "Jupiter"],
-                "correctAnswerIdx": 2
+                "question": "Which element has the atomic number 1?",
+                "answers": [
+                    "Oxygen",
+                    "Hydrogen",
+                    "Helium",
+                    "Carbon"
+                ],
+                "correctAnswerIdx": 1
             },
             {
                 "question": "What is the largest ocean on Earth?",
-                "answers": ["Atlantic", "Indian", "Arctic", "Pacific"],
+                "answers": [
+                    "Atlantic",
+                    "Indian",
+                    "Arctic",
+                    "Pacific"
+                ],
                 "correctAnswerIdx": 3
             },
             {
-                "question": "What is the main ingredient in guacamole?",
-                "answers": ["Tomato", "Avocado", "Onion", "Lettuce"],
+                "question": "What is the chemical symbol for gold?",
+                "answers": [
+                    "Ag",
+                    "Au",
+                    "Gd",
+                    "Pt"
+                ],
                 "correctAnswerIdx": 1
             }
         ]
@@ -40,19 +70,34 @@
     "300": {
         "questions": [
             {
-                "question": "What is the smallest prime number?",
-                "answers": ["0", "1", "2", "3"],
-                "correctAnswerIdx": 2
-            },
-            {
-                "question": "What is the chemical symbol for gold?",
-                "answers": ["Ag", "Au", "Gd", "Pt"],
+                "question": "What council defined the doctrine of transubstantiation?",
+                "answers": [
+                    "First Vatican Council",
+                    "Council of Trent",
+                    "Council of Nicea",
+                    "Council of Ephesus"
+                ],
                 "correctAnswerIdx": 1
             },
             {
                 "question": "Which Shakespeare play features the characters Rosencrantz and Guildenstern?",
-                "answers": ["Macbeth", "Hamlet", "Othello", "The Tempest"],
-                "correctAnswerIdx": 1
+                "answers": [
+                    "Macbeth",
+                    "The Tempest",
+                    "Othello",
+                    "Hamlet"
+                ],
+                "correctAnswerIdx": 3
+            },
+            {
+                "question": "TheStarbuckscoffeecompanywasfoundedinwhichUSCity?",
+                "answers": [
+                    "Seattle",
+                    "Dallas",
+                    "Miami",
+                    "Boston"
+                ],
+                "correctAnswerIdx": 0
             }
         ]
     },
@@ -60,55 +105,100 @@
         "questions": [
             {
                 "question": "What is the capital city of Australia?",
-                "answers": ["Sydney", "Melbourne", "Canberra", "Brisbane"],
-                "correctAnswerIdx": 2
+                "answers": [
+                    "Sydney",
+                    "Melbourne",
+                    "Brisbane",
+                    "Canberra"
+                ],
+                "correctAnswerIdx": 3
             },
             {
-                "question": "Which element has the atomic number 1?",
-                "answers": ["Oxygen", "Hydrogen", "Helium", "Carbon"],
-                "correctAnswerIdx": 1
+                "question": "What Marian apparition is associated with the phrase 'I am the Immaculate Conception'?",
+                "answers": [
+                    "Our Lady of Lourdes",
+                    "Our Lady of Fatima",
+                    "Our Lady of Guadalupe",
+                    "Our Lady of the Rosary"
+                ],
+                "correctAnswerIdx": 0
             },
             {
-                "question": "In which year did the Titanic sink?",
-                "answers": ["1910", "1912", "1914", "1916"],
-                "correctAnswerIdx": 1
+                "question": "The escape velocity of a rocket fired from the earth towards the moon is the velocity required to overcome",
+                "answers": [
+                    "Earth's gravitational pull",
+                    "Moon's gravitational pull",
+                    "Centripetal force due to the earth's rotation",
+                    "Pressure of the atmosphere"
+                ],
+                "correctAnswerIdx": 0
             }
         ]
     },
     "500": {
         "questions": [
             {
-                "question": "What is the square root of 144?",
-                "answers": ["10", "11", "12", "13"],
+                "question": "Which of these religious observances lasts for the shortest period of time during the calendar year?",
+                "answers": [
+                    "Ramadan",
+                    "Diwali",
+                    "Lent",
+                    "Hanukkah"
+                ],
+                "correctAnswerIdx": 1
+            },
+            {
+                "question": "Which composer wrote the 'Four Seasons'?",
+                "answers": [
+                    "Ludwig van Beethoven",
+                    "Wolfgang Amadeus Mozart",
+                    "Antonio Vivaldi",
+                    "Johann Sebastian Bach"
+                ],
                 "correctAnswerIdx": 2
             },
             {
-                "question": "What is the currency of Japan?",
-                "answers": ["Dollar", "Euro", "Yen", "Won"],
-                "correctAnswerIdx": 2
-            },
-            {
-                "question": "Which artist painted the ceiling of the Sistine Chapel?",
-                "answers": ["Leonardo da Vinci", "Raphael", "Michelangelo", "Donatello"],
-                "correctAnswerIdx": 2
+                "question": "What does HTTP stand for?",
+                "answers": [
+                    "HyperText Transfer Protocol",
+                    "HyperText Transfer Process",
+                    "HyperTool Transfer Protocol",
+                    "HighText Transfer Protocol"
+                ],
+                "correctAnswerIdx": 0
             }
         ]
     },
     "101": {
         "questions": [
             {
+                "question": "Who wrote 'To Kill a Mockingbird'?",
+                "answers": [
+                    "Mark Twain",
+                    "Ernest Hemingway",
+                    "Harper Lee",
+                    "F. Scott Fitzgerald"
+                ],
+                "correctAnswerIdx": 2
+            },
+            {
                 "question": "What is the freezing point of water in Celsius?",
-                "answers": ["0", "32", "100", "-1"],
+                "answers": [
+                    "0",
+                    "32",
+                    "100",
+                    "-1"
+                ],
                 "correctAnswerIdx": 0
             },
             {
-                "question": "Which country is known as the Land of the Rising Sun?",
-                "answers": ["China", "Japan", "Thailand", "Vietnam"],
-                "correctAnswerIdx": 1
-            },
-            {
-                "question": "Who wrote 'To Kill a Mockingbird'?",
-                "answers": ["Harper Lee", "Mark Twain", "Ernest Hemingway", "F. Scott Fitzgerald"],
+                "question": "Which of the following is a variety of rice?",
+                "answers": [
+                    "Jasmine",
+                    "Saffron",
+                    "Basil",
+                    "Paprika"
+                ],
                 "correctAnswerIdx": 0
             }
         ]
@@ -116,37 +206,67 @@
     "201": {
         "questions": [
             {
-                "question": "Which gas do plants absorb from the atmosphere?",
-                "answers": ["Oxygen", "Nitrogen", "Carbon Dioxide", "Hydrogen"],
-                "correctAnswerIdx": 2
+                "question": "What is the S.I. unit of temperature?",
+                "answers": [
+                    "Kelvin",
+                    "Celsius",
+                    "Centigrade",
+                    "Fahrenheit"
+                ],
+                "correctAnswerIdx": 0
             },
             {
-                "question": "How many continents are there on Earth?",
-                "answers": ["5", "6", "7", "8"],
-                "correctAnswerIdx": 2
+                "question": "The headquarters of UN are situated at",
+                "answers": [
+                    "New York, USA",
+                    "Haque (Netherlands)",
+                    "Geneva",
+                    "Paris"
+                ],
+                "correctAnswerIdx": 0
             },
             {
-                "question": "Which is the longest river in the world?",
-                "answers": ["Amazon", "Nile", "Yangtze", "Mississippi"],
-                "correctAnswerIdx": 1
+                "question": "Which invention is Alexander Graham Bell known for?",
+                "answers": [
+                    "Telephone",
+                    "Lightbulb",
+                    "Television",
+                    "Steam Engine"
+                ],
+                "correctAnswerIdx": 0
             }
         ]
     },
     "301": {
         "questions": [
             {
-                "question": "What is the name of the largest desert in the world?",
-                "answers": ["Sahara", "Gobi", "Kalahari", "Arctic"],
+                "question": "What is the second most common gas in the air?",
+                "answers": [
+                    "Nitrogen",
+                    "Oxygen",
+                    "Water",
+                    "Helium"
+                ],
+                "correctAnswerIdx": 1
+            },
+            {
+                "question": "What are the dimensions of A4 paper?",
+                "answers": [
+                    "8.3\" x 11.7\"",
+                    "8.5\" x 11\"",
+                    "30cm x 50cm",
+                    "8.5\" x 14\""
+                ],
                 "correctAnswerIdx": 0
             },
             {
-                "question": "What is the main ingredient in sushi?",
-                "answers": ["Chicken", "Beef", "Rice", "Fish"],
-                "correctAnswerIdx": 2
-            },
-            {
-                "question": "Which planet is closest to the Sun?",
-                "answers": ["Earth", "Venus", "Mercury", "Mars"],
+                "question": "Which of the following animals is a mammal?",
+                "answers": [
+                    "Penguin",
+                    "Shark",
+                    "Whale",
+                    "Crocodile"
+                ],
                 "correctAnswerIdx": 2
             }
         ]
@@ -154,38 +274,68 @@
     "401": {
         "questions": [
             {
-                "question": "What is the largest mammal on Earth?",
-                "answers": ["Elephant", "Blue Whale", "Shark", "Giraffe"],
-                "correctAnswerIdx": 1
+                "question": "Of the blood groups A, B, AB and O, which one is transfused into a person whose blood group is A?",
+                "answers": [
+                    "Group A only",
+                    "Group B only",
+                    "Group A and O",
+                    "Group AB only"
+                ],
+                "correctAnswerIdx": 2
             },
             {
-                "question": "Who developed the theory of relativity?",
-                "answers": ["Newton", "Einstein", "Galileo", "Tesla"],
-                "correctAnswerIdx": 1
+                "question": "Which 1980s film is known for the line, 'Where we're going, we don't need roads'?",
+                "answers": [
+                    "Back to the Future",
+                    "E.T. the Extra-Terrestrial",
+                    "Ghostbusters",
+                    "The Terminator"
+                ],
+                "correctAnswerIdx": 0
             },
             {
-                "question": "What is the official language of Brazil?",
-                "answers": ["Spanish", "Portuguese", "French", "English"],
-                "correctAnswerIdx": 1
+                "question": "What is the speed of light?",
+                "answers": [
+                    "300,000 km/s",
+                    "150,000 km/s",
+                    "250,000 km/s",
+                    "350,000 km/s"
+                ],
+                "correctAnswerIdx": 0
             }
         ]
     },
     "501": {
         "questions": [
             {
-                "question": "Who painted 'Starry Night'?",
-                "answers": ["Pablo Picasso", "Vincent van Gogh", "Claude Monet", "Salvador Dali"],
+                "question": "Which of these religious observances lasts for the shortest period of time during the calendar year?",
+                "answers": [
+                    "Ramadan",
+                    "Diwali",
+                    "Lent",
+                    "Hanukkah"
+                ],
                 "correctAnswerIdx": 1
             },
             {
-                "question": "What is the speed of light?",
-                "answers": ["300,000 km/s", "150,000 km/s", "250,000 km/s", "350,000 km/s"],
+                "question": "Which country has the largest Catholic population in the world?",
+                "answers": [
+                    "Italy",
+                    "Mexico",
+                    "Spain",
+                    "Brazil"
+                ],
+                "correctAnswerIdx": 3
+            },
+            {
+                "question": "In 1912, former US President Theodore Roosevelt was a candidate for which political party?",
+                "answers": [
+                    "Bull Moose",
+                    "Bull Dog",
+                    "Bull Frog",
+                    "Bull Elephant"
+                ],
                 "correctAnswerIdx": 0
-            },
-            {
-                "question": "What is the hardest natural substance on Earth?",
-                "answers": ["Gold", "Diamond", "Iron", "Platinum"],
-                "correctAnswerIdx": 1
             }
         ]
     }

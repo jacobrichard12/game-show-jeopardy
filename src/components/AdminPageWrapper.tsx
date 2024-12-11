@@ -7,6 +7,7 @@ import Minute from "./Minute";
 import HeadToHead from "./HeadToHead";
 import Millionaire from "./Millionaire";
 import ScoreBoard from "./Scoreboard";
+import wow from "../assets/wow.mp3";
 
 interface AdminPageWrapperProps {
   gameState: GameState;
@@ -20,7 +21,7 @@ interface AdminPageWrapperProps {
   handleRevealQuestion: () => void;
   handleBackButon: () => void;
   sendGameStateToServer: (gameState: GameState) => void;
-  handleUpdateTurn:(team: Team) => void;
+  handleUpdateTurn: (team: Team) => void;
 }
 
 const AdminPageWrapper: React.FC<AdminPageWrapperProps> = ({
@@ -30,7 +31,7 @@ const AdminPageWrapper: React.FC<AdminPageWrapperProps> = ({
   handleRevealQuestion,
   handleBackButon,
   sendGameStateToServer,
-  handleUpdateTurn
+  handleUpdateTurn,
 }) => {
   const havePointsBeenAwarded = () => {
     return (
@@ -52,6 +53,10 @@ const AdminPageWrapper: React.FC<AdminPageWrapperProps> = ({
 
   const handleToggleDoubleJeopardy = () => {
     const updatedGameState = { ...gameState };
+    if (!updatedGameState.isDoubleJeopardy) {
+      const audio = new Audio(wow);
+      audio.play();
+    }
     updatedGameState.isDoubleJeopardy = !updatedGameState.isDoubleJeopardy;
     sendGameStateToServer(updatedGameState);
   };
@@ -210,7 +215,11 @@ const AdminPageWrapper: React.FC<AdminPageWrapperProps> = ({
       {gameState.currentGame.gameName === GameName.BOARD
         ? getGameBoardAdminPage()
         : getChildAdminGamePage()}
-      <ScoreBoard gameState={gameState} isAdmin={true} handleUpdateTurn={handleUpdateTurn}/>
+      <ScoreBoard
+        gameState={gameState}
+        isAdmin={true}
+        handleUpdateTurn={handleUpdateTurn}
+      />
     </div>
   );
 };

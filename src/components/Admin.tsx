@@ -13,7 +13,7 @@ import {
 } from "../types/common";
 import AdminPageWrapper from "./AdminPageWrapper";
 import { useSocket } from "./SocketContext";
-import wowSound from "../assets/wow.mp3";
+import addPointsSound from "../assets/collectpoints.mp3";
 import { useLocation } from "react-router-dom";
 import SettingsModal from "./SettingsModal";
 
@@ -61,6 +61,7 @@ const Admin: React.FC<AdminProps> = ({ gameState }) => {
       [Team.TeamA]: { name: "Team A", score: 0 },
       [Team.TeamB]: { name: "Team B", score: 0 },
       answered: {},
+      doubleJeopardyAnswered: {},
       currentGame: {
         gameName: GameName.BOARD,
         gameTitle: "GameBoard",
@@ -159,22 +160,37 @@ const Admin: React.FC<AdminProps> = ({ gameState }) => {
     sendGameStateToServer(updatedGameState);
   };
 
-  const handleAddPoints = (team: Team, points: number, gameName: GameName, noPointsOverride: boolean) => {
+  const handleAddPoints = (
+    team: Team,
+    points: number,
+    gameName: GameName,
+    noPointsOverride: boolean
+  ) => {
     if (!currentGameState || !socket) return;
-
     const updatedGameState = { ...currentGameState };
+
     if (!noPointsOverride) {
       updatedGameState[team].score += points;
+      const audio = new Audio(addPointsSound);
+      audio.play();
     }
-    if (!updatedGameState.answered[gameName]) {
-      updatedGameState.answered[gameName] = [];
-    }
-    updatedGameState.answered[gameName].push(points);
-    updatedGameState.whoseTurn = team;
-    
-    //const audio = new Audio(wowSound);
-    //audio.play();
 
+    const answered = updatedGameState.isDoubleJeopardy
+      ? updatedGameState.doubleJeopardyAnswered
+      : updatedGameState.answered;
+
+    if (!answered[gameName]) {
+      answered[gameName] = [];
+    }
+    answered[gameName].push(points);
+
+    if (gameState.isDoubleJeopardy) {
+      updatedGameState.doubleJeopardyAnswered = answered;
+    } else {
+      updatedGameState.answered = answered;
+    }
+
+    updatedGameState.whoseTurn = team;
     setCurrentGameState(updatedGameState);
     sendGameStateToServer(updatedGameState);
   };
@@ -226,7 +242,7 @@ const Admin: React.FC<AdminProps> = ({ gameState }) => {
         onReset={handleReset}
         gameState={gameState}
       />
-      
+
       <AdminPageWrapper
         gameState={gameState}
         handleUpdateCurrentGame={handleUpdateCurrentGame}

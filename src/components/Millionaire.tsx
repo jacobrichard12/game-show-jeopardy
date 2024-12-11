@@ -3,8 +3,15 @@ import millionaireJson from "../data/millionaire.json";
 import soundtrack1 from "../assets/millionaire/sountrack-1.mp3";
 import soundtrack2 from "../assets/millionaire/sountrack-2.mp3";
 import soundtrack3 from "../assets/millionaire/sountrack-3.mp3";
-import yay from "../assets/yay.mp3";  // New audio for correct answers
-import oof from "../assets/oof.mp3"; // New audio for incorrect answers
+import yay from "../assets/yay.mp3";
+import oof from "../assets/oof.mp3";
+import losing1 from "../assets/losing1.mp3";
+import losing2 from "../assets/losing2.mp3";
+import losing3 from "../assets/losing3.mp3";
+import winning1 from "../assets/winning1.wav";
+import winning2 from "../assets/winning2.wav";
+import winning3 from "../assets/winning3.mp3";
+
 import {
   MillionaireQuestion,
   MillionaireQuestions,
@@ -20,17 +27,21 @@ const Millionaire: React.FC<MillionaireProps> = ({
   sendGameStateToServer,
 }) => {
   const audioRef = useRef(new Audio());
-  const [correctAudio] = useState(new Audio(yay));
-  const [incorrectAudio] = useState(new Audio(oof));
+  const soundtrackFiles = [soundtrack1, soundtrack2, soundtrack3];
+  const sadFiles = [oof, losing1, losing2, losing3];
+  const happyFiles = [yay, winning1, winning2, winning3];
+  
+  const getRandomFile = (files: string[]) => {
+    return files[Math.floor(Math.random() * files.length)]
+  }
 
-  const audioFiles = [soundtrack1, soundtrack2, soundtrack3];
+  const [correctAudio] = useState(new Audio(getRandomFile(happyFiles)));
+  const [incorrectAudio] = useState(new Audio(getRandomFile(sadFiles)));
 
-  // Assign a random soundtrack if not already assigned
   useEffect(() => {
     if (!isAdmin) return;
     const audio = audioRef.current;
-    audio.src = audioFiles[Math.floor(Math.random() * audioFiles.length)];
-
+    audio.src = getRandomFile(soundtrackFiles)
     const playAudio = async () => {
       try {
         if (audio.paused) {
@@ -40,20 +51,17 @@ const Millionaire: React.FC<MillionaireProps> = ({
         console.error("Error playing audio:", err);
       }
     };
-
-    playAudio(); // Start playing the initial soundtrack
+    playAudio();
 
     return () => {
-      // Stop the audio when the component unmounts
       if (!audio.paused) {
         audio.pause();
-        audio.currentTime = 0; // Reset to the beginning
+        audio.currentTime = 0;
       }
     };
   }, [isAdmin]);
 
   const value = gameState.currentGame.value;
-
   const allQuestions: MillionaireQuestions = millionaireJson;
   let questionData: MillionaireQuestion = allQuestions[value!];
   if (gameState.isDoubleJeopardy) {
@@ -62,7 +70,6 @@ const Millionaire: React.FC<MillionaireProps> = ({
 
   const questionState = gameState.currentGame
     .questionState as MillionaireQuestionState;
-
   const currentSubquestion = questionData.questions[questionState.questionIdx];
 
   const handleAnswerClick = (index: number) => {
@@ -71,21 +78,18 @@ const Millionaire: React.FC<MillionaireProps> = ({
     const updatedQuestionState = updatedGameState.currentGame
       .questionState as MillionaireQuestionState;
 
-    // Return if a question has already been selected
-    if (updatedQuestionState.questionAnswerIdx) return;
+    if (updatedQuestionState.answeredQuestionIdx !== undefined) return;
 
-    updatedQuestionState.questionAnswerIdx = index;
+    updatedQuestionState.answeredQuestionIdx = index;
     updatedGameState.currentGame.questionState = updatedQuestionState;
     sendGameStateToServer(updatedGameState);
 
-    // Stop the current background music
     const audio = audioRef.current;
     if (!audio.paused) {
       audio.pause();
       audio.currentTime = 0;
     }
 
-    // Play the correct or incorrect audio
     if (index === currentSubquestion.correctAnswerIdx) {
       correctAudio.play();
     } else {
@@ -93,14 +97,22 @@ const Millionaire: React.FC<MillionaireProps> = ({
     }
   };
 
+  const areAllAnswersRevealed = () =>
+    questionState.revealedAnswers === currentSubquestion.answers.length;
+
+  const isSelectionCorrect = (index: number) =>
+    index === currentSubquestion.correctAnswerIdx;
+
+  const hasAnswerBeenSelected = () =>
+    questionState.answeredQuestionIdx !== undefined;
+
   const highlightCorrectAnswer = () => {
     if (!isAdmin) return;
     const updatedGameState = { ...gameState };
     const updatedQuestionState = updatedGameState.currentGame
       .questionState as MillionaireQuestionState;
 
-    updatedQuestionState.questionAnswerIdx =
-      currentSubquestion.correctAnswerIdx;
+    updatedQuestionState.showCorrectAnswer = !updatedQuestionState.showCorrectAnswer;
     updatedGameState.currentGame.questionState = updatedQuestionState;
     sendGameStateToServer(updatedGameState);
   };
@@ -125,20 +137,19 @@ const Millionaire: React.FC<MillionaireProps> = ({
       const updatedQuestionState = updatedGameState.currentGame
         .questionState as MillionaireQuestionState;
 
-      // Advance to the next subquestion
       updatedQuestionState.questionIdx++;
       updatedQuestionState.revealedAnswers = 0;
-      updatedQuestionState.questionAnswerIdx = undefined;
+      updatedQuestionState.answeredQuestionIdx = undefined;
+      updatedQuestionState.showCorrectAnswer = false;
       updatedGameState.currentGame.questionState = updatedQuestionState;
       sendGameStateToServer(updatedGameState);
 
-      // Restart the audio when advancing to the next question
       const audio = audioRef.current;
       if (!audio.paused) {
         audio.pause();
-        audio.currentTime = 0; // Reset to the beginning
+        audio.currentTime = 0;
       }
-      audio.src = audioFiles[Math.floor(Math.random() * audioFiles.length)];
+      audio.src = soundtrackFiles[Math.floor(Math.random() * soundtrackFiles.length)];
       audio.play();
     }
   };
@@ -147,27 +158,34 @@ const Millionaire: React.FC<MillionaireProps> = ({
 
   return (
     <div className="millionaire-container">
-      {/* Title */}
       {questionState.promptVisible && (
         <h1 className="text-2xl font-bold mb-4 text-center">
-          Question {questionState.questionIdx + 1}:{" "}
-          {currentSubquestion.question}
+          Question {questionState.questionIdx + 1}: {currentSubquestion.question}
         </h1>
       )}
 
-      {/* Choices in 2x2 grid */}
       <div className="grid grid-cols-2 gap-4 mx-auto max-w-xl">
         {currentSubquestion.answers.map((answer, index) => {
-          let buttonClass = "border p-4 rounded-lg shadow-md text-left";
-          if (index === questionState.questionAnswerIdx) {
-            buttonClass +=
-              index === currentSubquestion.correctAnswerIdx
-                ? " bg-green-300" // Correct answer selected (highlighted green)
-                : " bg-red-300"; // Incorrect answer selected (highlighted red)
-          } else if (index < questionState.revealedAnswers) {
-            buttonClass += " bg-blue-50"; // Revealed answer
+          let buttonClass = "border p-4 rounded-lg shadow-md text-left ";
+          const isRevealed = index < questionState.revealedAnswers;
+          const isSelected = index === questionState.answeredQuestionIdx;
+
+          if (hasAnswerBeenSelected()) {
+            if (isSelected) {
+              buttonClass += isSelectionCorrect(index)
+                ? "bg-green-500 text-white"
+                : "bg-red-500 text-white";
+            } else if (questionState.showCorrectAnswer) {
+              buttonClass += isSelectionCorrect(index)
+                ? "bg-green-500 text-white"
+                : "bg-red-500 text-white";
+            } else {
+              buttonClass += "bg-gray-300 cursor-not-allowed";
+            }
+          } else if (!isRevealed) {
+            buttonClass += "bg-gray-300 cursor-not-allowed";
           } else {
-            buttonClass += " bg-gray-200"; // Default
+            buttonClass += "bg-blue-500 text-white hover:bg-blue-600";
           }
 
           return (
@@ -175,27 +193,22 @@ const Millionaire: React.FC<MillionaireProps> = ({
               key={index}
               onClick={() => handleAnswerClick(index)}
               className={buttonClass}
-              disabled={index >= questionState.revealedAnswers}
+              disabled={!isRevealed || hasAnswerBeenSelected() || !areAllAnswersRevealed()}
             >
               <span className="font-bold mr-2">{prefix[index]}</span>
-              {index < questionState.revealedAnswers ? answer : "???"}
+              {isRevealed ? answer : "???"}
             </button>
           );
         })}
       </div>
 
-      {/* Admin Buttons */}
       {isAdmin && (
         <div className="mt-4 flex justify-center space-x-4">
           <button
             onClick={revealNextAnswer}
-            disabled={
-              questionState.revealedAnswers >= currentSubquestion.answers.length
-            }
+            disabled={areAllAnswersRevealed()}
             className={`bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600 ${
-              questionState.revealedAnswers >= currentSubquestion.answers.length
-                ? "opacity-50 cursor-not-allowed"
-                : ""
+              areAllAnswersRevealed() ? "opacity-50 cursor-not-allowed" : ""
             }`}
           >
             Reveal Next Answer
@@ -203,11 +216,9 @@ const Millionaire: React.FC<MillionaireProps> = ({
 
           <button
             onClick={highlightCorrectAnswer}
-            disabled={!questionState.questionAnswerIdx} // Disabled unless an answer has been selected
+            disabled={!hasAnswerBeenSelected()}
             className={`bg-yellow-500 text-white py-2 px-4 rounded hover:bg-yellow-600 ${
-              !questionState.questionAnswerIdx
-                ? "opacity-50 cursor-not-allowed"
-                : ""
+              !hasAnswerBeenSelected() ? "opacity-50 cursor-not-allowed" : ""
             }`}
           >
             Highlight Correct Answer
@@ -215,13 +226,9 @@ const Millionaire: React.FC<MillionaireProps> = ({
 
           <button
             onClick={nextSubquestion}
-            disabled={
-              !questionState.questionAnswerIdx || questionState.questionIdx >= questionData.questions.length - 1
-            } // Disabled unless an answer has been selected
+            disabled={!hasAnswerBeenSelected() || !areAllAnswersRevealed()}
             className={`bg-green-500 text-white py-2 px-4 rounded hover:bg-green-600 ${
-              !questionState.questionAnswerIdx
-                ? "opacity-50 cursor-not-allowed"
-                : ""
+              !hasAnswerBeenSelected() ? "opacity-50 cursor-not-allowed" : ""
             }`}
           >
             Next Question

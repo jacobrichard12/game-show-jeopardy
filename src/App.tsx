@@ -21,6 +21,7 @@ const App: React.FC = () => {
       },
     },
     answered: {},
+    doubleJeopardyAnswered: {},
     isDoubleJeopardy: false,
   });
   const socket = useSocket();

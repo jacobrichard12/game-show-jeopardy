@@ -1,18 +1,14 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef } from "react";
 import familyFeudJson from "../data/familyFeud.json";
-import buzzer from "../assets/buzzer.wav";
-import ding from "../assets/yes-ding.mp3";
-import theme from "../assets/feudShort.mp3"
 import {
   FamilyFeudQuestion,
   FamilyFeudQuestions,
   FamilyFeudQuestionState,
   QuestionProps,
 } from "../types/common";
-
-// If you use Font Awesome icons, make sure it's installed in your project
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faTimesCircle } from "@fortawesome/free-solid-svg-icons";
+import { buzzerAudio, dingAudio, familyFeudTheme } from "../types/audio";
 
 interface FamilyFeudProps extends QuestionProps {}
 
@@ -21,7 +17,7 @@ const FamilyFeud: React.FC<FamilyFeudProps> = ({
   gameState,
   sendGameStateToServer,
 }) => {
-  const audioRef = useRef(new Audio(theme));
+  const audioRef = useRef(new Audio(familyFeudTheme));
 
   // Assign a random soundtrack if not already assigned
   useEffect(() => {
@@ -55,7 +51,7 @@ const FamilyFeud: React.FC<FamilyFeudProps> = ({
 
   let questionData: FamilyFeudQuestion = allQuestions[value!];
   if (gameState.isDoubleJeopardy) {
-    questionData = allQuestions[value!/2+1];
+    questionData = allQuestions[value! / 2 + 1];
   }
 
   const questionState = gameState.currentGame
@@ -76,7 +72,7 @@ const FamilyFeud: React.FC<FamilyFeudProps> = ({
       .questionState as FamilyFeudQuestionState;
 
     if (revealedAnswers[index]) return;
-    const audio = new Audio(ding);
+    const audio = new Audio(dingAudio);
     audio.play();
 
     revealedAnswers[index] = true;
@@ -107,7 +103,7 @@ const FamilyFeud: React.FC<FamilyFeudProps> = ({
     updatedGameState.currentGame.questionState = updatedQuestionState;
     sendGameStateToServer(updatedGameState); // Send updated state to server
 
-    const audio = new Audio(buzzer); // Create audio object with sound
+    const audio = new Audio(buzzerAudio); // Create audio object with sound
     audio.play(); // Play the sound
   };
 
@@ -127,36 +123,29 @@ const FamilyFeud: React.FC<FamilyFeudProps> = ({
               }`}
               onClick={() => (isAdmin ? handleReveal(index) : null)}
             >
-              {revealedAnswers[index] || isAdmin
-                ? answer
-                : `${index + 1}`}
+              {revealedAnswers[index] || isAdmin ? answer : `${index + 1}`}
             </li>
           ))}
         </ul>
 
-        {/* Admin-only play sound button */}
-        {isAdmin && (
-          <div className="mt-4">
-            <button
-              onClick={wrongAnswer}
-              className="bg-red-500 text-white py-2 px-4 rounded"
-            >
-              Wrong Answer
-            </button>
-          </div>
-        )}
-
-        {/* Admin-only play sound button */}
-        {isAdmin && (
-          <div className="mt-4">
-            <button
-              onClick={handleShowFeudPrompt}
-              className="bg-blue-500 text-white py-2 px-4 rounded"
-            >
-              Show Feud Prompt
-            </button>
-          </div>
-        )}
+        <div className="mt-4">
+          {isAdmin && (
+            <span className="flex space-x-4">
+              <button
+                onClick={wrongAnswer}
+                className="bg-red-500 text-white py-2 px-4 rounded"
+              >
+                Wrong Answer
+              </button>
+              <button
+                onClick={handleShowFeudPrompt}
+                className="bg-blue-500 text-white py-2 px-4 rounded"
+              >
+                Show Feud Prompt
+              </button>
+            </span>
+          )}
+        </div>
 
         {/* Display red X's for wrong guesses */}
         <div className="mt-4 flex flex-wrap">

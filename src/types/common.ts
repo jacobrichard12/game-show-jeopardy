@@ -16,6 +16,7 @@ export interface GameState {
     currentGame: CurrentGame;
     isDoubleJeopardy: boolean;
     answered: { [key: string]: number[] };
+    doubleJeopardyAnswered: { [key: string]: number[] };
 }
 
 export interface CurrentGame {
@@ -98,7 +99,8 @@ export interface HeadToHeadQuestionState extends QuestionState {
 export interface MillionaireQuestionState extends QuestionState {
     questionIdx: number;
     revealedAnswers: number;
-    questionAnswerIdx?: number;
+    answeredQuestionIdx?: number;
+    showCorrectAnswer?: boolean;
 }
 
 export enum GameName {
