@@ -12,6 +12,7 @@ export interface GameState {
         name: string;
         score: number;
     };
+    whoseTurn?: Team;
     currentGame: CurrentGame;
     isDoubleJeopardy: boolean;
     answered: { [key: string]: number[] };
@@ -64,13 +65,24 @@ export interface HeadToHeadQuestion extends Question {
     adminInfo: string;
 }
 
+export type MillionaireQuestions = Record<string, MillionaireQuestion>;
+export interface MillionaireQuestion extends Question {
+    questions: MillionaireSubQuestion[]
+}
+export interface MillionaireSubQuestion {
+    question: string;
+    answers: string[];
+    correctAnswerIdx: number;
+}
+
 export interface QuestionState {
-    questionVisible: boolean;
+    promptVisible: boolean;
 }
 
 export interface EmptyQuestionState extends QuestionState { }
 
 export interface FamilyFeudQuestionState extends QuestionState {
+    showFeudPrompt: boolean;
     revealedAnswers: boolean[];
     wrongGuesses: number;
 }
@@ -81,6 +93,12 @@ export interface MinuteQuestionState extends QuestionState {
 
 export interface HeadToHeadQuestionState extends QuestionState {
     showTitle: boolean;
+}
+
+export interface MillionaireQuestionState extends QuestionState {
+    questionIdx: number;
+    revealedAnswers: number;
+    questionAnswerIdx?: number;
 }
 
 export enum GameName {

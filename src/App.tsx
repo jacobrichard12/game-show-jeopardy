@@ -17,7 +17,7 @@ const App: React.FC = () => {
       gameTitle: "GameBoard",
       value: 0,
       questionState: {
-        questionVisible: false,
+        promptVisible: false,
       },
     },
     answered: {},

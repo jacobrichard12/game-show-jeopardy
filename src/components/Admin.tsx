@@ -7,6 +7,7 @@ import {
   GameName as GameType,
   getGameTitle,
   HeadToHeadQuestionState,
+  MillionaireQuestionState,
   MinuteQuestionState,
   Team,
 } from "../types/common";
@@ -65,7 +66,7 @@ const Admin: React.FC<AdminProps> = ({ gameState }) => {
         gameTitle: "GameBoard",
         value: 0,
         questionState: {
-          questionVisible: false,
+          promptVisible: false,
         },
       },
       isDoubleJeopardy: false,
@@ -81,7 +82,8 @@ const Admin: React.FC<AdminProps> = ({ gameState }) => {
     switch (newGame) {
       case GameName.FAMILY_FEUD: {
         const questionState: FamilyFeudQuestionState = {
-          questionVisible: false,
+          promptVisible: false,
+          showFeudPrompt: false,
           revealedAnswers: [],
           wrongGuesses: 0,
         };
@@ -95,7 +97,7 @@ const Admin: React.FC<AdminProps> = ({ gameState }) => {
       }
       case GameName.MINUTE: {
         const questionState: MinuteQuestionState = {
-          questionVisible: false,
+          promptVisible: false,
           readyTimer: false,
         };
         updatedGameState.currentGame = {
@@ -108,8 +110,22 @@ const Admin: React.FC<AdminProps> = ({ gameState }) => {
       }
       case GameName.HEAD_TO_HEAD: {
         const questionState: HeadToHeadQuestionState = {
-          questionVisible: false,
+          promptVisible: false,
           showTitle: false,
+        };
+        updatedGameState.currentGame = {
+          gameName: newGame,
+          gameTitle: getGameTitle(newGame),
+          value: points,
+          questionState: questionState,
+        };
+        break;
+      }
+      case GameName.MILLIONAIRE: {
+        const questionState: MillionaireQuestionState = {
+          promptVisible: false,
+          questionIdx: 0,
+          revealedAnswers: 0,
         };
         updatedGameState.currentGame = {
           gameName: newGame,
@@ -124,13 +140,23 @@ const Admin: React.FC<AdminProps> = ({ gameState }) => {
           gameName: newGame,
           gameTitle: getGameTitle(newGame),
           value: points,
-          questionState: { questionVisible: false },
+          questionState: { promptVisible: false },
         };
         break;
     }
 
     setCurrentGameState(updatedGameState);
     sendGameStateToServer(updatedGameState); // Send update to Socket.IO server
+  };
+
+  const handleUpdateTurn = (team: Team) => {
+    if (!currentGameState || !socket) return;
+
+    const updatedGameState = { ...currentGameState };
+    updatedGameState.whoseTurn = team;
+
+    setCurrentGameState(updatedGameState);
+    sendGameStateToServer(updatedGameState);
   };
 
   const handleAddPoints = (team: Team, points: number, gameName: GameName, noPointsOverride: boolean) => {
@@ -144,7 +170,8 @@ const Admin: React.FC<AdminProps> = ({ gameState }) => {
       updatedGameState.answered[gameName] = [];
     }
     updatedGameState.answered[gameName].push(points);
-
+    updatedGameState.whoseTurn = team;
+    
     //const audio = new Audio(wowSound);
     //audio.play();
 
@@ -161,7 +188,7 @@ const Admin: React.FC<AdminProps> = ({ gameState }) => {
       gameTitle: "GameBoard",
       value: 0,
       questionState: {
-        questionVisible: false,
+        promptVisible: false,
       },
     };
 
@@ -172,7 +199,7 @@ const Admin: React.FC<AdminProps> = ({ gameState }) => {
   const handleRevealQuestion = () => {
     if (!currentGameState || !socket) return;
     const updatedGameState = { ...currentGameState };
-    updatedGameState.currentGame.questionState.questionVisible = true;
+    updatedGameState.currentGame.questionState.promptVisible = true;
 
     setCurrentGameState(updatedGameState);
     sendGameStateToServer(updatedGameState);
@@ -207,6 +234,7 @@ const Admin: React.FC<AdminProps> = ({ gameState }) => {
         handleRevealQuestion={handleRevealQuestion}
         handleBackButon={handleBackButton}
         sendGameStateToServer={sendGameStateToServer}
+        handleUpdateTurn={handleUpdateTurn}
       ></AdminPageWrapper>
     </div>
   );

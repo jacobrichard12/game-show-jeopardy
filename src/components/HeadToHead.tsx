@@ -1,5 +1,5 @@
 import React from "react";
-import minuteJson from "../data/headToHead.json";
+import headToHeadJson from "../data/headToHead.json";
 import {
   HeadToHeadQuestion,
   HeadToHeadQuestions,
@@ -16,7 +16,7 @@ const HeadToHead: React.FC<HeadToHeadProps> = ({
 }) => {
   const value = gameState.currentGame.value;
 
-  const allQuestions: HeadToHeadQuestions = minuteJson;
+  const allQuestions: HeadToHeadQuestions = headToHeadJson;
   let questionData: HeadToHeadQuestion = allQuestions[value!];
   if (gameState.isDoubleJeopardy) {
     questionData = allQuestions[value! / 2 + 1];
@@ -49,11 +49,11 @@ const HeadToHead: React.FC<HeadToHeadProps> = ({
   return (
     <div className="minute-container">
       {/* Title */}
-      {!isAdmin && questionState.questionVisible && (
+      {!isAdmin && questionState.promptVisible && (
         <h1 className="text-2xl font-bold mb-4 text-center">Players Per Team: {questionData.players}</h1>
       )}
 
-      {!isAdmin && questionState.showTitle && (
+      {questionState.showTitle && (
         <h1 className="text-7xl font-bold mb-4 text-center">{questionData.title}</h1>
       )}
 

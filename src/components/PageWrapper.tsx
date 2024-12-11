@@ -22,9 +22,11 @@ const PageWrapper: React.FC<PageWrapperProps> = ({
       case GameName.BOARD:
         return (
           <GameBoard
+            isAdmin={false}
             gameState={gameState}
             gameBoardData={gameBoardData}
             handleUpdateCurrentGame={() => {}}
+            sendGameStateToServer={() => {}}
           />
         );
       case GameName.FAMILY_FEUD:
@@ -39,10 +41,6 @@ const PageWrapper: React.FC<PageWrapperProps> = ({
               />
             }
           />
-        );
-      case GameName.MILLIONAIRE:
-        return (
-          <QuestionWrapper gameState={gameState} question={<Millionaire />} />
         );
       case GameName.MINUTE:
         return (
@@ -70,6 +68,19 @@ const PageWrapper: React.FC<PageWrapperProps> = ({
             }
           />
         );
+      case GameName.MILLIONAIRE:
+        return (
+          <QuestionWrapper
+            gameState={gameState}
+            question={
+              <Millionaire
+                isAdmin={false}
+                gameState={gameState}
+                sendGameStateToServer={() => {}}
+              />
+            }
+          />
+        );
       default:
         return <div>Content not available for this category.</div>;
     }
@@ -78,7 +89,7 @@ const PageWrapper: React.FC<PageWrapperProps> = ({
   return (
     <div className="p-4">
       <div className="bg-white p-4 rounded shadow-lg">{getComponent()}</div>
-      <ScoreBoard gameState={gameState} />
+      <ScoreBoard gameState={gameState} isAdmin={false} />
     </div>
   );
 };

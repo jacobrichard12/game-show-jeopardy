@@ -1,6 +1,6 @@
 {
     "100": {
-        "prompt": "Name something People Try To Recite Lines From",
+        "prompt": "Name something people try to recite lines from",
         "answers": [
             "Movies",
             "Poetry",
@@ -10,45 +10,42 @@
         ]
     },
     "200": {
-        "prompt": "Name A Breed Of Dog That Everyone Has Heard Of",
+        "prompt": "Name a breed of dog that everyone has heard of",
         "answers": [
             "Poodle",
             "Pit Bull",
             "German Shepherd",
             "Labrador",
-            "Collie",
+            "Golden Retriever",
             "Dalmation"
         ]
     },
     "300": {
-        "prompt": "In Movie Endings Name A Place The Main Character Goes To Catch Her Crush Before It's Too Late",
+        "prompt": "In movie endings name a place the main character goes to catch her crush before it's too late",
         "answers": [
             "Airport",
             "Wedding/Church",
             "Train Station/Bus Depot",
             "Beach",
-            "Bridge",
             "Park"
         ]
     },
     "400": {
-        "prompt": "Name A Food Someone Might Use More Than One Hand To Eat",
+        "prompt": "Name a food someone might use more than one hand to eat",
         "answers": [
             "Pizza",
             "Chicken",
-            "Hambugers",
-            "Ribs Room",
+            "Ribs",
             "Corn On The Cob",
             "Watermelon",
-            "Sandwich"
+            "Sandwich/Burger"
         ]
     },
     "500": {
-        "prompt": "Name Something You Might Do On Vacation In Florida",
+        "prompt": "Name an activity you might do on vacation in Florida",
         "answers": [
             "Swim",
             "Go To Disney World",
-            "Relax",
             "Play Golf",
             "Visit The Everglades",
             "Go to Beach",
@@ -56,7 +53,7 @@
         ]
     },
     "101": {
-        "prompt": "Name A Baby Farm Animal That A Child Would Probably Want To Keep As A Pet",
+        "prompt": "Name a baby farm animal that a child would probably want to keep as a pet",
         "answers": [
             "Piglet",
             "Lamb",
@@ -66,7 +63,7 @@
         ]
     },
     "201": {
-        "prompt": "Name A Canned Food That You'd Never Eat Directly From The Can",
+        "prompt": "Name a canned food that you'd never eat directly from the can",
         "answers": [
             "Tuna",
             "Soup",
@@ -77,7 +74,7 @@
         ]
     },
     "301": {
-        "prompt": "Name Something People Want For Christmas That Can't Be Put In A Box",
+        "prompt": "Name something people want for Christmas that can't be put in a box",
         "answers": [
             "Car",
             "Love",
@@ -88,7 +85,7 @@
         ]
     },
     "401": {
-        "prompt": "Name A Job Which Is Busiest In The Summer Time",
+        "prompt": "Name a job which is busiest in the summer time",
         "answers": [
             "Lifeguard",
             "Gardening",
@@ -99,7 +96,7 @@
         ]
     },
     "501": {
-        "prompt": "Name a Smell Typically Associated with Christmas",
+        "prompt": "Name a smell typically associated with Christmas",
         "answers": [
             "Evergreen/Pine",
             "Cinnamon",

@@ -7,7 +7,7 @@
     "200": {
         "title": "Paper Airplane",
         "players": 2,
-        "adminInfo": "Players make paper airplanes and whoever's toss goes the farthest wins"
+        "adminInfo": "Players make paper airplanes and whoever's toss goes the farthest wins. 1 minute to make"
     },
     "300": {
         "title": "Ping Pong Battle",
@@ -15,29 +15,29 @@
         "adminInfo": "Players play a game to 3, selecting team serves"
     },
     "400": {
-        "title": "Impressions",
-        "players": 1,
-        "adminInfo": "Players will do impressions of the following lines.\n1. Australian: Crikey, mate, that kangaroo’s got some serious hops, eh?\n2. Italian: Bella, you’ve got to try this gelato, it’s like heaven in a cone!\n3. Scottish: This’ll be a grand day for a wee bit of adventure, eh?"
-    },
-    "500": {
-        "title": "Reverse Charades",
-        "players": 6,
-        "adminInfo": "Whole team plays reverse charades for 1 minute"
-    },
-    "101": {
         "title": "Big Bluff",
         "players": 2,
         "adminInfo": "Two players on the selecting team are given a red card and black card. One member from the other team can ask them who has the red card and they have to pick the right person. 60 seconds"
     },
-    "201": {
-        "title": "Art Contest",
-        "players": 1,
-        "adminInfo": "Players draw the following prompt and have two minutes: Marty feeding the ducks at his duck pond"
+    "500": {
+        "title": "Reverse Charades",
+        "players": 6,
+        "adminInfo": "Both teams play reverse charades for 1 minute, most points wins"
     },
-    "301": {
+    "101": {
+        "title": "Impressions",
+        "players": 1,
+        "adminInfo": "Players will do impressions of the following lines.\n1. Australian: Crikey, mate, that kangaroo’s got some serious hops, eh?\n2. Italian: Bella, you’ve got to try this gelato, it’s like heaven in a cone!\n3. Scottish: This’ll be a grand day for a wee bit of adventure, eh?"
+    },
+    "201": {
         "title": "Spikeball",
         "players": 2,
         "adminInfo": "Players play a game to 3, selecting team serves"
+    },
+    "301": {
+        "title": "Art Contest",
+        "players": 1,
+        "adminInfo": "Players draw the following prompt and have two minutes: Marty feeding the ducks at his duck pond"
     },
     "401": {
         "title": "Math Blitz",

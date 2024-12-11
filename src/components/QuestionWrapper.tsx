@@ -11,7 +11,7 @@ const QuestionWrapper: React.FC<QuestionWrapperProps> = ({
   gameState,
   question,
 }) => {
-  const questionVisible = gameState.currentGame.questionState.questionVisible;
+  const questionVisible = gameState.currentGame.questionState.promptVisible;
 
   return (
     <div className="p-4">

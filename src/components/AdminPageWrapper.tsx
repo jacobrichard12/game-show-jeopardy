@@ -5,6 +5,8 @@ import GameBoard from "./GameBoard";
 import FamilyFeud from "./FamilyFeud";
 import Minute from "./Minute";
 import HeadToHead from "./HeadToHead";
+import Millionaire from "./Millionaire";
+import ScoreBoard from "./Scoreboard";
 
 interface AdminPageWrapperProps {
   gameState: GameState;
@@ -18,6 +20,7 @@ interface AdminPageWrapperProps {
   handleRevealQuestion: () => void;
   handleBackButon: () => void;
   sendGameStateToServer: (gameState: GameState) => void;
+  handleUpdateTurn:(team: Team) => void;
 }
 
 const AdminPageWrapper: React.FC<AdminPageWrapperProps> = ({
@@ -27,6 +30,7 @@ const AdminPageWrapper: React.FC<AdminPageWrapperProps> = ({
   handleRevealQuestion,
   handleBackButon,
   sendGameStateToServer,
+  handleUpdateTurn
 }) => {
   const havePointsBeenAwarded = () => {
     return (
@@ -78,6 +82,14 @@ const AdminPageWrapper: React.FC<AdminPageWrapperProps> = ({
             sendGameStateToServer={sendGameStateToServer}
           />
         );
+      case GameName.MILLIONAIRE:
+        return (
+          <Millionaire
+            isAdmin={true}
+            gameState={gameState}
+            sendGameStateToServer={sendGameStateToServer}
+          />
+        );
       default:
         return <div>Admin child content</div>;
     }
@@ -104,9 +116,11 @@ const AdminPageWrapper: React.FC<AdminPageWrapperProps> = ({
           <h1 className="text-2xl font-bold mb-2">Admin Page - Board</h1>
         </div>
         <GameBoard
+          isAdmin={true}
           gameState={gameState}
           gameBoardData={gameBoardData}
           handleUpdateCurrentGame={handleUpdateCurrentGame}
+          sendGameStateToServer={sendGameStateToServer}
         />
       </div>
     );
@@ -121,7 +135,7 @@ const AdminPageWrapper: React.FC<AdminPageWrapperProps> = ({
             Admin Page - {gameState.currentGame.gameName} -{" "}
             {gameState.currentGame.value}
           </h1>
-          {!gameState.currentGame.questionState.questionVisible && (
+          {!gameState.currentGame.questionState.promptVisible && (
             <button
               onClick={handleRevealQuestion}
               className="p-2 bg-blue-500 text-white rounded hover:bg-blue-600"
@@ -139,14 +153,14 @@ const AdminPageWrapper: React.FC<AdminPageWrapperProps> = ({
         </button>
 
         {/* Content Section */}
-        {gameState.currentGame.questionState.questionVisible && (
+        {gameState.currentGame.questionState.promptVisible && (
           <div className="bg-white p-4 rounded shadow-lg">
             {getGameAdminComponent()}
           </div>
         )}
 
         {/* Add Points Buttons */}
-        {gameState.currentGame.questionState.questionVisible && (
+        {gameState.currentGame.questionState.promptVisible && (
           <div className="flex justify-around items-center">
             <button
               onClick={() => handleAwardPointsClick(Team.TeamA, false)}
@@ -196,24 +210,7 @@ const AdminPageWrapper: React.FC<AdminPageWrapperProps> = ({
       {gameState.currentGame.gameName === GameName.BOARD
         ? getGameBoardAdminPage()
         : getChildAdminGamePage()}
-      <div className="flex justify-around items-center">
-        <div className="p-4 border rounded-lg shadow-md bg-white w-1/4 text-center">
-          <h3 className="text-lg font-bold mb-2">
-            {gameState[Team.TeamA].name}
-          </h3>
-          <p className="text-2xl font-semibold">
-            {gameState[Team.TeamA].score}
-          </p>
-        </div>
-        <div className="p-4 border rounded-lg shadow-md bg-white w-1/4 text-center">
-          <h3 className="text-lg font-bold mb-2">
-            {gameState[Team.TeamB].name}
-          </h3>
-          <p className="text-2xl font-semibold">
-            {gameState[Team.TeamB].score}
-          </p>
-        </div>
-      </div>
+      <ScoreBoard gameState={gameState} isAdmin={true} handleUpdateTurn={handleUpdateTurn}/>
     </div>
   );
 };

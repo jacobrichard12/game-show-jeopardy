@@ -1,7 +1,8 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import familyFeudJson from "../data/familyFeud.json";
 import buzzer from "../assets/buzzer.wav";
 import ding from "../assets/yes-ding.mp3";
+import theme from "../assets/feudShort.mp3"
 import {
   FamilyFeudQuestion,
   FamilyFeudQuestions,
@@ -20,6 +21,34 @@ const FamilyFeud: React.FC<FamilyFeudProps> = ({
   gameState,
   sendGameStateToServer,
 }) => {
+  const audioRef = useRef(new Audio(theme));
+
+  // Assign a random soundtrack if not already assigned
+  useEffect(() => {
+    if (!isAdmin) return;
+    const audio = audioRef.current;
+
+    const playAudio = async () => {
+      try {
+        if (audio.paused) {
+          await audio.play();
+        }
+      } catch (err) {
+        console.error("Error playing audio:", err);
+      }
+    };
+
+    playAudio(); // Start playing the initial soundtrack
+
+    return () => {
+      // Stop the audio when the component unmounts
+      if (!audio.paused) {
+        audio.pause();
+        audio.currentTime = 0; // Reset to the beginning
+      }
+    };
+  }, [isAdmin]);
+
   const value = gameState.currentGame.value;
 
   const allQuestions: FamilyFeudQuestions = familyFeudJson;
@@ -55,6 +84,17 @@ const FamilyFeud: React.FC<FamilyFeudProps> = ({
     sendGameStateToServer(updatedGameState);
   };
 
+  const handleShowFeudPrompt = () => {
+    if (!isAdmin) return;
+    const updatedGameState = { ...gameState };
+    const updatedQuestionState = updatedGameState.currentGame
+      .questionState as FamilyFeudQuestionState;
+
+    updatedQuestionState.showFeudPrompt = true;
+    updatedGameState.currentGame.questionState = updatedQuestionState;
+    sendGameStateToServer(updatedGameState);
+  };
+
   // Function to play sound when button is clicked
   const wrongAnswer = () => {
     if (!isAdmin) return;
@@ -74,7 +114,7 @@ const FamilyFeud: React.FC<FamilyFeudProps> = ({
   return (
     <div className="p-4">
       <div className="bg-white shadow-md rounded-lg p-6 max-w-lg mx-auto">
-        {isAdmin && (
+        {questionState.showFeudPrompt && (
           <p className="text-lg font-semibold mb-4">{questionData.prompt}</p>
         )}
 
@@ -102,6 +142,18 @@ const FamilyFeud: React.FC<FamilyFeudProps> = ({
               className="bg-red-500 text-white py-2 px-4 rounded"
             >
               Wrong Answer
+            </button>
+          </div>
+        )}
+
+        {/* Admin-only play sound button */}
+        {isAdmin && (
+          <div className="mt-4">
+            <button
+              onClick={handleShowFeudPrompt}
+              className="bg-blue-500 text-white py-2 px-4 rounded"
+            >
+              Show Feud Prompt
             </button>
           </div>
         )}
