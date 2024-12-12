@@ -208,32 +208,32 @@
             {
                 "question": "What is the S.I. unit of temperature?",
                 "answers": [
-                    "Kelvin",
                     "Celsius",
                     "Centigrade",
+                    "Kelvin",
                     "Fahrenheit"
                 ],
-                "correctAnswerIdx": 0
+                "correctAnswerIdx": 2
             },
             {
                 "question": "The headquarters of UN are situated at",
                 "answers": [
-                    "New York, USA",
                     "Haque (Netherlands)",
                     "Geneva",
-                    "Paris"
+                    "Paris",
+                    "New York, USA"
                 ],
-                "correctAnswerIdx": 0
+                "correctAnswerIdx": 3
             },
             {
                 "question": "Which invention is Alexander Graham Bell known for?",
                 "answers": [
-                    "Telephone",
                     "Lightbulb",
+                    "Telephone",
                     "Television",
                     "Steam Engine"
                 ],
-                "correctAnswerIdx": 0
+                "correctAnswerIdx": 1
             }
         ]
     },
@@ -296,12 +296,12 @@
             {
                 "question": "What is the speed of light?",
                 "answers": [
-                    "300,000 km/s",
                     "150,000 km/s",
                     "250,000 km/s",
+                    "300,000 km/s",
                     "350,000 km/s"
                 ],
-                "correctAnswerIdx": 0
+                "correctAnswerIdx": 2
             }
         ]
     },

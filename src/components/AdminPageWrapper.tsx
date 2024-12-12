@@ -8,6 +8,7 @@ import HeadToHead from "./HeadToHead";
 import Millionaire from "./Millionaire";
 import ScoreBoard from "./Scoreboard";
 import wow from "../assets/wow.mp3";
+import Singing from "./Singing";
 
 interface AdminPageWrapperProps {
   gameState: GameState;
@@ -34,12 +35,21 @@ const AdminPageWrapper: React.FC<AdminPageWrapperProps> = ({
   handleUpdateTurn,
 }) => {
   const havePointsBeenAwarded = () => {
-    return (
-      gameState.answered[gameState.currentGame.gameName] &&
-      gameState.answered[gameState.currentGame.gameName].includes(
-        gameState.currentGame.value
-      )
-    );
+    if (gameState.isDoubleJeopardy) {
+      return (
+        gameState.doubleJeopardyAnswered[gameState.currentGame.gameName] &&
+        gameState.doubleJeopardyAnswered[gameState.currentGame.gameName].includes(
+          gameState.currentGame.value
+        )
+      );
+    } else {
+      return (
+        gameState.answered[gameState.currentGame.gameName] &&
+        gameState.answered[gameState.currentGame.gameName].includes(
+          gameState.currentGame.value
+        )
+      );
+    }
   };
 
   const handleAwardPointsClick = (team: Team, noPointsOverride: boolean) => {
@@ -90,6 +100,14 @@ const AdminPageWrapper: React.FC<AdminPageWrapperProps> = ({
       case GameName.MILLIONAIRE:
         return (
           <Millionaire
+            isAdmin={true}
+            gameState={gameState}
+            sendGameStateToServer={sendGameStateToServer}
+          />
+        );
+      case GameName.SINGING:
+        return (
+          <Singing
             isAdmin={true}
             gameState={gameState}
             sendGameStateToServer={sendGameStateToServer}

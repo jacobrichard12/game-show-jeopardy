@@ -8,3 +8,5 @@ declare module '*.mp3' {
     export default value;
 }
 
+// src/global.d.ts
+declare var YT: any;

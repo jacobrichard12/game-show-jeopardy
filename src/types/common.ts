@@ -59,6 +59,15 @@ export interface MinuteQuestion extends Question {
     title: string;
 }
 
+export type SingingQuestions = Record<string, SingingQuestion>;
+export interface SingingQuestion extends Question {
+    embedLink: string;
+    songTitle: string;
+    correctWords: string;
+    start: number;
+    end: number;
+}
+
 export type HeadToHeadQuestions = Record<string, HeadToHeadQuestion>;
 export interface HeadToHeadQuestion extends Question {
     title: string;
@@ -108,6 +117,7 @@ export enum GameName {
     FAMILY_FEUD = "feud",
     MILLIONAIRE = "millionaire",
     MINUTE = "minute",
+    SINGING = "singing",
     HEAD_TO_HEAD = "head",
 }
 
@@ -121,6 +131,8 @@ export function getGameTitle(gameName: GameName): string {
             return "Who Wants To Be A Millionaire";
         case GameName.MINUTE:
             return "Minute To Win It";
+        case GameName.SINGING:
+            return "The Singing Bee";
         case GameName.HEAD_TO_HEAD:
             return "Head To Head";
         default:

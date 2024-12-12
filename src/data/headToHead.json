@@ -15,9 +15,9 @@
         "adminInfo": "Players play a game to 3, selecting team serves"
     },
     "400": {
-        "title": "Big Bluff",
+        "title": "Cornhole Toss",
         "players": 2,
-        "adminInfo": "Two players on the selecting team are given a red card and black card. One member from the other team can ask them who has the red card and they have to pick the right person. 60 seconds"
+        "adminInfo": "Teams take turns throwing cornhole, first to make it in wins"
     },
     "500": {
         "title": "Reverse Charades",

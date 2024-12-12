@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { io, Socket } from "socket.io-client";
 import {
+  EmptyQuestionState,
   FamilyFeudQuestionState,
   GameName,
   GameState,
@@ -16,6 +17,7 @@ import { useSocket } from "./SocketContext";
 import addPointsSound from "../assets/collectpoints.mp3";
 import { useLocation } from "react-router-dom";
 import SettingsModal from "./SettingsModal";
+import { getRandomAudio, happyFiles } from "../types/audio";
 
 interface AdminProps {
   gameState: GameState;
@@ -136,6 +138,18 @@ const Admin: React.FC<AdminProps> = ({ gameState }) => {
         };
         break;
       }
+      case GameName.SINGING: {
+        const questionState: EmptyQuestionState = {
+          promptVisible: false,
+        };
+        updatedGameState.currentGame = {
+          gameName: newGame,
+          gameTitle: getGameTitle(newGame),
+          value: points,
+          questionState: questionState,
+        };
+        break;
+      }
       default:
         updatedGameState.currentGame = {
           gameName: newGame,
@@ -171,7 +185,7 @@ const Admin: React.FC<AdminProps> = ({ gameState }) => {
 
     if (!noPointsOverride) {
       updatedGameState[team].score += points;
-      const audio = new Audio(addPointsSound);
+      const audio = new Audio(getRandomAudio(happyFiles));
       audio.play();
     }
 

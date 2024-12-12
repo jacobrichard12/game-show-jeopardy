@@ -7,6 +7,7 @@ import ScoreBoard from "./Scoreboard";
 import QuestionWrapper from "./QuestionWrapper";
 import Minute from "./Minute";
 import HeadToHead from "./HeadToHead";
+import Singing from "./Singing";
 
 interface PageWrapperProps {
   gameState: GameState;
@@ -74,6 +75,19 @@ const PageWrapper: React.FC<PageWrapperProps> = ({
             gameState={gameState}
             question={
               <Millionaire
+                isAdmin={false}
+                gameState={gameState}
+                sendGameStateToServer={() => {}}
+              />
+            }
+          />
+        );
+      case GameName.SINGING:
+        return (
+          <QuestionWrapper
+            gameState={gameState}
+            question={
+              <Singing
                 isAdmin={false}
                 gameState={gameState}
                 sendGameStateToServer={() => {}}
