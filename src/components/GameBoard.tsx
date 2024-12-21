@@ -82,7 +82,8 @@ const GameBoard: React.FC<GameBoardProps> = ({
                 return (
                   <th
                     key={category.gameName}
-                    className={`p-4 text-lg font-bold border-b text-center ${
+                    style={{ width: "125px" }} // Set a fixed width for the columns
+                    className={`p-6 text-3xl font-bold border-b text-center ${
                       isDoubleJeopardy
                         ? "bg-gray-600 text-white"
                         : "bg-gray-200"
@@ -118,17 +119,12 @@ const GameBoard: React.FC<GameBoardProps> = ({
                       >
                         <div className="flex items-center justify-center">
                           <button
-                            className={`text-xl font-semibold p-5 rounded-lg ${
+                            className={`text-4xl font-semibold p-6 rounded-lg ${
                               hasQuestionBeenAnswered(
                                 category.gameName,
                                 pointValue
                               )
                                 ? "bg-gray-400 cursor-not-allowed"
-                                : hasQuestionBeenAnswered(
-                                    category.gameName,
-                                    pointValue
-                                  )
-                                ? "bg-gray-500 cursor-not-allowed"
                                 : "bg-blue-500 hover:bg-blue-600"
                             } text-white focus:outline-none focus:ring-2 focus:ring-blue-500`}
                             onClick={() =>
@@ -137,16 +133,10 @@ const GameBoard: React.FC<GameBoardProps> = ({
                                 pointValue
                               )
                             }
-                            disabled={
-                              hasQuestionBeenAnswered(
-                                category.gameName,
-                                pointValue
-                              ) ||
-                              hasQuestionBeenAnswered(
-                                category.gameName,
-                                pointValue
-                              )
-                            }
+                            disabled={hasQuestionBeenAnswered(
+                              category.gameName,
+                              pointValue
+                            )}
                           >
                             ${pointValue}
                           </button>

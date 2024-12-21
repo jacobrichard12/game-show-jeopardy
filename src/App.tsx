@@ -44,7 +44,6 @@ const App: React.FC = () => {
 
   return (
     <div className="App">
-      <h1 className="text-center text-4xl font-bold py-4">Game Show Jeopardy </h1>
       <Routes>
         <Route
           path="/"

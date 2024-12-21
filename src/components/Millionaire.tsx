@@ -159,14 +159,14 @@ const Millionaire: React.FC<MillionaireProps> = ({
   return (
     <div className="millionaire-container">
       {questionState.promptVisible && (
-        <h1 className="text-2xl font-bold mb-4 text-center">
+        <h1 className="text-5xl font-bold mb-4 text-center">
           Question {questionState.questionIdx + 1}: {currentSubquestion.question}
         </h1>
       )}
 
       <div className="grid grid-cols-2 gap-4 mx-auto max-w-xl">
         {currentSubquestion.answers.map((answer, index) => {
-          let buttonClass = "border p-4 rounded-lg shadow-md text-left ";
+          let buttonClass = "border p-4 text-2xl rounded-lg shadow-md text-left ";
           const isRevealed = index < questionState.revealedAnswers;
           const isSelected = index === questionState.answeredQuestionIdx;
 

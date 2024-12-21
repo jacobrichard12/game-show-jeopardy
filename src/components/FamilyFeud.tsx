@@ -109,17 +109,23 @@ const FamilyFeud: React.FC<FamilyFeudProps> = ({
 
   return (
     <div className="p-4">
-      <div className="bg-white shadow-md rounded-lg p-6 max-w-lg mx-auto">
+      {/* Container for the prompt */}
+      <div className="bg-white shadow-md rounded-lg p-6 mx-auto max-w-4xl">
         {questionState.showFeudPrompt && (
-          <p className="text-lg font-semibold mb-4">{questionData.prompt}</p>
+          <p className="text-3xl font-semibold mb-4 text-center">
+            {questionData.prompt}
+          </p>
         )}
+      </div>
 
+      {/* Container for the answer board */}
+      <div className="bg-white shadow-md rounded-lg p-6 mx-auto max-w-lg mt-6">
         <ul className="space-y-4">
           {questionData.answers.map((answer, index) => (
             <li
               key={index}
-              className={`p-4 border rounded-lg ${
-                revealedAnswers[index] ? "bg-green-100" : "bg-gray-200"
+              className={`p-4 border rounded-lg text-2xl text-white ${
+                revealedAnswers[index] ? "bg-blue-600" : "bg-blue-400"
               }`}
               onClick={() => (isAdmin ? handleReveal(index) : null)}
             >

@@ -1,0 +1,185 @@
+{
+    "easy": [
+        {
+            "link": "https://www.youtube.com/watch?v=alc9IDzwpAI",
+            "title": "Yank Me",
+            "materials": [
+                "4 plastic cups",
+                "3 index cards"
+            ],
+            "description": "Player stacks cups with index cards in between and pulls out the cards to form one stack of cups"
+        },
+        {
+            "link": "https://www.youtube.com/watch?v=4pn7Y19ijAE",
+            "title": "A Bit Dicey",
+            "materials": [
+                "1 popsicle stick per player",
+                "6 dice"
+            ],
+            "description": "Player holds the popsicle stick in their mouth and stacks the 6 dice on it, the dice must be held for three seconds."
+        },
+        {
+            "link": "https://www.youtube.com/watch?v=oHepnVdpdis",
+            "title": "Breakfast Scramble",
+            "materials": [
+                "1 cereal box puzzle"
+            ],
+            "description": "Player puts the cereal box puzzle together"
+        },
+        {
+            "link": "https://www.youtube.com/watch?v=gFNsxGQftmc",
+            "title": "Stick the Landing",
+            "materials": [
+                "1 half full water bottle for flipping"
+            ],
+            "description": "Player must flip water bottle on to table - video says to do it once but we can add more successful landings"
+        },
+        {
+            "link": "https://www.youtube.com/watch?v=bnvxUYJKy3M",
+            "title": "Puddle Jumper",
+            "materials": [
+                "6 plastic cups with water",
+                "many ping pong balls"
+            ],
+            "description": "Player must flip water bottle on to table - video says to do it once but we can add more successful landings"
+        },
+        {
+            "link": "https://www.youtube.com/watch?v=jyxZ9KwkgdM",
+            "title": "Flip Your Lid",
+            "materials": [
+                "2 empty glass bottles",
+                "2 plastic cups"
+            ],
+            "description": "2 Players have to flip the cup onto the bottle from 1 foot away"
+        }
+    ],
+    "medium": [
+        {
+            "link": "https://www.youtube.com/watch?v=7SujijNO-hk",
+            "title": "Spin Doctor",
+            "materials": [
+                "1 coin (quarter or larger)"
+            ],
+            "description": "Player spins the coin across the middle of the table to the other player who must stop the coin with their finger"
+        },
+        {
+            "link": "https://www.youtube.com/watch?v=PVg4VzbhsTs",
+            "title": "Do You Hear What I Hear",
+            "materials": [
+                "7 boxes with small bells, from 5 bells to 35 bells"
+            ],
+            "description": "2 Players must order the boxes from least amount of bells to largest amount of bells"
+        },
+        {
+            "link": "https://www.youtube.com/watch?v=yGTGSfzmAB8",
+            "title": "Speed Eraser",
+            "materials": [
+                "lots of pencils",
+                "7 glass cups (1 can also be used)"
+            ],
+            "description": "Player must bounce pencils off their eraser end into the glass cups - 7 times"
+        },
+        {
+            "link": "https://www.youtube.com/watch?v=CWr1R5BiIjQ",
+            "title": "Tilt-a-cup",
+            "materials": [
+                "8 plastic cups",
+                "ping pong balls"
+            ],
+            "description": "Player bounces a ping pong ball into the stack, pulls bottom cup to top of stack, repeats until 6 balls have landed"
+        },
+        {
+            "link": "https://www.youtube.com/watch?v=WfKcOIpDWYQ",
+            "title": "Shoe Fly Shoe",
+            "materials": [
+                "shoes for flinging"
+            ],
+            "description": "Player flings a shoe off of their foot to a table 9 feet away and lands the shoe on the table"
+        },
+        {
+            "link": "https://www.youtube.com/watch?v=ksr2JPk2MnM",
+            "title": "Sharp Shooter",
+            "materials": [
+                "rubber bands",
+                "3 playing cards",
+                "3 clothespins"
+            ],
+            "description": "Player shoots rubber bands at 3 cards held by clothespins 8 feet away"
+        },
+        {
+            "link": "https://www.youtube.com/watch?v=od6KoCYr4nw",
+            "title": "Office Tennis",
+            "materials": [
+                "1 paper ball",
+                "2 clipboards (or any hard surfaces for bouncing)"
+            ],
+            "description": "Players must rally the paper ball across the room into a garbage can, players cannot double hit"
+        }
+        ,
+        {
+            "link": "https://www.youtube.com/watch?v=YsrTROq6Xz8",
+            "title": "Pong^5",
+            "materials": [
+                "plastic cups",
+                "ping pong balls"
+            ],
+            "description": "Player must bounce 5 balls in the cup all in a row - if they miss one they have to restart"
+        }
+    ],
+    "hard": [
+        {
+            "link": "https://www.youtube.com/watch?v=xivZUv23fz8",
+            "title": "Chop Stack",
+            "materials": [
+                "4 tubes of chapstick",
+                "pair of chopsticks"
+            ],
+            "description": "Player must use the chopsticks to stack 4 chapsticks on the table"
+        },
+        {
+            "link": "https://www.youtube.com/watch?v=4PLmRpIonCA",
+            "title": "Double Trouble",
+            "materials": [
+                "2 plastic cups (with water)",
+                "ping pong balls"
+            ],
+            "description": "Player must bounce two ping pong balls at once with one hand and land both balls in the same toss, one in each cup"
+        },
+        {
+            "link": "https://www.youtube.com/watch?v=XhvcSOA5Ndw",
+            "title": "Go The Distance",
+            "materials": [
+                "tape measure",
+                "ping pong balls",
+                "3 cups (smaller cups for a harder challenge)"
+            ],
+            "description": "Player must guide the ping pong balls across the tape measure into the cups at 5, 6, and 7 feet away"
+        },
+        {
+            "link": "https://www.youtube.com/watch?v=N0WpCXipyPg",
+            "title": "High Roller",
+            "materials": [
+                "1 yahtzee style hard plastic cup",
+                "12 dice"
+            ],
+            "description": "Player must pick up dice in the cup with one hand and spin the dice into a stack of 3, 4, and 5"
+        },
+        {
+            "link": "https://www.youtube.com/watch?v=_f4cO74Tb1Q",
+            "title": "Back Flip",
+            "materials": [
+                "12 pencils"
+            ],
+            "description": "Player must balance sets of pencils on their hand and catch the stack, starting at 2 and going to 12"
+        },
+        {
+            "link": "https://www.youtube.com/watch?v=myLret2h5EI",
+            "title": "Bridge the Gap",
+            "materials": [
+                "deck of cards",
+                "two thick books or platforms of the same size"
+            ],
+            "description": "Player must make a bridge of cards across an 11 inch gap and place the box in the middle"
+        }
+    ]
+}
