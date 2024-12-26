@@ -160,10 +160,18 @@ const Millionaire: React.FC<MillionaireProps> = ({
   return (
     <div className="millionaire-container">
       {questionState.promptVisible && (
-        <h1 className="text-5xl font-bold mb-4 text-center">
-          Question {questionState.questionIdx + 1}:{" "}
-          {currentSubquestion.question}
-        </h1>
+        <div>
+          {/* Display the category */}
+          <h2 className="text-2xl font-semibold mb-2 text-center">
+            Category: {currentSubquestion.category}
+          </h2>
+
+          {/* Display the question */}
+          <h1 className="text-5xl font-bold mb-4 text-center">
+            Question {questionState.questionIdx + 1}:{" "}
+            {currentSubquestion.question}
+          </h1>
+        </div>
       )}
 
       <div className="grid grid-cols-2 gap-4 mx-auto max-w-xl">
