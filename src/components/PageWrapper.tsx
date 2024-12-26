@@ -1,13 +1,12 @@
-import React, { useEffect } from "react";
-import GameBoard, { GameBoardData } from "./GameBoard";
+import React from "react";
+import { GameData, GameName, GameState } from "../shared/types";
 import FamilyFeud from "./FamilyFeud";
-import Millionaire from "./Millionaire";
-import { GameName, GameState } from "../types/common";
-import ScoreBoard from "./Scoreboard";
-import QuestionWrapper from "./QuestionWrapper";
-import Minute from "./Minute";
+import GameBoard, { GameBoardData } from "./GameBoard";
 import HeadToHead from "./HeadToHead";
-import Singing from "./Singing";
+import Millionaire from "./Millionaire";
+import Minute from "./Minute";
+import QuestionWrapper from "./QuestionWrapper";
+import ScoreBoard from "./Scoreboard";
 
 interface PageWrapperProps {
   gameState: GameState;
@@ -75,19 +74,6 @@ const PageWrapper: React.FC<PageWrapperProps> = ({
             gameState={gameState}
             question={
               <Millionaire
-                isAdmin={false}
-                gameState={gameState}
-                sendGameStateToServer={() => {}}
-              />
-            }
-          />
-        );
-      case GameName.SINGING:
-        return (
-          <QuestionWrapper
-            gameState={gameState}
-            question={
-              <Singing
                 isAdmin={false}
                 gameState={gameState}
                 sendGameStateToServer={() => {}}

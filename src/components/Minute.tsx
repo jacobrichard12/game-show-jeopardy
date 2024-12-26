@@ -1,11 +1,10 @@
 import React from "react";
-import minuteJson from "../data/minute.json";
 import {
   MinuteQuestion,
   MinuteQuestions,
   MinuteQuestionState,
   QuestionProps,
-} from "../types/common";
+} from "../shared/types";
 
 const timerLinks = [
   "https://www.youtube.com/watch?v=qLWVVnPfCEY",
@@ -25,7 +24,7 @@ const Minute: React.FC<MinuteProps> = ({
 }) => {
   const value = gameState.currentGame.value;
 
-  const allQuestions: MinuteQuestions = minuteJson;
+  const allQuestions: MinuteQuestions = gameState.gameData.minute;
   let questionData: MinuteQuestion = allQuestions[value!];
   if (gameState.isDoubleJeopardy) {
     questionData = allQuestions[value! / 2 + 1];
@@ -40,14 +39,16 @@ const Minute: React.FC<MinuteProps> = ({
   const videoId = link.split("v=")[1]?.split("&")[0]; // Get the video ID from the URL
   const timerVideoId = randomLink.split("v=")[1]?.split("&")[0];
 
-  const questionState = gameState.currentGame.questionState as MinuteQuestionState;
+  const questionState = gameState.currentGame
+    .questionState as MinuteQuestionState;
 
   const handleReadyTimer = () => {
     if (!isAdmin) return; // Only admin can change the readyTimer
     const updatedGameState = { ...gameState };
-    const updatedQuestionState = updatedGameState.currentGame.questionState as MinuteQuestionState;
+    const updatedQuestionState = updatedGameState.currentGame
+      .questionState as MinuteQuestionState;
 
-    updatedQuestionState.readyTimer = !updatedQuestionState.readyTimer ;
+    updatedQuestionState.readyTimer = !updatedQuestionState.readyTimer;
     sendGameStateToServer(updatedGameState); // Send the updated game state to the server
   };
 

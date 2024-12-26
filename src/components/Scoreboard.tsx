@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { GameName, GameState, Team } from "../types/common";
+import { GameName, GameState, Team } from "../shared/types";
 
 interface ScoreBoardProps {
   isAdmin: boolean;

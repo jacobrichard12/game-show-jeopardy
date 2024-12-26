@@ -3,7 +3,7 @@ import ReactDOM from "react-dom/client";
 import "./index.css";
 import reportWebVitals from "./reportWebVitals";
 import { BrowserRouter as Router } from "react-router-dom"; // Import BrowserRouter
-import { AppWithSocketProvider } from "./App";
+import AppWithProviders from "./App";
 
 const root = ReactDOM.createRoot(
   document.getElementById("root") as HTMLElement
@@ -12,7 +12,7 @@ const root = ReactDOM.createRoot(
 root.render(
   <React.StrictMode>
     <Router>
-      <AppWithSocketProvider />
+      <AppWithProviders />
     </Router>
   </React.StrictMode>
 );

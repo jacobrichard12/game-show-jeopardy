@@ -1,14 +1,13 @@
 import React, { useEffect, useRef } from "react";
-import familyFeudJson from "../data/familyFeud.json";
 import {
   FamilyFeudQuestion,
   FamilyFeudQuestions,
   FamilyFeudQuestionState,
   QuestionProps,
-} from "../types/common";
+} from "../shared/types";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faTimesCircle } from "@fortawesome/free-solid-svg-icons";
-import { buzzerAudio, dingAudio, familyFeudTheme } from "../types/audio";
+import { buzzerAudio, dingAudio, familyFeudTheme } from "../shared/audio";
 
 interface FamilyFeudProps extends QuestionProps {}
 
@@ -47,7 +46,7 @@ const FamilyFeud: React.FC<FamilyFeudProps> = ({
 
   const value = gameState.currentGame.value;
 
-  const allQuestions: FamilyFeudQuestions = familyFeudJson;
+  const allQuestions: FamilyFeudQuestions = gameState.gameData.feud;
 
   let questionData: FamilyFeudQuestion = allQuestions[value!];
   if (gameState.isDoubleJeopardy) {
@@ -124,12 +123,18 @@ const FamilyFeud: React.FC<FamilyFeudProps> = ({
           {questionData.answers.map((answer, index) => (
             <li
               key={index}
-              className={`p-4 border rounded-lg text-2xl text-white ${
+              className={`p-4 border rounded-lg text-2xl text-white flex justify-between ${
                 revealedAnswers[index] ? "bg-blue-600" : "bg-blue-400"
               }`}
               onClick={() => (isAdmin ? handleReveal(index) : null)}
             >
-              {revealedAnswers[index] || isAdmin ? answer : `${index + 1}`}
+              <span>{revealedAnswers[index] || isAdmin ? answer.answer : `${index + 1}`}</span>
+              {/* Show points if answer is revealed */}
+              {revealedAnswers[index] && (
+                <span className="ml-4 text-2xl font-bold">
+                  {answer.points}
+                </span>
+              )}
             </li>
           ))}
         </ul>

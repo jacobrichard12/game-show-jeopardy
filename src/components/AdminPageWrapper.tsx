@@ -1,14 +1,15 @@
 import React from "react";
-import { GameName, GameState, Team } from "../types/common";
+import wow from "../assets/wow.mp3";
 import gameBoardData from "../data/gameBoard.json";
-import GameBoard from "./GameBoard";
+import { GameData, GameName, GameState, Team } from "../shared/types";
+import AdminPointsButtons from "./AddPointsButtons";
 import FamilyFeud from "./FamilyFeud";
-import Minute from "./Minute";
+import GameBoard from "./GameBoard";
 import HeadToHead from "./HeadToHead";
 import Millionaire from "./Millionaire";
+import Minute from "./Minute";
 import ScoreBoard from "./Scoreboard";
-import wow from "../assets/wow.mp3";
-import Singing from "./Singing";
+import TitlePage from "./TitlePage";
 
 interface AdminPageWrapperProps {
   gameState: GameState;
@@ -34,33 +35,6 @@ const AdminPageWrapper: React.FC<AdminPageWrapperProps> = ({
   sendGameStateToServer,
   handleUpdateTurn,
 }) => {
-  const havePointsBeenAwarded = () => {
-    if (gameState.isDoubleJeopardy) {
-      return (
-        gameState.doubleJeopardyAnswered[gameState.currentGame.gameName] &&
-        gameState.doubleJeopardyAnswered[gameState.currentGame.gameName].includes(
-          gameState.currentGame.value
-        )
-      );
-    } else {
-      return (
-        gameState.answered[gameState.currentGame.gameName] &&
-        gameState.answered[gameState.currentGame.gameName].includes(
-          gameState.currentGame.value
-        )
-      );
-    }
-  };
-
-  const handleAwardPointsClick = (team: Team, noPointsOverride: boolean) => {
-    handleAddPoints(
-      team,
-      gameState.currentGame.value,
-      gameState.currentGame.gameName,
-      noPointsOverride
-    );
-  };
-
   const handleToggleDoubleJeopardy = () => {
     const updatedGameState = { ...gameState };
     if (!updatedGameState.isDoubleJeopardy) {
@@ -69,6 +43,24 @@ const AdminPageWrapper: React.FC<AdminPageWrapperProps> = ({
     }
     updatedGameState.isDoubleJeopardy = !updatedGameState.isDoubleJeopardy;
     sendGameStateToServer(updatedGameState);
+  };
+
+  const getAdminPageWrapperContent = () => {
+    if (!gameState.started) {
+      return (
+        <TitlePage
+          isAdmin={true}
+          gameState={gameState}
+          sendGameStateToServer={sendGameStateToServer}
+        />
+      );
+    }
+
+    if (gameState.currentGame.gameName === GameName.BOARD) {
+      return getGameBoardAdminPage();
+    } else {
+      return getChildAdminGamePage();
+    }
   };
 
   const getGameAdminComponent = () => {
@@ -105,14 +97,6 @@ const AdminPageWrapper: React.FC<AdminPageWrapperProps> = ({
             sendGameStateToServer={sendGameStateToServer}
           />
         );
-      case GameName.SINGING:
-        return (
-          <Singing
-            isAdmin={true}
-            gameState={gameState}
-            sendGameStateToServer={sendGameStateToServer}
-          />
-        );
       default:
         return <div>Admin child content</div>;
     }
@@ -144,6 +128,11 @@ const AdminPageWrapper: React.FC<AdminPageWrapperProps> = ({
           gameBoardData={gameBoardData}
           handleUpdateCurrentGame={handleUpdateCurrentGame}
           sendGameStateToServer={sendGameStateToServer}
+        />
+        <ScoreBoard
+          gameState={gameState}
+          isAdmin={true}
+          handleUpdateTurn={handleUpdateTurn}
         />
       </div>
     );
@@ -184,62 +173,21 @@ const AdminPageWrapper: React.FC<AdminPageWrapperProps> = ({
 
         {/* Add Points Buttons */}
         {gameState.currentGame.questionState.promptVisible && (
-          <div className="flex justify-around items-center">
-            <button
-              onClick={() => handleAwardPointsClick(Team.TeamA, false)}
-              disabled={havePointsBeenAwarded()} // Disable if points have been awarded
-              className={`p-2 rounded ${
-                havePointsBeenAwarded()
-                  ? "bg-gray-400 text-gray-700 cursor-not-allowed"
-                  : "bg-green-500 hover:bg-green-600 text-white"
-              }`}
-            >
-              Add {gameState.currentGame.value} points to{" "}
-              {gameState[Team.TeamA].name}
-            </button>
-
-            <button
-              onClick={() => handleAwardPointsClick(Team.TeamA, true)}
-              disabled={havePointsBeenAwarded()} // Disable if points have been awarded
-              className={`p-2 rounded ${
-                havePointsBeenAwarded()
-                  ? "bg-gray-400 text-gray-700 cursor-not-allowed"
-                  : "bg-blue-500 hover:bg-blue-600 text-white"
-              }`}
-            >
-              No One Gets Points
-            </button>
-
-            <button
-              onClick={() => handleAwardPointsClick(Team.TeamB, false)}
-              disabled={havePointsBeenAwarded()} // Disable if points have been awarded
-              className={`p-2 rounded ${
-                havePointsBeenAwarded()
-                  ? "bg-gray-400 text-gray-700 cursor-not-allowed"
-                  : "bg-red-500 hover:bg-red-600 text-white"
-              }`}
-            >
-              Add {gameState.currentGame.value} points to{" "}
-              {gameState[Team.TeamB].name}
-            </button>
-          </div>
+          <AdminPointsButtons
+            gameState={gameState}
+            handleAddPoints={handleAddPoints}
+          ></AdminPointsButtons>
         )}
+        <ScoreBoard
+          gameState={gameState}
+          isAdmin={true}
+          handleUpdateTurn={handleUpdateTurn}
+        />
       </div>
     );
   };
 
-  return (
-    <div>
-      {gameState.currentGame.gameName === GameName.BOARD
-        ? getGameBoardAdminPage()
-        : getChildAdminGamePage()}
-      <ScoreBoard
-        gameState={gameState}
-        isAdmin={true}
-        handleUpdateTurn={handleUpdateTurn}
-      />
-    </div>
-  );
+  return getAdminPageWrapperContent();
 };
 
 export default AdminPageWrapper;

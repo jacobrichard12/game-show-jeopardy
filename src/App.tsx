@@ -1,46 +1,52 @@
-import React, { useState, useEffect } from "react";
-import { Route, Routes, useLocation } from "react-router-dom";
-import io from "socket.io-client"; // Import socket.io-client
-import gameBoardData from "./data/gameBoard.json";
+import React, { useEffect, useState } from "react";
+import { Route, Routes } from "react-router-dom";
+import Admin from "./components/Admin";
 import PageWrapper from "./components/PageWrapper";
-import SettingsModal from "./components/SettingsModal";
-import Admin from "./components/Admin"; // Import the Admin component
-import { GameName, GameState, Team } from "./types/common";
 import { SocketProvider, useSocket } from "./components/SocketContext";
+import TitlePage from "./components/TitlePage";
+import gameBoardData from "./data/gameBoard.json";
+import { GameState } from "./shared/types";
 
 const App: React.FC = () => {
-  const [gameState, setGameState] = useState<GameState>({
-    [Team.TeamA]: { name: "Team A", score: 0 },
-    [Team.TeamB]: { name: "Team B", score: 0 },
-    currentGame: {
-      gameName: GameName.BOARD,
-      gameTitle: "GameBoard",
-      value: 0,
-      questionState: {
-        promptVisible: false,
-      },
-    },
-    answered: {},
-    doubleJeopardyAnswered: {},
-    isDoubleJeopardy: false,
-  });
   const socket = useSocket();
+  const [gameState, setGameState] = useState<GameState | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  // Set up socket listener to update the game state when the server sends updates
+  // Wait for the server to send the initial game state
   useEffect(() => {
-    if (!socket) return; // Ensure socket is connected
+    if (!socket) return;
+
+    const handleInitialGameState = (data: { gameState: GameState }) => {
+      setGameState(data.gameState);
+      setLoading(false);
+    };
+
+    // Listen for the game state update from the server
+    socket.on("initialGameState", handleInitialGameState);
+
+    return () => {
+      socket.off("initialGameState", handleInitialGameState);
+    };
+  }, [socket]);
+
+  // Set up socket listener for subsequent game state updates
+  useEffect(() => {
+    if (!socket) return;
 
     const handleGameStateUpdate = (data: { gameState: GameState }) => {
-      setGameState(data.gameState); // Update the game state with the data from the server
+      setGameState(data.gameState);
     };
 
     socket.on("gameStateUpdate", handleGameStateUpdate);
 
-    // Clean up the listener when the component is unmounted
     return () => {
       socket.off("gameStateUpdate", handleGameStateUpdate);
     };
   }, [socket]);
+
+  // Render loading or main app based on game state
+  if (loading) return <div>Loading game state...</div>;
+  if (!gameState) return <div>Game state unavailable. Please try again.</div>;
 
   return (
     <div className="App">
@@ -48,7 +54,18 @@ const App: React.FC = () => {
         <Route
           path="/"
           element={
-            <PageWrapper gameState={gameState} gameBoardData={gameBoardData} />
+            !gameState.started ? (
+              <TitlePage
+                isAdmin={false}
+                gameState={gameState}
+                sendGameStateToServer={() => {}}
+              />
+            ) : (
+              <PageWrapper
+                gameState={gameState}
+                gameBoardData={gameBoardData}
+              />
+            )
           }
         />
         <Route path="/admin" element={<Admin gameState={gameState} />} />
@@ -57,13 +74,10 @@ const App: React.FC = () => {
   );
 };
 
-export default App;
+export const AppWithProviders: React.FC = () => (
+  <SocketProvider>
+    <App />
+  </SocketProvider>
+);
 
-// Wrap the entire app with the SocketProvider
-export const AppWithSocketProvider: React.FC = () => {
-  return (
-    <SocketProvider>
-      <App />
-    </SocketProvider>
-  );
-};
+export default AppWithProviders;

@@ -1,5 +1,5 @@
 import React from "react";
-import { GameName, GameState } from "../types/common";
+import { GameName, GameState } from "../shared/types";
 
 export interface GameBoardData {
   gameName: string;

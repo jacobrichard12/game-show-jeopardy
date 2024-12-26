@@ -4,6 +4,8 @@ export enum Team {
 }
 
 export interface GameState {
+    gameData: GameData;
+    started?: boolean;
     [Team.TeamA]: {
         name: string;
         score: number;
@@ -26,17 +28,10 @@ export interface CurrentGame {
     questionState: QuestionState;
 }
 
-export interface Questions {
-    "100": Question;
-    "200": Question;
-    "300": Question;
-    "400": Question;
-    "500": Question;
-    "101": Question;
-    "201": Question;
-    "301": Question;
-    "401": Question;
-    "501": Question;
+export enum Difficulty {
+    easy = "easy",
+    medium = "medium",
+    hard = "hard",
 }
 
 export interface Question { }
@@ -47,32 +42,29 @@ export interface QuestionProps {
     sendGameStateToServer: (updatedGameState: GameState) => void;
 }
 
+export interface GameData {
+    feud: FamilyFeudQuestions;
+    minute: MinuteQuestions;
+    millionaire: MillionaireQuestions;
+    head: HeadToHeadQuestions;
+}
+
 export type FamilyFeudQuestions = Record<string, FamilyFeudQuestion>;
 export interface FamilyFeudQuestion extends Question {
     prompt: string;
-    answers: string[];
+    answers: FeudAnswer[];
+}
+export interface FeudAnswer {
+    answer: string;
+    points: number;
 }
 
 export type MinuteQuestions = Record<string, MinuteQuestion>;
 export interface MinuteQuestion extends Question {
     link: string;
     title: string;
-}
-
-export type SingingQuestions = Record<string, SingingQuestion>;
-export interface SingingQuestion extends Question {
-    embedLink: string;
-    songTitle: string;
-    correctWords: string;
-    start: number;
-    end: number;
-}
-
-export type HeadToHeadQuestions = Record<string, HeadToHeadQuestion>;
-export interface HeadToHeadQuestion extends Question {
-    title: string;
-    players: number;
-    adminInfo: string;
+    materials: string[];
+    description: string;
 }
 
 export type MillionaireQuestions = Record<string, MillionaireQuestion>;
@@ -81,8 +73,16 @@ export interface MillionaireQuestion extends Question {
 }
 export interface MillionaireSubQuestion {
     question: string;
+    category: string;
     answers: string[];
     correctAnswerIdx: number;
+}
+
+export type HeadToHeadQuestions = Record<string, HeadToHeadQuestion>;
+export interface HeadToHeadQuestion extends Question {
+    title: string;
+    players: number;
+    adminInfo: string;
 }
 
 export interface QuestionState {
@@ -117,7 +117,6 @@ export enum GameName {
     FAMILY_FEUD = "feud",
     MILLIONAIRE = "millionaire",
     MINUTE = "minute",
-    SINGING = "singing",
     HEAD_TO_HEAD = "head",
 }
 
@@ -131,11 +130,9 @@ export function getGameTitle(gameName: GameName): string {
             return "Who Wants To Be A Millionaire";
         case GameName.MINUTE:
             return "Minute To Win It";
-        case GameName.SINGING:
-            return "The Singing Bee";
         case GameName.HEAD_TO_HEAD:
             return "Head To Head";
         default:
-            return "No Entry for Gam Yet";
+            return "No Entry for Game Yet";
     }
 }

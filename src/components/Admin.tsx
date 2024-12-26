@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
-import { io, Socket } from "socket.io-client";
+import { useLocation } from "react-router-dom";
+import { getRandomAudio, happyFiles } from "../shared/audio";
 import {
-  EmptyQuestionState,
   FamilyFeudQuestionState,
   GameName,
   GameState,
@@ -10,14 +10,12 @@ import {
   HeadToHeadQuestionState,
   MillionaireQuestionState,
   MinuteQuestionState,
-  Team,
-} from "../types/common";
+  Team
+} from "../shared/types";
 import AdminPageWrapper from "./AdminPageWrapper";
-import { useSocket } from "./SocketContext";
-import addPointsSound from "../assets/collectpoints.mp3";
-import { useLocation } from "react-router-dom";
 import SettingsModal from "./SettingsModal";
-import { getRandomAudio, happyFiles } from "../types/audio";
+import { useSocket } from "./SocketContext";
+import { initGameData } from "../server/datagen";
 
 interface AdminProps {
   gameState: GameState;
@@ -58,24 +56,11 @@ const Admin: React.FC<AdminProps> = ({ gameState }) => {
     sendGameStateToServer(gameState); // Send updated settings to Socket.IO server
   };
 
-  const handleReset = () => {
-    const resetState: GameState = {
-      [Team.TeamA]: { name: "Team A", score: 0 },
-      [Team.TeamB]: { name: "Team B", score: 0 },
-      answered: {},
-      doubleJeopardyAnswered: {},
-      currentGame: {
-        gameName: GameName.BOARD,
-        gameTitle: "GameBoard",
-        value: 0,
-        questionState: {
-          promptVisible: false,
-        },
-      },
-      isDoubleJeopardy: false,
-    };
-    setCurrentGameState(resetState);
-    sendGameStateToServer(resetState); // Send reset state to Socket.IO server
+  const handleReset = async () => {  
+    // Send reset event to server
+    if (socket) {
+      socket.emit("resetGameState");
+    }
   };
 
   const handleUpdateCurrentGame = (newGame: GameName, points: number) => {
@@ -129,18 +114,6 @@ const Admin: React.FC<AdminProps> = ({ gameState }) => {
           promptVisible: false,
           questionIdx: 0,
           revealedAnswers: 0,
-        };
-        updatedGameState.currentGame = {
-          gameName: newGame,
-          gameTitle: getGameTitle(newGame),
-          value: points,
-          questionState: questionState,
-        };
-        break;
-      }
-      case GameName.SINGING: {
-        const questionState: EmptyQuestionState = {
-          promptVisible: false,
         };
         updatedGameState.currentGame = {
           gameName: newGame,

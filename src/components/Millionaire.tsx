@@ -1,5 +1,4 @@
 import React, { useEffect, useRef, useState } from "react";
-import millionaireJson from "../data/millionaire.json";
 import soundtrack1 from "../assets/millionaire/sountrack-1.mp3";
 import soundtrack2 from "../assets/millionaire/sountrack-2.mp3";
 import soundtrack3 from "../assets/millionaire/sountrack-3.mp3";
@@ -17,7 +16,7 @@ import {
   MillionaireQuestions,
   MillionaireQuestionState,
   QuestionProps,
-} from "../types/common";
+} from "../shared/types";
 
 interface MillionaireProps extends QuestionProps {}
 
@@ -30,10 +29,10 @@ const Millionaire: React.FC<MillionaireProps> = ({
   const soundtrackFiles = [soundtrack1, soundtrack2, soundtrack3];
   const sadFiles = [oof, losing1, losing2, losing3];
   const happyFiles = [yay, winning1, winning2, winning3];
-  
+
   const getRandomFile = (files: string[]) => {
-    return files[Math.floor(Math.random() * files.length)]
-  }
+    return files[Math.floor(Math.random() * files.length)];
+  };
 
   const [correctAudio] = useState(new Audio(getRandomFile(happyFiles)));
   const [incorrectAudio] = useState(new Audio(getRandomFile(sadFiles)));
@@ -41,7 +40,7 @@ const Millionaire: React.FC<MillionaireProps> = ({
   useEffect(() => {
     if (!isAdmin) return;
     const audio = audioRef.current;
-    audio.src = getRandomFile(soundtrackFiles)
+    audio.src = getRandomFile(soundtrackFiles);
     const playAudio = async () => {
       try {
         if (audio.paused) {
@@ -62,7 +61,7 @@ const Millionaire: React.FC<MillionaireProps> = ({
   }, [isAdmin]);
 
   const value = gameState.currentGame.value;
-  const allQuestions: MillionaireQuestions = millionaireJson;
+  const allQuestions: MillionaireQuestions = gameState.gameData.millionaire;
   let questionData: MillionaireQuestion = allQuestions[value!];
   if (gameState.isDoubleJeopardy) {
     questionData = allQuestions[value! / 2 + 1];
@@ -112,7 +111,8 @@ const Millionaire: React.FC<MillionaireProps> = ({
     const updatedQuestionState = updatedGameState.currentGame
       .questionState as MillionaireQuestionState;
 
-    updatedQuestionState.showCorrectAnswer = !updatedQuestionState.showCorrectAnswer;
+    updatedQuestionState.showCorrectAnswer =
+      !updatedQuestionState.showCorrectAnswer;
     updatedGameState.currentGame.questionState = updatedQuestionState;
     sendGameStateToServer(updatedGameState);
   };
@@ -149,7 +149,8 @@ const Millionaire: React.FC<MillionaireProps> = ({
         audio.pause();
         audio.currentTime = 0;
       }
-      audio.src = soundtrackFiles[Math.floor(Math.random() * soundtrackFiles.length)];
+      audio.src =
+        soundtrackFiles[Math.floor(Math.random() * soundtrackFiles.length)];
       audio.play();
     }
   };
@@ -160,13 +161,15 @@ const Millionaire: React.FC<MillionaireProps> = ({
     <div className="millionaire-container">
       {questionState.promptVisible && (
         <h1 className="text-5xl font-bold mb-4 text-center">
-          Question {questionState.questionIdx + 1}: {currentSubquestion.question}
+          Question {questionState.questionIdx + 1}:{" "}
+          {currentSubquestion.question}
         </h1>
       )}
 
       <div className="grid grid-cols-2 gap-4 mx-auto max-w-xl">
         {currentSubquestion.answers.map((answer, index) => {
-          let buttonClass = "border p-4 text-2xl rounded-lg shadow-md text-left ";
+          let buttonClass =
+            "border p-4 text-3xl rounded-lg shadow-md text-left ";
           const isRevealed = index < questionState.revealedAnswers;
           const isSelected = index === questionState.answeredQuestionIdx;
 
@@ -193,7 +196,11 @@ const Millionaire: React.FC<MillionaireProps> = ({
               key={index}
               onClick={() => handleAnswerClick(index)}
               className={buttonClass}
-              disabled={!isRevealed || hasAnswerBeenSelected() || !areAllAnswersRevealed()}
+              disabled={
+                !isRevealed ||
+                hasAnswerBeenSelected() ||
+                !areAllAnswersRevealed()
+              }
             >
               <span className="font-bold mr-2">{prefix[index]}</span>
               {isRevealed ? answer : "???"}

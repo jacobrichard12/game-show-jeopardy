@@ -1,13 +1,21 @@
+/* Ensure the app takes full screen and prevents overflow */
 .App {
   text-align: center;
   width: 100vw;
   height: 100vh;
   overflow: hidden;
+  background: linear-gradient(to bottom, #000428, #004e92); /* Subtle gradient */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Arial', sans-serif;
 }
 
+/* Placeholder for logo styles if needed */
 .App-logo {
   height: 40vmin;
   pointer-events: none;
+  opacity: 0.8; /* Add subtle transparency */
 }
 
 @media (prefers-reduced-motion: no-preference) {
@@ -16,8 +24,9 @@
   }
 }
 
+/* Header styles for fallback pages */
 .App-header {
-  background-color: #282c34;
+  background-color: rgba(40, 44, 52, 0.9); /* Slight transparency for layered effect */
   min-height: 100vh;
   display: flex;
   flex-direction: column;
@@ -27,10 +36,18 @@
   color: white;
 }
 
+/* Link styling for compatibility */
 .App-link {
   color: #61dafb;
+  text-decoration: none;
+  transition: color 0.3s ease;
 }
 
+.App-link:hover {
+  color: #ffffff;
+}
+
+/* Logo spin animation */
 @keyframes App-logo-spin {
   from {
     transform: rotate(0deg);
@@ -38,4 +55,44 @@
   to {
     transform: rotate(360deg);
   }
+}
+
+/* Additional custom animations for the TitlePage */
+@keyframes fadeIn {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+@keyframes pulseGlow {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 0.8;
+  }
+}
+
+/* Add custom classes used in TitlePage */
+.fade-in {
+  animation: fadeIn 2s ease-in-out;
+}
+
+.blink {
+  animation: blink 1s infinite;
+}
+
+.pulse-glow {
+  animation: pulseGlow 3s infinite;
 }

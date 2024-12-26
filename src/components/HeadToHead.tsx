@@ -1,11 +1,10 @@
 import React from "react";
-import headToHeadJson from "../data/headToHead.json";
 import {
   HeadToHeadQuestion,
   HeadToHeadQuestions,
   HeadToHeadQuestionState,
   QuestionProps,
-} from "../types/common";
+} from "../shared/types";
 
 interface HeadToHeadProps extends QuestionProps {}
 
@@ -16,7 +15,7 @@ const HeadToHead: React.FC<HeadToHeadProps> = ({
 }) => {
   const value = gameState.currentGame.value;
 
-  const allQuestions: HeadToHeadQuestions = headToHeadJson;
+  const allQuestions: HeadToHeadQuestions = gameState.gameData.head;
   let questionData: HeadToHeadQuestion = allQuestions[value!];
   if (gameState.isDoubleJeopardy) {
     questionData = allQuestions[value! / 2 + 1];
@@ -50,11 +49,15 @@ const HeadToHead: React.FC<HeadToHeadProps> = ({
     <div className="minute-container">
       {/* Title */}
       {!isAdmin && questionState.promptVisible && (
-        <h1 className="text-2xl font-bold mb-4 text-center">Players Per Team: {questionData.players}</h1>
+        <h1 className="text-2xl font-bold mb-4 text-center">
+          Players Per Team: {questionData.players}
+        </h1>
       )}
 
       {questionState.showTitle && (
-        <h1 className="text-7xl font-bold mb-4 text-center">{questionData.title}</h1>
+        <h1 className="text-7xl font-bold mb-4 text-center">
+          {questionData.title}
+        </h1>
       )}
 
       {isAdmin && questionState.showTitle && (
