@@ -10,12 +10,11 @@ import {
   HeadToHeadQuestionState,
   MillionaireQuestionState,
   MinuteQuestionState,
-  Team
+  Team,
 } from "../shared/types";
 import AdminPageWrapper from "./AdminPageWrapper";
 import SettingsModal from "./SettingsModal";
 import { useSocket } from "./SocketContext";
-import { initGameData } from "../server/datagen";
 
 interface AdminProps {
   gameState: GameState;
@@ -25,17 +24,15 @@ const Admin: React.FC<AdminProps> = ({ gameState }) => {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const socket = useSocket();
 
-  // Set up socket listener to update the game state when the server sends updates
   useEffect(() => {
-    if (!socket) return; // Ensure socket is connected
+    if (!socket) return;
 
     const handleGameStateUpdate = (data: { gameState: GameState }) => {
-      setCurrentGameState(data.gameState); // Update the game state with the data from the server
+      setCurrentGameState(data.gameState);
     };
 
     socket.on("gameStateUpdate", handleGameStateUpdate);
 
-    // Clean up the listener when the component is unmounted
     return () => {
       socket.off("gameStateUpdate", handleGameStateUpdate);
     };
@@ -44,29 +41,36 @@ const Admin: React.FC<AdminProps> = ({ gameState }) => {
   const [currentGameState, setCurrentGameState] =
     useState<GameState>(gameState);
 
-  // Send game state update to Socket.IO server
   const sendGameStateToServer = (updatedGameState: GameState) => {
     if (socket) {
-      socket.emit("gameStateUpdate", { gameState: updatedGameState }); // Emit game state to server
+      socket.emit("gameStateUpdate", { gameState: updatedGameState });
     }
   };
 
   const handleSaveSettings = (gameState: GameState) => {
     setCurrentGameState(gameState);
-    sendGameStateToServer(gameState); // Send updated settings to Socket.IO server
+    sendGameStateToServer(gameState);
   };
 
-  const handleReset = async () => {  
-    // Send reset event to server
+  const handleReset = async () => {
     if (socket) {
       socket.emit("resetGameState");
     }
   };
 
-  const handleUpdateCurrentGame = (newGame: GameName, points: number) => {
-    console.log("Updating current game");
+  const handleToggleTimer = () => {
     const updatedGameState = { ...gameState };
+    if (!updatedGameState.showTimer) {
+      updatedGameState.showTimer = true;
+    } else {
+      updatedGameState.showTimer = false;
+    }
+    setCurrentGameState(updatedGameState);
+    sendGameStateToServer(updatedGameState);
+  };
 
+  const handleUpdateCurrentGame = (newGame: GameName, points: number) => {
+    const updatedGameState = { ...gameState };
     switch (newGame) {
       case GameName.FAMILY_FEUD: {
         const questionState: FamilyFeudQuestionState = {
@@ -86,7 +90,6 @@ const Admin: React.FC<AdminProps> = ({ gameState }) => {
       case GameName.MINUTE: {
         const questionState: MinuteQuestionState = {
           promptVisible: false,
-          readyTimer: false,
         };
         updatedGameState.currentGame = {
           gameName: newGame,
@@ -134,7 +137,7 @@ const Admin: React.FC<AdminProps> = ({ gameState }) => {
     }
 
     setCurrentGameState(updatedGameState);
-    sendGameStateToServer(updatedGameState); // Send update to Socket.IO server
+    sendGameStateToServer(updatedGameState);
   };
 
   const handleUpdateTurn = (team: Team) => {
@@ -208,18 +211,28 @@ const Admin: React.FC<AdminProps> = ({ gameState }) => {
     sendGameStateToServer(updatedGameState);
   };
 
-  const location = useLocation(); // Get the current location
+  const location = useLocation();
 
   return (
     <div className="admin-container">
-      {/* Conditionally show the settings button only on the home page */}
       {location.pathname === "/admin" && (
-        <button
-          onClick={() => setIsSettingsOpen(true)}
-          className="fixed top-4 right-4 p-2 bg-blue-500 text-white rounded"
-        >
-          Settings
-        </button>
+        <div className="fixed top-4 right-4">
+          {/* Wrap buttons in a span for alignment */}
+          <span className="flex space-x-2">
+            <button
+              onClick={handleToggleTimer}
+              className="p-2 bg-green-500 text-white rounded"
+            >
+              Toggle Timer
+            </button>
+            <button
+              onClick={() => setIsSettingsOpen(true)}
+              className="p-2 bg-blue-500 text-white rounded"
+            >
+              Settings
+            </button>
+          </span>
+        </div>
       )}
 
       <SettingsModal
@@ -238,7 +251,7 @@ const Admin: React.FC<AdminProps> = ({ gameState }) => {
         handleBackButon={handleBackButton}
         sendGameStateToServer={sendGameStateToServer}
         handleUpdateTurn={handleUpdateTurn}
-      ></AdminPageWrapper>
+      />
     </div>
   );
 };

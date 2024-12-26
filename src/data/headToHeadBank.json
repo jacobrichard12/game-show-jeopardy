@@ -1,0 +1,58 @@
+{
+    "easy": [
+        {
+            "title": "Rock Paper Scissors",
+            "players": 1,
+            "adminInfo": "Players play best two out of three"
+        },
+        {
+            "title": "Thumb War",
+            "players": 1,
+            "adminInfo": "Players thumb wrestle on a table, must keep elbows on the table and hold the thumb for three secods"
+        },
+        {
+            "title": "Staring Contest",
+            "players": 1,
+            "adminInfo": "First Person to blink loses"
+        },
+        {
+            "title": "Concentration 64",
+            "players": 1,
+            "adminInfo": "Players play concentration 64 host calls out the category, first to miss one loses"
+        }
+    ],
+    "medium": [
+        {
+            "title": "Leg Wrestling",
+            "players": 1,
+            "adminInfo": "Players leg wrestle for points for the round"
+        },
+        {
+            "title": "Paper Airplane",
+            "players": 2,
+            "adminInfo": "Players have 1 minute make paper airplanes and whoever's toss goes the farthest wins."
+        },
+        {
+            "title": "Pong",
+            "players": 1,
+            "adminInfo": "One cup per player, first to make it wins. Player who picked challenge goes first"
+        },
+        {
+            "title": "Rhyme Challenge",
+            "players": 1,
+            "adminInfo": "Host calls out a word to rhyme with, whoever can't think of the next rhyme loses."
+        }
+    ],
+    "hard": [
+        {
+            "title": "Reverse Charades",
+            "players": 6,
+            "adminInfo": "Both teams play reverse charades for 1 minute, most points wins."
+        },
+        {
+            "title": "Catch Phrase",
+            "players": 6,
+            "adminInfo": "Teams play a round of catch phrase, whoever gets the most in one minute wins."
+        }
+    ]
+}

@@ -16,6 +16,7 @@ export interface GameState {
     };
     whoseTurn?: Team;
     currentGame: CurrentGame;
+    showTimer?: boolean;
     isDoubleJeopardy: boolean;
     answered: { [key: string]: number[] };
     doubleJeopardyAnswered: { [key: string]: number[] };
@@ -97,9 +98,7 @@ export interface FamilyFeudQuestionState extends QuestionState {
     wrongGuesses: number;
 }
 
-export interface MinuteQuestionState extends QuestionState {
-    readyTimer: boolean;
-}
+export interface MinuteQuestionState extends QuestionState {}
 
 export interface HeadToHeadQuestionState extends QuestionState {
     showTitle: boolean;
@@ -118,6 +117,7 @@ export enum GameName {
     MILLIONAIRE = "millionaire",
     MINUTE = "minute",
     HEAD_TO_HEAD = "head",
+    TIMER = "timer",
 }
 
 export function getGameTitle(gameName: GameName): string {

@@ -1,9 +1,10 @@
-import headToHeadJson from "../data/headToHead.json";
 import minuteBankJson from "../data/minuteBank.json";
+import headToHeadBankJson from "../data/headToHeadBank.json";
 import {
   Difficulty,
   FamilyFeudQuestions,
   GameData,
+  HeadToHeadQuestions,
   MillionaireQuestions,
   MinuteQuestions
 } from "../shared/types";
@@ -12,6 +13,7 @@ import { fetchTriviaQuestions } from "./trivia";
 
 export async function initGameData(): Promise<GameData> {
   const minuteData = createMinuteQuestions();
+  const headToHeadData = createHeadToHeadQuestions();
   const millionaireDataPromise = createMillionaireQuestions();
   const fuedDataPromise = createFeudQuestions();
 
@@ -21,7 +23,7 @@ export async function initGameData(): Promise<GameData> {
     feud: feudData,
     minute: minuteData,
     millionaire: millionaireData,
-    head: headToHeadJson,
+    head: headToHeadData,
   };
 
   return gameData;
@@ -79,21 +81,34 @@ export async function createMillionaireQuestions(): Promise<MillionaireQuestions
 
 export function createMinuteQuestions(): MinuteQuestions {
   const minuteQuestions: MinuteQuestions = {};
-  const shuffledEasy = shuffleArray(minuteBankJson.easy);
-  const shuffledMedium = shuffleArray(minuteBankJson.medium);
-  const shuffledHard = shuffleArray(minuteBankJson.hard);
-
-  DIFFICULTY_MAPPING[Difficulty.easy].forEach((value, idx) => {
-    minuteQuestions[value] = shuffledEasy[idx];
-  });
-  DIFFICULTY_MAPPING[Difficulty.medium].forEach((value, idx) => {
-    minuteQuestions[value] = shuffledMedium[idx];
-  });
-  DIFFICULTY_MAPPING[Difficulty.hard].forEach((value, idx) => {
-    minuteQuestions[value] = shuffledHard[idx];
+  const shuffledQuestions = {
+    [Difficulty.easy]: shuffleArray(minuteBankJson.easy),
+    [Difficulty.medium]: shuffleArray(minuteBankJson.medium),
+    [Difficulty.hard]: shuffleArray(minuteBankJson.hard),
+  }
+  Object.values(Difficulty).forEach((difficulty) => {
+    DIFFICULTY_MAPPING[difficulty].forEach((value, idx) => {
+      minuteQuestions[value] = shuffledQuestions[difficulty][idx];
+    });
   });
 
   return minuteQuestions;
+}
+
+export function createHeadToHeadQuestions(): HeadToHeadQuestions {
+  const headToHeadQuestions: HeadToHeadQuestions = {};
+  const shuffledQuestions = {
+    [Difficulty.easy]: shuffleArray(headToHeadBankJson.easy),
+    [Difficulty.medium]: shuffleArray(headToHeadBankJson.medium),
+    [Difficulty.hard]: shuffleArray(headToHeadBankJson.hard),
+  }
+  Object.values(Difficulty).forEach((difficulty) => {
+    DIFFICULTY_MAPPING[difficulty].forEach((value, idx) => {
+      headToHeadQuestions[value] = shuffledQuestions[difficulty][idx];
+    });
+  });
+
+  return headToHeadQuestions;
 }
 
 export function shuffleArray<T>(array: T[]): T[] {

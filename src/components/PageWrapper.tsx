@@ -7,6 +7,7 @@ import Millionaire from "./Millionaire";
 import Minute from "./Minute";
 import QuestionWrapper from "./QuestionWrapper";
 import ScoreBoard from "./Scoreboard";
+import Timer from "./Timer";
 
 interface PageWrapperProps {
   gameState: GameState;
@@ -18,6 +19,9 @@ const PageWrapper: React.FC<PageWrapperProps> = ({
   gameBoardData,
 }) => {
   const getComponent = (): React.ReactNode => {
+    if (gameState.showTimer) {
+      return <Timer/>;
+    }
     switch (gameState.currentGame.gameName) {
       case GameName.BOARD:
         return (

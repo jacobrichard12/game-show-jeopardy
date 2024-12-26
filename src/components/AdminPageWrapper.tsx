@@ -1,7 +1,7 @@
 import React from "react";
 import wow from "../assets/wow.mp3";
 import gameBoardData from "../data/gameBoard.json";
-import { GameData, GameName, GameState, Team } from "../shared/types";
+import { GameName, GameState, Team } from "../shared/types";
 import AdminPointsButtons from "./AddPointsButtons";
 import FamilyFeud from "./FamilyFeud";
 import GameBoard from "./GameBoard";
@@ -56,7 +56,10 @@ const AdminPageWrapper: React.FC<AdminPageWrapperProps> = ({
       );
     }
 
-    if (gameState.currentGame.gameName === GameName.BOARD) {
+    if (
+      gameState.currentGame.gameName === GameName.BOARD ||
+      gameState.currentGame.gameName === GameName.TIMER
+    ) {
       return getGameBoardAdminPage();
     } else {
       return getChildAdminGamePage();
