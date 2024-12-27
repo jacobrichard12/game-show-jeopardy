@@ -23,6 +23,9 @@ const baseFilters = [
     "Entertainment: Comics",
     "Entertainment: Television",
     "Entertainment: Musicals & Theatres",
+    "Entertainment: Books",
+    "Sports",
+    "Celebrities",
     "Vehicles",
 ];
 
