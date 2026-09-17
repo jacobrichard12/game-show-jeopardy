@@ -1,5 +1,6 @@
 import express from "express";
 import http from "http";
+import path from "path";
 import { Server } from "socket.io";
 import { GameName, GameState, Team } from "../shared/types";
 import { initGameData } from "./datagen";
@@ -192,6 +193,18 @@ io.on("connection", (socket) => {
 
 // Serve the React app (optional, for production)
 app.use(express.static("build")); // Serve React app from the 'build' folder
+
+// react-router uses client-side (BrowserRouter) routing, so a direct load or
+// refresh of a route like /admin has no matching static file — express.static
+// alone 404s on it. Fall back to index.html for any other GET so the client
+// router can take over and render the right route. This runs after
+// express.static, so real static assets (JS/CSS/images) are still served
+// as files and never hit this fallback. __dirname is dist/server (compiled)
+// or src/server (ts-node dev) — both two levels below the repo root where
+// the CRA build output lives.
+app.get(/.*/, (req, res) => {
+  res.sendFile(path.join(__dirname, "..", "..", "build", "index.html"));
+});
 
 // Start the server. Override with PORT to avoid clashing with other apps.
 const PORT = process.env.PORT || 4000;
