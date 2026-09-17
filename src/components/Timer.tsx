@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 
 const timerLinks = [
   "https://www.youtube.com/watch?v=qLWVVnPfCEY",
@@ -14,18 +14,19 @@ const timerLinks = [
 
 interface TimerProps {}
 
-const Timer: React.FC<TimerProps> = ({}) => {
-  const getRandomTimerLink = () => {
+const Timer: React.FC<TimerProps> = () => {
+  // Pick a video once on mount so parent re-renders don't reload the iframe.
+  const [videoId] = useState(() => {
     const randomLink = timerLinks[Math.floor(Math.random() * timerLinks.length)];
     return randomLink.split("v=")[1]?.split("&")[0];
-  };
+  });
 
   return (
     <div className="flex justify-around items-center">
       <iframe
         width="800"
         height="600"
-        src={`https://www.youtube.com/embed/${getRandomTimerLink()}`}
+        src={`https://www.youtube.com/embed/${videoId}`}
         title="YouTube video player"
         allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
         allowFullScreen

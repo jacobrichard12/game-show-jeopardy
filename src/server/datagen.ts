@@ -53,8 +53,12 @@ export async function createFeudQuestions(): Promise<FamilyFeudQuestions> {
 export async function createMillionaireQuestions(): Promise<MillionaireQuestions> {
   const millionaireQuestions: MillionaireQuestions = {};
 
-  const easyQuestions = await fetchTriviaQuestions(12, Difficulty.easy);
-  const mediumHardQuestions = await fetchTriviaQuestions(18, Difficulty.medium);
+  // Independent requests (different difficulty pools) — run concurrently
+  // rather than awaiting one after the other.
+  const [easyQuestions, mediumHardQuestions] = await Promise.all([
+    fetchTriviaQuestions(12, Difficulty.easy),
+    fetchTriviaQuestions(18, Difficulty.medium),
+  ]);
 
   DIFFICULTY_MAPPING[Difficulty.easy].forEach((value, idx) => {
     millionaireQuestions[value] = {

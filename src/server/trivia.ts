@@ -1,4 +1,4 @@
-import axios, { all } from "axios";
+import axios from "axios";
 import { Difficulty, MillionaireSubQuestion } from "../shared/types";
 import { shuffleArray } from "./datagen";
 
@@ -41,23 +41,31 @@ const difficultyFilters = {
     ],
 }
 
+// OpenTDB rate-limits each IP to roughly one request every 5 seconds; querying
+// faster returns HTTP 429. Space retries accordingly.
+const RETRY_DELAY_MS = 5000;
+const MAX_ATTEMPTS = 6;
+
 export async function fetchTriviaQuestions(numQuestions: number, difficulty: Difficulty): Promise<MillionaireSubQuestion[]> {
     const allQuestions: MillionaireSubQuestion[] = [];
 
-    while (allQuestions.length < numQuestions) {
+    for (let attempt = 1; attempt <= MAX_ATTEMPTS && allQuestions.length < numQuestions; attempt++) {
+        if (attempt > 1) {
+            // Back off before retrying so we don't trip the rate limit again.
+            await new Promise(resolve => setTimeout(resolve, RETRY_DELAY_MS));
+        }
         try {
             const subQuestions = await queryAndFilterApi(difficulty);
-            console.log(`got ${subQuestions.length} questions`)
+            console.log(`got ${subQuestions.length} ${difficulty} questions`);
             allQuestions.push(...subQuestions);
-            if (allQuestions.length < numQuestions) {
-                return allQuestions;
-            }
         } catch (error) {
-            console.error("Error fetching trivia questions:", error);
-            break;
+            const message = error instanceof Error ? error.message : String(error);
+            console.error(`Trivia fetch failed (${difficulty}, attempt ${attempt}/${MAX_ATTEMPTS}): ${message}`);
         }
-        // We have to wait 5 seconds before querying the API again
-        await new Promise(resolve => setTimeout(resolve, 5000));
+    }
+
+    if (allQuestions.length < numQuestions) {
+        console.warn(`Only fetched ${allQuestions.length}/${numQuestions} ${difficulty} trivia questions; some Millionaire tiles will be empty.`);
     }
     return allQuestions;
 };

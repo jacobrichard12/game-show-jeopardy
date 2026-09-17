@@ -1,22 +1,16 @@
 import React, { useEffect, useRef, useState } from "react";
-import soundtrack1 from "../assets/millionaire/sountrack-1.mp3";
-import soundtrack2 from "../assets/millionaire/sountrack-2.mp3";
-import soundtrack3 from "../assets/millionaire/sountrack-3.mp3";
-import yay from "../assets/yay.mp3";
-import oof from "../assets/oof.mp3";
-import losing1 from "../assets/losing1.mp3";
-import losing2 from "../assets/losing2.mp3";
-import losing3 from "../assets/losing3.mp3";
-import winning1 from "../assets/winning1.wav";
-import winning2 from "../assets/winning2.wav";
-import winning3 from "../assets/winning3.mp3";
-
 import {
-  MillionaireQuestion,
-  MillionaireQuestions,
+  getRandomAudio,
+  happyFiles,
+  millionaireSoundtrackFiles,
+  sadFiles,
+} from "../shared/audio";
+import {
+  getCurrentQuestion,
   MillionaireQuestionState,
   QuestionProps,
 } from "../shared/types";
+import NoQuestionAvailable from "./NoQuestionAvailable";
 
 interface MillionaireProps extends QuestionProps {}
 
@@ -26,21 +20,14 @@ const Millionaire: React.FC<MillionaireProps> = ({
   sendGameStateToServer,
 }) => {
   const audioRef = useRef(new Audio());
-  const soundtrackFiles = [soundtrack1, soundtrack2, soundtrack3];
-  const sadFiles = [oof, losing1, losing2, losing3];
-  const happyFiles = [yay, winning1, winning2, winning3];
 
-  const getRandomFile = (files: string[]) => {
-    return files[Math.floor(Math.random() * files.length)];
-  };
-
-  const [correctAudio] = useState(new Audio(getRandomFile(happyFiles)));
-  const [incorrectAudio] = useState(new Audio(getRandomFile(sadFiles)));
+  const [correctAudio] = useState(new Audio(getRandomAudio(happyFiles)));
+  const [incorrectAudio] = useState(new Audio(getRandomAudio(sadFiles)));
 
   useEffect(() => {
     if (!isAdmin) return;
     const audio = audioRef.current;
-    audio.src = getRandomFile(soundtrackFiles);
+    audio.src = getRandomAudio(millionaireSoundtrackFiles);
     const playAudio = async () => {
       try {
         if (audio.paused) {
@@ -60,16 +47,22 @@ const Millionaire: React.FC<MillionaireProps> = ({
     };
   }, [isAdmin]);
 
-  const value = gameState.currentGame.value;
-  const allQuestions: MillionaireQuestions = gameState.gameData.millionaire;
-  let questionData: MillionaireQuestion = allQuestions[value!];
-  if (gameState.isDoubleJeopardy) {
-    questionData = allQuestions[value! / 2 + 1];
-  }
+  const questionData = getCurrentQuestion(
+    gameState.gameData.millionaire,
+    gameState
+  );
 
   const questionState = gameState.currentGame
     .questionState as MillionaireQuestionState;
-  const currentSubquestion = questionData.questions[questionState.questionIdx];
+
+  const currentSubquestion =
+    questionData?.questions[questionState.questionIdx];
+
+  // The slot object can exist while its sub-questions are missing (e.g. the
+  // trivia API was rate-limited at startup), so guard the sub-question too.
+  if (!questionData || !currentSubquestion) {
+    return <NoQuestionAvailable />;
+  }
 
   const handleAnswerClick = (index: number) => {
     if (!isAdmin) return;
@@ -149,8 +142,7 @@ const Millionaire: React.FC<MillionaireProps> = ({
         audio.pause();
         audio.currentTime = 0;
       }
-      audio.src =
-        soundtrackFiles[Math.floor(Math.random() * soundtrackFiles.length)];
+      audio.src = getRandomAudio(millionaireSoundtrackFiles);
       audio.play();
     }
   };

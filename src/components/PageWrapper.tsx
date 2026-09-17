@@ -1,5 +1,5 @@
 import React from "react";
-import { GameData, GameName, GameState } from "../shared/types";
+import { GameName, GameState } from "../shared/types";
 import FamilyFeud from "./FamilyFeud";
 import GameBoard, { GameBoardData } from "./GameBoard";
 import HeadToHead from "./HeadToHead";

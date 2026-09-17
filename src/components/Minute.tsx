@@ -1,11 +1,6 @@
 import React from "react";
-import {
-  MinuteQuestion,
-  MinuteQuestions,
-  MinuteQuestionState,
-  QuestionProps,
-} from "../shared/types";
-import Timer from "./Timer";
+import { getCurrentQuestion, QuestionProps } from "../shared/types";
+import NoQuestionAvailable from "./NoQuestionAvailable";
 
 interface MinuteProps extends QuestionProps {}
 
@@ -14,22 +9,16 @@ const Minute: React.FC<MinuteProps> = ({
   gameState,
   sendGameStateToServer,
 }) => {
-  const value = gameState.currentGame.value;
+  const questionData = getCurrentQuestion(gameState.gameData.minute, gameState);
 
-  const allQuestions: MinuteQuestions = gameState.gameData.minute;
-  let questionData: MinuteQuestion = allQuestions[value!];
-  if (gameState.isDoubleJeopardy) {
-    questionData = allQuestions[value! / 2 + 1];
+  if (!questionData) {
+    return <NoQuestionAvailable />;
   }
 
-  const link = questionData.link;
   const title = questionData.title;
 
   // Extract the YouTube video ID from the link
-  const videoId = link.split("v=")[1]?.split("&")[0]; // Get the video ID from the URL
-
-  const questionState = gameState.currentGame
-    .questionState as MinuteQuestionState;
+  const videoId = questionData.link.split("v=")[1]?.split("&")[0];
 
   return (
     <div className="minute-container">

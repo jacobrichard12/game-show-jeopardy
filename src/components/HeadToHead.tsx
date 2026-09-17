@@ -1,10 +1,10 @@
 import React from "react";
 import {
-  HeadToHeadQuestion,
-  HeadToHeadQuestions,
+  getCurrentQuestion,
   HeadToHeadQuestionState,
   QuestionProps,
 } from "../shared/types";
+import NoQuestionAvailable from "./NoQuestionAvailable";
 
 interface HeadToHeadProps extends QuestionProps {}
 
@@ -13,16 +13,14 @@ const HeadToHead: React.FC<HeadToHeadProps> = ({
   gameState,
   sendGameStateToServer,
 }) => {
-  const value = gameState.currentGame.value;
-
-  const allQuestions: HeadToHeadQuestions = gameState.gameData.head;
-  let questionData: HeadToHeadQuestion = allQuestions[value!];
-  if (gameState.isDoubleJeopardy) {
-    questionData = allQuestions[value! / 2 + 1];
-  }
+  const questionData = getCurrentQuestion(gameState.gameData.head, gameState);
 
   const questionState = gameState.currentGame
     .questionState as HeadToHeadQuestionState;
+
+  if (!questionData) {
+    return <NoQuestionAvailable />;
+  }
 
   // Function to convert \n to <br />
   const formatAdminInfo = (adminInfo: string) => {

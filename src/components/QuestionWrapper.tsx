@@ -1,6 +1,5 @@
 import React from "react";
 import { GameState } from "../shared/types";
-import gameData from "../data/gameBoard.json";
 
 interface QuestionWrapperProps {
   gameState: GameState;

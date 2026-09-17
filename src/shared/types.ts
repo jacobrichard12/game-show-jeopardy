@@ -90,8 +90,6 @@ export interface QuestionState {
     promptVisible: boolean;
 }
 
-export interface EmptyQuestionState extends QuestionState { }
-
 export interface FamilyFeudQuestionState extends QuestionState {
     showFeudPrompt: boolean;
     revealedAnswers: boolean[];
@@ -118,6 +116,22 @@ export enum GameName {
     MINUTE = "minute",
     HEAD_TO_HEAD = "head",
     TIMER = "timer",
+}
+
+/**
+ * Resolves the question for the currently-selected board tile from a question
+ * bank, accounting for the Double Jeopardy key offset (DJ tiles use double the
+ * point value, and the bank stores the DJ twin at `value / 2 + 1`). Returns
+ * `undefined` when the tile has no matching entry — callers must guard against
+ * this rather than dereferencing the result directly.
+ */
+export function getCurrentQuestion<T>(
+    bank: Record<string, T>,
+    gameState: GameState
+): T | undefined {
+    const { value } = gameState.currentGame;
+    const key = gameState.isDoubleJeopardy ? value / 2 + 1 : value;
+    return bank[key];
 }
 
 export function getGameTitle(gameName: GameName): string {

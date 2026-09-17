@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { GameName, GameState, Team } from "../shared/types";
 
 interface ScoreBoardProps {
@@ -7,13 +7,18 @@ interface ScoreBoardProps {
   handleUpdateTurn?: (team: Team) => void;
 }
 
+// How long the score "bounce" animation plays after a score change.
+const BOUNCE_DURATION_MS = 2000;
+
 const ScoreBoard: React.FC<ScoreBoardProps> = ({
   isAdmin,
   gameState,
   handleUpdateTurn,
 }) => {
   const [bouncingTeam, setBouncingTeam] = useState<Team | null>(null);
-  const [prevScores, setPrevScores] = useState({
+  // A ref (not state) because writing it must not itself re-trigger the
+  // effect below — it only exists to remember the previous render's scores.
+  const prevScores = useRef({
     [Team.TeamA]: gameState[Team.TeamA].score,
     [Team.TeamB]: gameState[Team.TeamB].score,
   });
@@ -21,22 +26,27 @@ const ScoreBoard: React.FC<ScoreBoardProps> = ({
   const isTeamATurn = gameState.whoseTurn === Team.TeamA;
   const isTeamBTurn = gameState.whoseTurn === Team.TeamB;
 
+  const scoreA = gameState[Team.TeamA].score;
+  const scoreB = gameState[Team.TeamB].score;
+
   useEffect(() => {
-    // Check for changes in scores and trigger bounce for the appropriate team
-    if (gameState[Team.TeamA].score !== prevScores[Team.TeamA]) {
-      setBouncingTeam(Team.TeamA);
-      setTimeout(() => setBouncingTeam(null), 2000); // Reset bounce after 2 seconds
-    } else if (gameState[Team.TeamB].score !== prevScores[Team.TeamB]) {
-      setBouncingTeam(Team.TeamB);
-      setTimeout(() => setBouncingTeam(null), 2000); // Reset bounce after 2 seconds
+    // Nothing changed since the last render — skip.
+    if (scoreA === prevScores.current[Team.TeamA] && scoreB === prevScores.current[Team.TeamB]) {
+      return;
     }
 
-    // Update previous scores
-    setPrevScores({
-      [Team.TeamA]: gameState[Team.TeamA].score,
-      [Team.TeamB]: gameState[Team.TeamB].score,
-    });
-  }, [gameState[Team.TeamA].score, gameState[Team.TeamB].score]);
+    // Trigger the bounce for whichever team's score changed.
+    if (scoreA !== prevScores.current[Team.TeamA]) {
+      setBouncingTeam(Team.TeamA);
+    } else if (scoreB !== prevScores.current[Team.TeamB]) {
+      setBouncingTeam(Team.TeamB);
+    }
+    const timer = setTimeout(() => setBouncingTeam(null), BOUNCE_DURATION_MS);
+
+    prevScores.current = { [Team.TeamA]: scoreA, [Team.TeamB]: scoreB };
+
+    return () => clearTimeout(timer);
+  }, [scoreA, scoreB]);
 
   return (
     <div className="flex justify-around items-center">

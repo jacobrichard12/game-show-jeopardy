@@ -1,0 +1,32 @@
+{
+  // Separate tsconfig for compiling ONLY the Node server for production.
+  // The root tsconfig.json is for the CRA client build and has rootDir "."
+  // with outDir "./dist", which actually emits the server to
+  // dist/src/server/server.js — not the dist/server.js the old
+  // `server-build` script assumed. This config emits to dist/server/server.js
+  // to match, and excludes client-only code (React components, asset
+  // imports, test files) that the server never imports and that wouldn't
+  // compile without CRA's webpack loaders/ambient types anyway.
+  "compilerOptions": {
+    "target": "es2020",
+    "lib": ["es2020"],
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "forceConsistentCasingInFileNames": true,
+    "outDir": "./dist",
+    "rootDir": "./src"
+  },
+  "include": [
+    "src/server/**/*.ts",
+    "src/shared/types.ts",
+    "src/data/**/*.json"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist"
+  ]
+}

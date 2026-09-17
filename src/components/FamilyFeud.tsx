@@ -1,13 +1,13 @@
 import React, { useEffect, useRef } from "react";
 import {
-  FamilyFeudQuestion,
-  FamilyFeudQuestions,
   FamilyFeudQuestionState,
+  getCurrentQuestion,
   QuestionProps,
 } from "../shared/types";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faTimesCircle } from "@fortawesome/free-solid-svg-icons";
 import { buzzerAudio, dingAudio, familyFeudTheme } from "../shared/audio";
+import NoQuestionAvailable from "./NoQuestionAvailable";
 
 interface FamilyFeudProps extends QuestionProps {}
 
@@ -44,17 +44,14 @@ const FamilyFeud: React.FC<FamilyFeudProps> = ({
     };
   }, [isAdmin]);
 
-  const value = gameState.currentGame.value;
-
-  const allQuestions: FamilyFeudQuestions = gameState.gameData.feud;
-
-  let questionData: FamilyFeudQuestion = allQuestions[value!];
-  if (gameState.isDoubleJeopardy) {
-    questionData = allQuestions[value! / 2 + 1];
-  }
+  const questionData = getCurrentQuestion(gameState.gameData.feud, gameState);
 
   const questionState = gameState.currentGame
     .questionState as FamilyFeudQuestionState;
+
+  if (!questionData) {
+    return <NoQuestionAvailable />;
+  }
 
   const revealedAnswers =
     questionState.revealedAnswers.length === 0
