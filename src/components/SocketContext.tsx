@@ -15,62 +15,15 @@ const SOCKET_URL =
   process.env.REACT_APP_SOCKET_URL ||
   (process.env.NODE_ENV === "production" ? undefined : "http://localhost:4000");
 
-// Where the admin token is cached in this browser so the host doesn't have to
-// re-enter it on every visit. Only the admin panel ever writes to this; the
-// display view never needs a token.
-export const ADMIN_TOKEN_STORAGE_KEY = "adminToken";
-
-const readStoredAdminToken = (): string | undefined => {
-  try {
-    return window.localStorage.getItem(ADMIN_TOKEN_STORAGE_KEY) || undefined;
-  } catch {
-    // localStorage can throw in private-browsing / locked-down contexts.
-    return undefined;
-  }
-};
-
-export type AdminAuthStatus = "pending" | "authorized" | "denied";
-
-// Define context type with socket and children
-interface SocketContextType {
-  socket: Socket | null;
-  adminAuthStatus: AdminAuthStatus;
-  // Stores the token for this browser and reconnects the socket so the
-  // server re-checks the handshake with it. Pass "" to clear it.
-  setAdminToken: (token: string) => void;
-}
-
-const SocketContext = createContext<SocketContextType | undefined>(undefined);
+const SocketContext = createContext<Socket | null | undefined>(undefined);
 
 // Custom hook to access socket from context
 export const useSocket = (): Socket | null => {
   const context = useContext(SocketContext);
-  if (!context) {
+  if (context === undefined) {
     throw new Error("useSocket must be used within a SocketProvider");
   }
-  return context.socket;
-};
-
-// Whether this browser's socket has been confirmed as an admin by the server.
-// Subscribed here (not in Admin.tsx) because the server sends its answer
-// (`adminAuthResult`) immediately at connect time — before App.tsx clears its
-// loading gate and mounts the /admin route — so a listener registered inside
-// Admin.tsx would miss it. Socket.IO doesn't replay missed events.
-export const useAdminAuthStatus = (): AdminAuthStatus => {
-  const context = useContext(SocketContext);
-  if (!context) {
-    throw new Error("useAdminAuthStatus must be used within a SocketProvider");
-  }
-  return context.adminAuthStatus;
-};
-
-// Lets the admin panel supply/replace the shared admin token for this browser.
-export const useSetAdminToken = (): ((token: string) => void) => {
-  const context = useContext(SocketContext);
-  if (!context) {
-    throw new Error("useSetAdminToken must be used within a SocketProvider");
-  }
-  return context.setAdminToken;
+  return context;
 };
 
 interface SocketProviderProps {
@@ -79,25 +32,12 @@ interface SocketProviderProps {
 
 export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
   const [socket, setSocket] = useState<Socket | null>(null);
-  const [adminAuthStatus, setAdminAuthStatus] = useState<AdminAuthStatus>("pending");
 
   useEffect(() => {
-    const socketInstance = io(SOCKET_URL, {
-      auth: { token: readStoredAdminToken() },
-    });
+    const socketInstance = io(SOCKET_URL);
 
     socketInstance.on("connect", () => {
       console.log("Connected to Socket.IO server");
-    });
-
-    socketInstance.on("adminAuthResult", (data: { isAdmin: boolean }) => {
-      setAdminAuthStatus(data.isAdmin ? "authorized" : "denied");
-    });
-
-    // A previously-accepted token can still be rejected later (e.g. the host
-    // rotates ADMIN_TOKEN mid-event) if an action is attempted after that.
-    socketInstance.on("unauthorized", () => {
-      setAdminAuthStatus("denied");
     });
 
     setSocket(socketInstance);
@@ -110,25 +50,31 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
     };
   }, []);
 
-  const setAdminToken = (token: string) => {
-    try {
-      window.localStorage.setItem(ADMIN_TOKEN_STORAGE_KEY, token);
-    } catch {
-      // Best-effort cache; the token still works for this session via
-      // socket.auth below even if it can't be persisted.
-    }
-    if (socket) {
-      setAdminAuthStatus("pending");
-      socket.auth = { token };
-      // Re-handshake so the server re-evaluates admin status with the new token.
-      socket.disconnect();
-      socket.connect();
-    }
-  };
-
   return (
-    <SocketContext.Provider value={{ socket, adminAuthStatus, setAdminToken }}>
-      {children}
-    </SocketContext.Provider>
+    <SocketContext.Provider value={socket}>{children}</SocketContext.Provider>
   );
 };
+
+// A room's adminKey proves "this browser created (or was granted admin on)
+// this room" so a reload doesn't require re-entering ADMIN_TOKEN. Cached per
+// room code — only the admin panel ever writes these; the display view
+// never needs one.
+const adminKeyStorageKey = (code: string) => `adminKey:${code.toUpperCase()}`;
+
+export function getStoredAdminKey(code: string): string | undefined {
+  try {
+    return window.localStorage.getItem(adminKeyStorageKey(code)) || undefined;
+  } catch {
+    // localStorage can throw in private-browsing / locked-down contexts.
+    return undefined;
+  }
+}
+
+export function storeAdminKey(code: string, adminKey: string): void {
+  try {
+    window.localStorage.setItem(adminKeyStorageKey(code), adminKey);
+  } catch {
+    // Best-effort cache; the key still works for this session via the
+    // in-memory join call even if it can't be persisted.
+  }
+}

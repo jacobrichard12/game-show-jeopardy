@@ -1,74 +1,26 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { Route, Routes } from "react-router-dom";
 import Admin from "./components/Admin";
-import PageWrapper from "./components/PageWrapper";
-import { SocketProvider, useSocket } from "./components/SocketContext";
-import TitlePage from "./components/TitlePage";
-import gameBoardData from "./data/gameBoard.json";
-import { GameState } from "./shared/types";
+import CreateGame from "./components/CreateGame";
+import Display from "./components/Display";
+import JoinGame from "./components/JoinGame";
+import { SocketProvider } from "./components/SocketContext";
 
+// Each room is its own isolated game, addressed by a short code:
+//  /            - enter a code to watch a game (display/spectator)
+//  /watch/:code - the display for that specific game
+//  /admin       - create a new game (ADMIN_TOKEN-gated)
+//  /admin/:code - the host panel for that specific game
+// There's no more single global game state — Admin and Display each own
+// the room they're scoped to via the URL, joining it over the socket.
 const App: React.FC = () => {
-  const socket = useSocket();
-  const [gameState, setGameState] = useState<GameState | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  // Wait for the server to send the initial game state
-  useEffect(() => {
-    if (!socket) return;
-
-    const handleInitialGameState = (data: { gameState: GameState }) => {
-      setGameState(data.gameState);
-      setLoading(false);
-    };
-
-    // Listen for the game state update from the server
-    socket.on("initialGameState", handleInitialGameState);
-
-    return () => {
-      socket.off("initialGameState", handleInitialGameState);
-    };
-  }, [socket]);
-
-  // Set up socket listener for subsequent game state updates
-  useEffect(() => {
-    if (!socket) return;
-
-    const handleGameStateUpdate = (data: { gameState: GameState }) => {
-      setGameState(data.gameState);
-    };
-
-    socket.on("gameStateUpdate", handleGameStateUpdate);
-
-    return () => {
-      socket.off("gameStateUpdate", handleGameStateUpdate);
-    };
-  }, [socket]);
-
-  // Render loading or main app based on game state
-  if (loading) return <div>Loading game state...</div>;
-  if (!gameState) return <div>Game state unavailable. Please try again.</div>;
-
   return (
     <div className="App">
       <Routes>
-        <Route
-          path="/"
-          element={
-            !gameState.started ? (
-              <TitlePage
-                isAdmin={false}
-                gameState={gameState}
-                sendGameStateToServer={() => {}}
-              />
-            ) : (
-              <PageWrapper
-                gameState={gameState}
-                gameBoardData={gameBoardData}
-              />
-            )
-          }
-        />
-        <Route path="/admin" element={<Admin gameState={gameState} />} />
+        <Route path="/" element={<JoinGame />} />
+        <Route path="/watch/:code" element={<Display />} />
+        <Route path="/admin" element={<CreateGame />} />
+        <Route path="/admin/:code" element={<Admin />} />
       </Routes>
     </div>
   );

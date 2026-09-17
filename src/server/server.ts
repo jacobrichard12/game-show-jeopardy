@@ -1,39 +1,54 @@
+import crypto from "crypto";
 import express from "express";
 import http from "http";
 import path from "path";
-import { Server } from "socket.io";
+import { Server, Socket } from "socket.io";
 import { GameName, GameState, Team } from "../shared/types";
-import { initGameData } from "./datagen";
+import { createRoomGameData, fetchMillionairePool, MillionairePool } from "./datagen";
 
 interface ServerToClientEvents {
-  initialGameState: (data: { gameState: GameState }) => void;
-  gameStateUpdate: (data: { gameState: GameState }) => void;
-  unauthorized: (data: { reason: string }) => void;
+  gameCreated: (data: { code: string; adminKey: string; gameState: GameState }) => void;
+  gameCreateError: (data: { reason: string }) => void;
+  gameJoined: (data: { code: string; gameState: GameState }) => void;
+  gameNotFound: (data: { code: string }) => void;
+  // `code` lets a client double-check a broadcast is actually for the room
+  // it currently cares about — belt-and-suspenders alongside the server only
+  // ever routing this to sockets joined to that room (see leaveCurrentRoom).
+  gameStateUpdate: (data: { code: string; gameState: GameState }) => void;
   adminAuthResult: (data: { isAdmin: boolean }) => void;
+  unauthorized: (data: { reason: string }) => void;
 }
 
 interface ClientToServerEvents {
-  gameStateUpdate: (data: { gameState: GameState }) => void;
-  resetGameState: () => void;
+  createGame: (data: { adminToken?: string }) => void;
+  joinGame: (data: { code: string; adminKey?: string; adminToken?: string }) => void;
+  gameStateUpdate: (data: { code: string; gameState: GameState }) => void;
+  resetGameState: (data: { code: string }) => void;
+}
+
+// Per-socket state: which room this connection is in, and whether it holds
+// admin rights for that specific room (set once at createGame/joinGame time).
+interface SocketData {
+  code?: string;
+  isAdmin?: boolean;
 }
 
 const app = express();
 const server = http.createServer(app);
 
-// Shared secret gating admin actions (gameStateUpdate / resetGameState). Unset
-// by default so local/LAN dev keeps working with zero config; set it before
-// exposing the server on the public internet, or anyone who finds the URL can
-// control the game. The admin client sends it via the socket auth handshake.
+// Shared secret gating room *creation* (and a break-glass override to
+// reclaim any room's admin access). Unset by default so local/LAN dev keeps
+// working with zero config; set it before exposing the server on the public
+// internet, or anyone can create games and burn through the trivia pool.
 const ADMIN_TOKEN = process.env.ADMIN_TOKEN;
 if (!ADMIN_TOKEN) {
   console.warn(
-    "ADMIN_TOKEN is not set — admin actions are unauthenticated. Fine for local/LAN use, " +
+    "ADMIN_TOKEN is not set — anyone can create a game. Fine for local/LAN use, " +
     "but set ADMIN_TOKEN before hosting this on the public internet."
   );
 }
 
-// Configure CORS for Socket.IO
-const io = new Server<ClientToServerEvents, ServerToClientEvents>(server, {
+const io = new Server<ClientToServerEvents, ServerToClientEvents, {}, SocketData>(server, {
   // Bound incoming payload size — the largest legitimate message is a full
   // GameState, which is well under this; rejects oversized junk outright.
   maxHttpBufferSize: 256 * 1024,
@@ -49,7 +64,7 @@ const io = new Server<ClientToServerEvents, ServerToClientEvents>(server, {
 
 // Loose but cheap shape check on an incoming GameState payload — enough to
 // reject garbage/malformed data from a buggy or malicious client before it
-// overwrites the shared state and gets broadcast to every connected screen.
+// overwrites a room's state and gets broadcast to everyone watching it.
 function isPlausibleGameState(value: unknown): value is GameState {
   if (!value || typeof value !== "object") return false;
   const candidate = value as Partial<GameState>;
@@ -63,132 +78,189 @@ function isPlausibleGameState(value: unknown): value is GameState {
   );
 }
 
-// Placeholder for game state
-let gameState: GameState | null = null;
+interface Room {
+  code: string;
+  gameState: GameState;
+  // Proves who created this room, so their browser can silently reclaim
+  // admin status on reconnect without re-entering ADMIN_TOKEN. Never sent to
+  // anyone but the creator.
+  adminKey: string;
+  lastActivity: number;
+}
 
-// Queue to hold sockets that connected before the game state was initialized
-const waitingClients: Set<string> = new Set();
+const rooms = new Map<string, Room>();
 
-// Function to initialize game data
-const loadGameData = async () => {
-  try {
-    // Construct initial GameState using fetched data
-    gameState = {
-      started: false,
-      TeamA: { name: "Team A", score: 0 },
-      TeamB: { name: "Team B", score: 0 },
-      currentGame: {
-        gameName: GameName.BOARD,
-        gameTitle: "GameBoard",
-        value: 0,
-        questionState: { promptVisible: false },
-      },
-      isDoubleJeopardy: false,
-      answered: {},
-      doubleJeopardyAnswered: {},
-      gameData: await initGameData(),
-    };
+// Avoids visually-ambiguous characters (0/O, 1/I) since this gets read off a
+// screen and typed on another device, like a Jackbox room code.
+const CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 
-    console.log("GameState initialized:", gameState);
-    console.log("Game is ready");
+function generateRoomCode(): string {
+  let code: string;
+  do {
+    code = Array.from({ length: 4 }, () => CODE_ALPHABET[crypto.randomInt(CODE_ALPHABET.length)]).join("");
+  } while (rooms.has(code));
+  return code;
+}
 
-    // Notify all waiting clients
-    waitingClients.forEach((socketId) => {
-      const socket = io.sockets.sockets.get(socketId);
-      if (socket && gameState != null) {
-        socket.emit("initialGameState", { gameState });
-      }
-    });
-    waitingClients.clear(); // Clear the waiting list after notifying clients
-  } catch (error) {
-    console.error("Error initializing game state:", error);
+function generateAdminKey(): string {
+  return crypto.randomBytes(16).toString("hex");
+}
+
+// Millionaire trivia is fetched once at boot (see createRoomGameData's doc
+// comment) rather than per room. Kick this off immediately so it's usually
+// already resolved by the time anyone creates a game; a create request that
+// arrives before it resolves just awaits the same in-flight promise.
+const millionairePoolPromise: Promise<MillionairePool> = fetchMillionairePool().catch((error) => {
+  console.error("Error fetching Millionaire trivia pool:", error);
+  return { easy: [], mediumHard: [] };
+});
+
+async function buildInitialGameState(pool: MillionairePool): Promise<GameState> {
+  return {
+    started: false,
+    TeamA: { name: "Team A", score: 0 },
+    TeamB: { name: "Team B", score: 0 },
+    currentGame: {
+      gameName: GameName.BOARD,
+      gameTitle: "GameBoard",
+      value: 0,
+      questionState: { promptVisible: false },
+    },
+    isDoubleJeopardy: false,
+    answered: {},
+    doubleJeopardyAnswered: {},
+    gameData: await createRoomGameData(pool),
+  };
+}
+
+// Idle rooms are swept periodically so a long-running server doesn't
+// accumulate abandoned games forever.
+const ROOM_IDLE_MS = 6 * 60 * 60 * 1000; // 6 hours
+const SWEEP_INTERVAL_MS = 30 * 60 * 1000; // 30 minutes
+setInterval(() => {
+  const now = Date.now();
+  // .forEach rather than for...of — the latter needs --downlevelIteration
+  // under the root tsconfig's es5 target (which also type-checks src/server
+  // as part of the CRA app, even though it's compiled separately for real
+  // via tsconfig.server.json).
+  rooms.forEach((room, code) => {
+    if (now - room.lastActivity > ROOM_IDLE_MS) {
+      rooms.delete(code);
+      console.log(`Swept idle room ${code}`);
+    }
+  });
+}, SWEEP_INTERVAL_MS);
+
+// A socket that switches rooms without a full page reload (e.g. browser
+// back button, then joining/creating a different game in the same tab)
+// would otherwise stay a member of every room it ever joined — Socket.IO
+// rooms are additive, `join` never implicitly leaves a previous one. Left
+// unfixed, that socket keeps receiving other rooms' broadcasts indefinitely,
+// and a naive client applies whatever gameStateUpdate arrives regardless of
+// which room it was for. Call this before joining a new room so a socket is
+// only ever in at most one game's room at a time.
+function leaveCurrentRoom(socket: Socket<ClientToServerEvents, ServerToClientEvents, {}, SocketData>) {
+  if (socket.data.code) {
+    socket.leave(socket.data.code);
   }
-};
+}
 
-// Load the initial game state on server startup
-loadGameData();
-
-// WebSocket connection handling
 io.on("connection", (socket) => {
   console.log(`New client connected: ${socket.id}`);
-  console.log("GameState:");
-  console.log(gameState);
 
-  // Evaluated once at connect time from the handshake; a client that gets a
-  // token later (e.g. entering it in the admin UI) reconnects to re-run this.
-  const isAdminSocket = !ADMIN_TOKEN || socket.handshake.auth?.token === ADMIN_TOKEN;
+  // Create a new room. Gated by ADMIN_TOKEN (when set) so creating a game —
+  // and burning through the shared Millionaire trivia pool — isn't open to
+  // anyone who finds the URL. The creator is automatically that room's admin.
+  socket.on("createGame", async (data) => {
+    const providedToken = data?.adminToken;
+    const isAuthorized = !ADMIN_TOKEN || providedToken === ADMIN_TOKEN;
+    if (!isAuthorized) {
+      console.warn(`Rejected createGame from unauthenticated client: ${socket.id}`);
+      socket.emit("gameCreateError", { reason: "Invalid admin token." });
+      return;
+    }
 
-  // Tell the client its admin status right away — the admin UI waits for
-  // this before showing the panel, instead of optimistically letting anyone
-  // in and only finding out a token was wrong once an action gets rejected.
-  socket.emit("adminAuthResult", { isAdmin: isAdminSocket });
+    const code = generateRoomCode();
+    const adminKey = generateAdminKey();
+    const pool = await millionairePoolPromise;
+    const gameState = await buildInitialGameState(pool);
+    const room: Room = { code, gameState, adminKey, lastActivity: Date.now() };
+    rooms.set(code, room);
 
-  // Send the initial game state to the client if it is ready
-  if (gameState) {
-    socket.emit("initialGameState", { gameState });
-  } else {
-    console.log(`Game state not initialized. Adding client to waitlist: ${socket.id}`);
-    waitingClients.add(socket.id);
-  }
+    leaveCurrentRoom(socket);
+    socket.data.code = code;
+    socket.data.isAdmin = true;
+    socket.join(code);
 
-  // Handle game state updates from client
+    console.log(`Room ${code} created by ${socket.id}`);
+    socket.emit("gameCreated", { code, adminKey, gameState });
+    socket.emit("adminAuthResult", { isAdmin: true });
+  });
+
+  // Join an existing room, as a display/spectator by default. Passing the
+  // room's adminKey (cached from creation) or the venue's ADMIN_TOKEN
+  // (break-glass override) grants admin rights for this room instead.
+  socket.on("joinGame", async (data) => {
+    const code = data?.code?.toUpperCase();
+    const room = code ? rooms.get(code) : undefined;
+    if (!room) {
+      socket.emit("gameNotFound", { code: code ?? "" });
+      return;
+    }
+
+    const isAdmin =
+      (!!data.adminKey && data.adminKey === room.adminKey) ||
+      (!!data.adminToken && !!ADMIN_TOKEN && data.adminToken === ADMIN_TOKEN);
+
+    leaveCurrentRoom(socket);
+    socket.data.code = room.code;
+    socket.data.isAdmin = isAdmin;
+    socket.join(room.code);
+    room.lastActivity = Date.now();
+
+    console.log(`${socket.id} joined room ${room.code} (admin: ${isAdmin})`);
+    socket.emit("gameJoined", { code: room.code, gameState: room.gameState });
+    socket.emit("adminAuthResult", { isAdmin });
+  });
+
+  // Handle game state updates from an admin client
   socket.on("gameStateUpdate", (data) => {
-    if (!isAdminSocket) {
-      console.warn(`Rejected gameStateUpdate from unauthenticated client: ${socket.id}`);
-      socket.emit("unauthorized", { reason: "Invalid or missing admin token." });
+    const code = data?.code;
+    const room = code ? rooms.get(code) : undefined;
+    if (!room || socket.data.code !== code || !socket.data.isAdmin) {
+      console.warn(`Rejected gameStateUpdate from unauthorized client: ${socket.id}`);
+      socket.emit("unauthorized", { reason: "Invalid or missing admin access for this game." });
       return;
     }
-    if (!isPlausibleGameState(data?.gameState)) {
-      console.warn(`Rejected malformed gameStateUpdate from ${socket.id}`);
+    if (!isPlausibleGameState(data.gameState)) {
+      console.warn(`Rejected malformed gameStateUpdate for room ${code}`);
       return;
     }
-    console.log("Received gameStateUpdate from client:", data);
-    gameState = data.gameState; // Update server-side state
-    io.emit("gameStateUpdate", { gameState }); // Broadcast the updated state to all clients
+    room.gameState = data.gameState;
+    room.lastActivity = Date.now();
+    io.to(code).emit("gameStateUpdate", { code, gameState: room.gameState });
   });
 
-  // Handle reset game state from client
-  socket.on("resetGameState", async () => {
-    if (!isAdminSocket) {
-      console.warn(`Rejected resetGameState from unauthenticated client: ${socket.id}`);
-      socket.emit("unauthorized", { reason: "Invalid or missing admin token." });
+  // Handle reset game state from an admin client
+  socket.on("resetGameState", async (data) => {
+    const code = data?.code;
+    const room = code ? rooms.get(code) : undefined;
+    if (!room || socket.data.code !== code || !socket.data.isAdmin) {
+      console.warn(`Rejected resetGameState from unauthorized client: ${socket.id}`);
+      socket.emit("unauthorized", { reason: "Invalid or missing admin access for this game." });
       return;
     }
-    console.log("Resetting game state from client");
 
-    // Initialize the game data and reset state
-    const resetState: GameState = {
-      gameData: await initGameData(),
-      [Team.TeamA]: { name: "Team A", score: 0 },
-      [Team.TeamB]: { name: "Team B", score: 0 },
-      answered: {},
-      doubleJeopardyAnswered: {},
-      currentGame: {
-        gameName: GameName.BOARD,
-        gameTitle: "GameBoard",
-        value: 0,
-        questionState: {
-          promptVisible: false,
-        },
-      },
-      isDoubleJeopardy: false,
-    };
-
-    // Update the server-side game state
-    gameState = resetState;
-
-    // Emit the updated game state to all connected clients
-    io.emit("gameStateUpdate", { gameState });
-
-    console.log("Game state has been reset and broadcasted to clients.");
+    const pool = await millionairePoolPromise;
+    room.gameState = await buildInitialGameState(pool);
+    room.lastActivity = Date.now();
+    io.to(code).emit("gameStateUpdate", { code, gameState: room.gameState });
+    console.log(`Room ${code} has been reset.`);
   });
 
-  // Handle client disconnect
   socket.on("disconnect", () => {
     console.log(`Client disconnected: ${socket.id}`);
-    waitingClients.delete(socket.id); // Remove from waiting list if they disconnect
   });
-
 });
 
 // Serve the React app (optional, for production)
