@@ -1,4 +1,5 @@
-import React from "react";
+import React, { useEffect, useRef } from "react";
+import wow from "../assets/wow.mp3";
 import { GameName, GameState } from "../shared/types";
 
 export interface GameBoardData {
@@ -35,6 +36,19 @@ const GameBoard: React.FC<GameBoardProps> = ({
 
   // Get whether it's Double Jeopardy
   const isDoubleJeopardy = gameState.isDoubleJeopardy;
+
+  // The "wow" sting plays when Double Jeopardy is switched on. Detected here
+  // (rather than played directly from the admin's toggle click) so it fires
+  // on the display copy of this component instead of the admin's — both
+  // render from the same broadcast state, so gating on isAdmin is what
+  // lets the sound come from the "watch" tab rather than the control panel.
+  const wasDoubleJeopardy = useRef(isDoubleJeopardy);
+  useEffect(() => {
+    if (!isAdmin && isDoubleJeopardy && !wasDoubleJeopardy.current) {
+      new Audio(wow).play();
+    }
+    wasDoubleJeopardy.current = isDoubleJeopardy;
+  }, [isAdmin, isDoubleJeopardy]);
 
   // Function to toggle the disabled state of a tile
   const toggleEnableDisableState = (gameName: string, pointValue: number) => {

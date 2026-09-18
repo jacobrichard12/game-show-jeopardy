@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import { getRandomAudio, happyFiles } from "../shared/audio";
 import { GameName, GameState, Team } from "../shared/types";
 
 interface ScoreBoardProps {
@@ -43,10 +44,22 @@ const ScoreBoard: React.FC<ScoreBoardProps> = ({
     }
     const timer = setTimeout(() => setBouncingTeam(null), BOUNCE_DURATION_MS);
 
+    // Sound plays only on the display copy of this component (rendered with
+    // isAdmin=false), not the host's control panel — so on a single machine
+    // with both tabs open, the sound comes from the "watch" screen rather
+    // than the admin tab, matching where an audience would actually be. Both
+    // Admin and Display render a Scoreboard from the same broadcast state,
+    // so gating on isAdmin here (rather than only ever playing it from
+    // Admin's own click handler) is what makes that possible.
+    if (!isAdmin) {
+      const audio = new Audio(getRandomAudio(happyFiles));
+      audio.play();
+    }
+
     prevScores.current = { [Team.TeamA]: scoreA, [Team.TeamB]: scoreB };
 
     return () => clearTimeout(timer);
-  }, [scoreA, scoreB]);
+  }, [scoreA, scoreB, isAdmin]);
 
   return (
     <div className="flex justify-around items-center">

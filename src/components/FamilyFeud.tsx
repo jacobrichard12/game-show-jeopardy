@@ -18,9 +18,14 @@ const FamilyFeud: React.FC<FamilyFeudProps> = ({
 }) => {
   const audioRef = useRef(new Audio(familyFeudTheme));
 
-  // Assign a random soundtrack if not already assigned
+  // Play the theme + reveal/wrong-answer stings from the display side only
+  // (isAdmin=false) so, on a single machine with both tabs open, sound
+  // comes from the "watch" tab rather than the host's control panel. Both
+  // sides render from the same broadcast state, so reacting to that state
+  // here — instead of playing sounds directly inside the admin's click
+  // handlers below — is what makes gating on isAdmin possible at all.
   useEffect(() => {
-    if (!isAdmin) return;
+    if (isAdmin) return;
     const audio = audioRef.current;
 
     const playAudio = async () => {
@@ -49,16 +54,37 @@ const FamilyFeud: React.FC<FamilyFeudProps> = ({
   const questionState = gameState.currentGame
     .questionState as FamilyFeudQuestionState;
 
-  if (!questionData) {
-    return <NoQuestionAvailable />;
-  }
-
   const revealedAnswers =
-    questionState.revealedAnswers.length === 0
+    questionState.revealedAnswers.length === 0 && questionData
       ? Array(questionData.answers.length).fill(false)
       : questionState.revealedAnswers;
 
   const wrongGuesses = questionState.wrongGuesses || 0;
+  const revealedCount = revealedAnswers.filter(Boolean).length;
+
+  // Ding on each newly-revealed answer.
+  const prevRevealedCount = useRef(revealedCount);
+  useEffect(() => {
+    if (isAdmin) return;
+    if (revealedCount > prevRevealedCount.current) {
+      new Audio(dingAudio).play();
+    }
+    prevRevealedCount.current = revealedCount;
+  }, [isAdmin, revealedCount]);
+
+  // Buzzer on each new wrong guess.
+  const prevWrongGuesses = useRef(wrongGuesses);
+  useEffect(() => {
+    if (isAdmin) return;
+    if (wrongGuesses > prevWrongGuesses.current) {
+      new Audio(buzzerAudio).play();
+    }
+    prevWrongGuesses.current = wrongGuesses;
+  }, [isAdmin, wrongGuesses]);
+
+  if (!questionData) {
+    return <NoQuestionAvailable />;
+  }
 
   const handleReveal = (index: number) => {
     if (!isAdmin) return;
@@ -68,8 +94,6 @@ const FamilyFeud: React.FC<FamilyFeudProps> = ({
       .questionState as FamilyFeudQuestionState;
 
     if (revealedAnswers[index]) return;
-    const audio = new Audio(dingAudio);
-    audio.play();
 
     revealedAnswers[index] = true;
     updatedQuestionState.revealedAnswers = revealedAnswers;
@@ -87,7 +111,6 @@ const FamilyFeud: React.FC<FamilyFeudProps> = ({
     sendGameStateToServer(updatedGameState);
   };
 
-  // Function to play sound when button is clicked
   const wrongAnswer = () => {
     if (!isAdmin) return;
 
@@ -98,9 +121,6 @@ const FamilyFeud: React.FC<FamilyFeudProps> = ({
     updatedQuestionState.wrongGuesses++;
     updatedGameState.currentGame.questionState = updatedQuestionState;
     sendGameStateToServer(updatedGameState); // Send updated state to server
-
-    const audio = new Audio(buzzerAudio); // Create audio object with sound
-    audio.play(); // Play the sound
   };
 
   return (

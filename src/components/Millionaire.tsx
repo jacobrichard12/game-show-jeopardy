@@ -24,20 +24,20 @@ const Millionaire: React.FC<MillionaireProps> = ({
   const [correctAudio] = useState(new Audio(getRandomAudio(happyFiles)));
   const [incorrectAudio] = useState(new Audio(getRandomAudio(sadFiles)));
 
+  const questionState = gameState.currentGame
+    .questionState as MillionaireQuestionState;
+
+  // Soundtrack plays from the display side only (isAdmin=false), restarting
+  // fresh on each new subquestion — see FamilyFeud.tsx's doc comment for why
+  // sounds react to broadcast state here rather than playing directly from
+  // the admin's click handlers below.
   useEffect(() => {
-    if (!isAdmin) return;
+    if (isAdmin) return;
     const audio = audioRef.current;
+    audio.pause();
+    audio.currentTime = 0;
     audio.src = getRandomAudio(millionaireSoundtrackFiles);
-    const playAudio = async () => {
-      try {
-        if (audio.paused) {
-          await audio.play();
-        }
-      } catch (err) {
-        console.error("Error playing audio:", err);
-      }
-    };
-    playAudio();
+    audio.play().catch((err) => console.error("Error playing audio:", err));
 
     return () => {
       if (!audio.paused) {
@@ -45,18 +45,38 @@ const Millionaire: React.FC<MillionaireProps> = ({
         audio.currentTime = 0;
       }
     };
-  }, [isAdmin]);
+  }, [isAdmin, questionState.questionIdx]);
 
   const questionData = getCurrentQuestion(
     gameState.gameData.millionaire,
     gameState
   );
 
-  const questionState = gameState.currentGame
-    .questionState as MillionaireQuestionState;
-
   const currentSubquestion =
     questionData?.questions[questionState.questionIdx];
+
+  // Correct/incorrect sting when an answer is newly selected (not on every
+  // render — only the transition from "no answer yet" to "answered").
+  const prevAnsweredIdx = useRef(questionState.answeredQuestionIdx);
+  useEffect(() => {
+    const prev = prevAnsweredIdx.current;
+    const current = questionState.answeredQuestionIdx;
+    prevAnsweredIdx.current = current;
+
+    if (isAdmin || !currentSubquestion) return;
+    if (prev === undefined && current !== undefined) {
+      const audio = audioRef.current;
+      if (!audio.paused) {
+        audio.pause();
+        audio.currentTime = 0;
+      }
+      if (current === currentSubquestion.correctAnswerIdx) {
+        correctAudio.play();
+      } else {
+        incorrectAudio.play();
+      }
+    }
+  }, [isAdmin, questionState.answeredQuestionIdx, currentSubquestion, correctAudio, incorrectAudio]);
 
   // The slot object can exist while its sub-questions are missing (e.g. the
   // trivia API was rate-limited at startup), so guard the sub-question too.
@@ -75,18 +95,6 @@ const Millionaire: React.FC<MillionaireProps> = ({
     updatedQuestionState.answeredQuestionIdx = index;
     updatedGameState.currentGame.questionState = updatedQuestionState;
     sendGameStateToServer(updatedGameState);
-
-    const audio = audioRef.current;
-    if (!audio.paused) {
-      audio.pause();
-      audio.currentTime = 0;
-    }
-
-    if (index === currentSubquestion.correctAnswerIdx) {
-      correctAudio.play();
-    } else {
-      incorrectAudio.play();
-    }
   };
 
   const areAllAnswersRevealed = () =>
@@ -136,14 +144,8 @@ const Millionaire: React.FC<MillionaireProps> = ({
       updatedQuestionState.showCorrectAnswer = false;
       updatedGameState.currentGame.questionState = updatedQuestionState;
       sendGameStateToServer(updatedGameState);
-
-      const audio = audioRef.current;
-      if (!audio.paused) {
-        audio.pause();
-        audio.currentTime = 0;
-      }
-      audio.src = getRandomAudio(millionaireSoundtrackFiles);
-      audio.play();
+      // Soundtrack restart for the new subquestion happens in the effect
+      // above (keyed on questionIdx), on the display side only.
     }
   };
 

@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { getRandomAudio, happyFiles } from "../shared/audio";
 import {
   FamilyFeudQuestionState,
   GameName,
@@ -202,8 +201,8 @@ const Admin: React.FC = () => {
 
     if (!noPointsOverride) {
       updatedGameState[team].score += points;
-      const audio = new Audio(getRandomAudio(happyFiles));
-      audio.play();
+      // Sound plays from Scoreboard's own score-change effect instead of
+      // here, so it comes from the display tab rather than this admin tab.
     }
 
     const answered = updatedGameState.isDoubleJeopardy

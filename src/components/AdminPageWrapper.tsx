@@ -1,5 +1,4 @@
 import React from "react";
-import wow from "../assets/wow.mp3";
 import gameBoardData from "../data/gameBoard.json";
 import { GameName, GameState, Team } from "../shared/types";
 import AdminPointsButtons from "./AddPointsButtons";
@@ -37,10 +36,8 @@ const AdminPageWrapper: React.FC<AdminPageWrapperProps> = ({
 }) => {
   const handleToggleDoubleJeopardy = () => {
     const updatedGameState = { ...gameState };
-    if (!updatedGameState.isDoubleJeopardy) {
-      const audio = new Audio(wow);
-      audio.play();
-    }
+    // The "wow" sound plays from GameBoard's own effect on the display side
+    // instead of here, so it comes from the watch tab, not this admin tab.
     updatedGameState.isDoubleJeopardy = !updatedGameState.isDoubleJeopardy;
     sendGameStateToServer(updatedGameState);
   };
