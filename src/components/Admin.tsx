@@ -8,7 +8,6 @@ import {
   HeadToHeadQuestionState,
   MillionaireQuestionState,
   MinuteQuestionState,
-  Team,
 } from "../shared/types";
 import AdminPageWrapper from "./AdminPageWrapper";
 import SettingsModal from "./SettingsModal";
@@ -181,26 +180,28 @@ const Admin: React.FC = () => {
     sendGameStateToServer(updatedGameState);
   };
 
-  const handleUpdateTurn = (team: Team) => {
+  const handleUpdateTurn = (teamId: string) => {
     if (!socket || !gameState) return;
 
     const updatedGameState = { ...gameState };
-    updatedGameState.whoseTurn = team;
+    updatedGameState.whoseTurn = teamId;
 
     sendGameStateToServer(updatedGameState);
   };
 
   const handleAddPoints = (
-    team: Team,
+    teamId: string,
     points: number,
     gameName: GameName,
     noPointsOverride: boolean
   ) => {
     if (!socket || !gameState) return;
     const updatedGameState = { ...gameState };
+    const team = updatedGameState.teams.find((t) => t.id === teamId);
+    if (!team) return;
 
     if (!noPointsOverride) {
-      updatedGameState[team].score += points;
+      team.score += points;
       // Sound plays from Scoreboard's own score-change effect instead of
       // here, so it comes from the display tab rather than this admin tab.
     }
@@ -220,7 +221,12 @@ const Admin: React.FC = () => {
       updatedGameState.answered = answered;
     }
 
-    updatedGameState.whoseTurn = team;
+    // "No one gets points" isn't anyone's turn ending in a win — leave the
+    // turn where it was instead of handing it to whichever team the button
+    // happened to be wired to.
+    if (!noPointsOverride) {
+      updatedGameState.whoseTurn = teamId;
+    }
     sendGameStateToServer(updatedGameState);
   };
 
@@ -250,7 +256,7 @@ const Admin: React.FC = () => {
 
   if (status === "not_found") {
     return (
-      <div className="flex flex-col items-center justify-center h-screen text-center p-4">
+      <div className="flex flex-col items-center justify-center min-h-screen text-center p-4">
         <h1 className="text-2xl font-bold mb-2">Game not found</h1>
         <p className="text-gray-600">
           No game is running with code "{code}". It may have expired, or
@@ -262,7 +268,7 @@ const Admin: React.FC = () => {
 
   if (status === "joining" || !gameState) {
     return (
-      <div className="flex items-center justify-center h-screen text-gray-500 italic">
+      <div className="flex items-center justify-center min-h-screen text-gray-500 italic px-4 text-center">
         Joining game...
       </div>
     );
@@ -270,7 +276,7 @@ const Admin: React.FC = () => {
 
   if (status === "denied") {
     return (
-      <div className="flex items-center justify-center h-screen">
+      <div className="flex items-center justify-center min-h-screen px-4 py-8">
         {/*
           Deliberately not a <form onSubmit>: a real form submission with a
           type="password" field is exactly what triggers Chrome's "save this
@@ -279,7 +285,7 @@ const Admin: React.FC = () => {
           way to know our server rejected it. A plain div + button/Enter-key
           handler avoids the native submit event entirely.
         */}
-        <div className="bg-white p-8 rounded shadow-lg w-full max-w-sm">
+        <div className="bg-white p-6 sm:p-8 rounded shadow-lg w-full max-w-sm">
           <h1 className="text-xl font-bold mb-4 text-center">Admin Access</h1>
           <p className="text-sm text-gray-600 mb-4 text-center">
             This browser isn't recognized as the admin for game "{code}".
@@ -323,21 +329,21 @@ const Admin: React.FC = () => {
         entirely on the pre-game screen despite `fixed` positioning, which
         only opts out of normal layout flow, not stacking order.
       */}
-      <div className="fixed top-4 right-4 z-50">
-        {/* Wrap buttons in a span for alignment */}
-        <span className="flex space-x-2">
-          <div className="p-2 bg-white border rounded font-mono font-bold tracking-widest">
-            {code}
-          </div>
+      <div className="fixed top-2 right-2 sm:top-4 sm:right-4 z-50 max-w-[160px] sm:max-w-none">
+        {/* Wrap buttons in a span for alignment. flex-wrap + a constrained
+            max-width on mobile lets this stack to a couple of lines in the
+            corner instead of stretching across the screen and colliding with
+            page titles, which is fine at desktop/TV widths without the cap. */}
+        <span className="flex flex-wrap justify-end gap-1 sm:gap-2">
           <button
             onClick={handleToggleTimer}
-            className="p-2 bg-green-500 text-white rounded"
+            className="p-1.5 sm:p-2 text-xs sm:text-base bg-green-500 text-white rounded"
           >
             Toggle Timer
           </button>
           <button
             onClick={() => setIsSettingsOpen(true)}
-            className="p-2 bg-blue-500 text-white rounded"
+            className="p-1.5 sm:p-2 text-xs sm:text-base bg-blue-500 text-white rounded"
           >
             Settings
           </button>
@@ -347,7 +353,7 @@ const Admin: React.FC = () => {
               setHasAttempted(false);
               setStatus("denied");
             }}
-            className="p-2 bg-gray-500 text-white rounded"
+            className="p-1.5 sm:p-2 text-xs sm:text-base bg-gray-500 text-white rounded"
           >
             Reclaim Admin Access
           </button>
@@ -364,6 +370,7 @@ const Admin: React.FC = () => {
 
       <AdminPageWrapper
         gameState={gameState}
+        code={code}
         handleUpdateCurrentGame={handleUpdateCurrentGame}
         handleAddPoints={handleAddPoints}
         handleRevealQuestion={handleRevealQuestion}

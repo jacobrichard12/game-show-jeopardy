@@ -22,10 +22,9 @@ const Timer: React.FC<TimerProps> = () => {
   });
 
   return (
-    <div className="flex justify-around items-center">
+    <div className="flex justify-around items-center px-4">
       <iframe
-        width="800"
-        height="600"
+        className="w-full max-w-3xl xl:max-w-6xl aspect-video"
         src={`https://www.youtube.com/embed/${videoId}`}
         title="YouTube video player"
         allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"

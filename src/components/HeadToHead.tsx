@@ -47,13 +47,13 @@ const HeadToHead: React.FC<HeadToHeadProps> = ({
     <div className="minute-container">
       {/* Title */}
       {!isAdmin && questionState.promptVisible && (
-        <h1 className="text-2xl font-bold mb-4 text-center">
+        <h1 className="text-2xl md:text-3xl xl:text-5xl font-bold mb-4 text-center">
           Players Per Team: {questionData.players}
         </h1>
       )}
 
       {questionState.showTitle && (
-        <h1 className="text-7xl font-bold mb-4 text-center">
+        <h1 className="text-3xl sm:text-5xl md:text-7xl xl:text-9xl font-bold mb-4 text-center">
           {questionData.title}
         </h1>
       )}

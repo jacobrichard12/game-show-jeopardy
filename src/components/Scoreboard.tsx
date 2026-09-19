@@ -1,11 +1,13 @@
 import React, { useEffect, useRef, useState } from "react";
 import { getRandomAudio, happyFiles } from "../shared/audio";
-import { GameName, GameState, Team } from "../shared/types";
+import { createAudio } from "../shared/sound";
+import { teamColor } from "../shared/teamColors";
+import { GameName, GameState } from "../shared/types";
 
 interface ScoreBoardProps {
   isAdmin: boolean;
   gameState: GameState;
-  handleUpdateTurn?: (team: Team) => void;
+  handleUpdateTurn?: (teamId: string) => void;
 }
 
 // How long the score "bounce" animation plays after a score change.
@@ -16,33 +18,27 @@ const ScoreBoard: React.FC<ScoreBoardProps> = ({
   gameState,
   handleUpdateTurn,
 }) => {
-  const [bouncingTeam, setBouncingTeam] = useState<Team | null>(null);
+  const [bouncingTeamId, setBouncingTeamId] = useState<string | null>(null);
   // A ref (not state) because writing it must not itself re-trigger the
   // effect below — it only exists to remember the previous render's scores.
-  const prevScores = useRef({
-    [Team.TeamA]: gameState[Team.TeamA].score,
-    [Team.TeamB]: gameState[Team.TeamB].score,
-  });
+  const prevScores = useRef<Record<string, number>>(
+    Object.fromEntries(gameState.teams.map((team) => [team.id, team.score]))
+  );
 
-  const isTeamATurn = gameState.whoseTurn === Team.TeamA;
-  const isTeamBTurn = gameState.whoseTurn === Team.TeamB;
-
-  const scoreA = gameState[Team.TeamA].score;
-  const scoreB = gameState[Team.TeamB].score;
+  // A joined string change only when a score actually does, unlike a fresh
+  // array/object each render — used as the effect's dependency below so it
+  // only re-runs on a genuine score change, for any number of teams.
+  const scoresKey = gameState.teams.map((team) => `${team.id}:${team.score}`).join(",");
 
   useEffect(() => {
-    // Nothing changed since the last render — skip.
-    if (scoreA === prevScores.current[Team.TeamA] && scoreB === prevScores.current[Team.TeamB]) {
-      return;
-    }
+    const prev = prevScores.current;
+    const changedTeam = gameState.teams.find((team) => team.score !== prev[team.id]);
 
-    // Trigger the bounce for whichever team's score changed.
-    if (scoreA !== prevScores.current[Team.TeamA]) {
-      setBouncingTeam(Team.TeamA);
-    } else if (scoreB !== prevScores.current[Team.TeamB]) {
-      setBouncingTeam(Team.TeamB);
-    }
-    const timer = setTimeout(() => setBouncingTeam(null), BOUNCE_DURATION_MS);
+    // Nothing changed since the last render — skip.
+    if (!changedTeam) return;
+
+    setBouncingTeamId(changedTeam.id);
+    const timer = setTimeout(() => setBouncingTeamId(null), BOUNCE_DURATION_MS);
 
     // Sound plays only on the display copy of this component (rendered with
     // isAdmin=false), not the host's control panel — so on a single machine
@@ -52,64 +48,63 @@ const ScoreBoard: React.FC<ScoreBoardProps> = ({
     // so gating on isAdmin here (rather than only ever playing it from
     // Admin's own click handler) is what makes that possible.
     if (!isAdmin) {
-      const audio = new Audio(getRandomAudio(happyFiles));
+      const audio = createAudio(getRandomAudio(happyFiles));
       audio.play();
     }
 
-    prevScores.current = { [Team.TeamA]: scoreA, [Team.TeamB]: scoreB };
+    prevScores.current = Object.fromEntries(
+      gameState.teams.map((team) => [team.id, team.score])
+    );
 
     return () => clearTimeout(timer);
-  }, [scoreA, scoreB, isAdmin]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scoresKey, isAdmin]);
 
   return (
-    <div className="flex justify-around items-center">
-      {/* Team A Score */}
-      <div
-        className={`p-4 border rounded-lg shadow-md w-1/4 text-center ${
-          isTeamATurn ? "bg-green-200" : "bg-white"
-        }`}
-      >
-        <h3 className="text-5xl font-bold mb-2">{gameState[Team.TeamA].name}</h3>
-        <p
-          className={`text-5xl font-semibold ${
-            bouncingTeam === Team.TeamA ? "animate-bounce" : ""
-          }`}
-        >
-          {gameState[Team.TeamA].score}
-        </p>
-        {isAdmin && handleUpdateTurn && gameState.currentGame.gameName === GameName.BOARD && (
-          <button
-            onClick={() => handleUpdateTurn(Team.TeamA)}
-            className="mt-2 bg-blue-500 text-white py-1 px-3 rounded hover:bg-blue-600"
+    // flex-nowrap + flex-1 (rather than flex-wrap + a fixed min-width): all
+    // teams always share one row, shrinking evenly to fit instead of
+    // wrapping to a second row once there isn't room for every box's
+    // minimum width — matters once there are 3-4 teams on a narrow screen.
+    <div className="flex flex-nowrap justify-around items-stretch gap-1 sm:gap-4">
+      {gameState.teams.map((team, index) => {
+        const isTeamsTurn = gameState.whoseTurn === team.id;
+        const color = teamColor(index);
+        return (
+          <div
+            key={team.id}
+            // Each team keeps its own color; the team whose turn it is gets a
+            // glow, a brighter panel and a marker so it reads from a distance.
+            className={`flex-1 min-w-0 p-1 sm:p-4 border-2 sm:border-4 rounded-lg lg:py-[1vh] text-center transition-all duration-300 ${
+              color.border
+            } ${
+              isTeamsTurn
+                ? `bg-surface ${color.glow} scale-[1.04]`
+                : "bg-ink opacity-90"
+            }`}
           >
-            Set Turn for {gameState[Team.TeamA].name}
-          </button>
-        )}
-      </div>
-
-      {/* Team B Score */}
-      <div
-        className={`p-4 border rounded-lg shadow-md w-1/4 text-center ${
-          isTeamBTurn ? "bg-green-200" : "bg-white"
-        }`}
-      >
-        <h3 className="text-5xl font-bold mb-2">{gameState[Team.TeamB].name}</h3>
-        <p
-          className={`text-5xl font-semibold ${
-            bouncingTeam === Team.TeamB ? "animate-bounce" : ""
-          }`}
-        >
-          {gameState[Team.TeamB].score}
-        </p>
-        {isAdmin && handleUpdateTurn && gameState.currentGame.gameName === GameName.BOARD && (
-          <button
-            onClick={() => handleUpdateTurn(Team.TeamB)}
-            className="mt-2 bg-blue-500 text-white py-1 px-3 rounded hover:bg-blue-600"
-          >
-            Set Turn for {gameState[Team.TeamB].name}
-          </button>
-        )}
-      </div>
+            <div className="h-3 sm:h-6 lg:h-[2.5vh] text-[10px] sm:text-sm lg:text-[clamp(0.75rem,1.6vh,1.5rem)] font-semibold tracking-widest text-accent">
+              {isTeamsTurn ? "▶ Turn" : ""}
+            </div>
+            <h3 className="font-display font-semibold text-sm sm:text-2xl md:text-5xl lg:text-[clamp(1.25rem,3.4vh,3.5rem)] leading-tight mb-1 sm:mb-2 break-words text-white">{team.name}</h3>
+            <p
+              className={`font-display font-semibold text-lg sm:text-3xl md:text-5xl lg:text-[clamp(1.75rem,6vh,6rem)] leading-tight ${color.text} ${
+                bouncingTeamId === team.id ? "animate-bounce" : ""
+              }`}
+            >
+              {team.score}
+            </p>
+            {isAdmin && handleUpdateTurn && gameState.currentGame.gameName === GameName.BOARD && (
+              <button
+                onClick={() => handleUpdateTurn(team.id)}
+                className="mt-1 sm:mt-2 text-[10px] sm:text-sm bg-blue-500 text-white py-1 px-1 sm:px-3 rounded hover:bg-blue-600 w-full sm:w-auto"
+              >
+                <span className="hidden sm:inline">Set Turn for {team.name}</span>
+                <span className="sm:hidden">Set Turn</span>
+              </button>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 };

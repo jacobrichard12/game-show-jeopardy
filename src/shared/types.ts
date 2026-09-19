@@ -1,25 +1,40 @@
-export enum Team {
-    TeamA = "TeamA",
-    TeamB = "TeamB",
+export interface TeamState {
+    id: string;
+    name: string;
+    score: number;
 }
+
+// Team count is fixed for the life of a room (chosen at creation) rather
+// than editable mid-game, so GameState just holds a plain list rather than
+// separately tracking a count.
+export const MIN_TEAMS = 2;
+export const MAX_TEAMS = 4;
 
 export interface GameState {
     gameData: GameData;
     started?: boolean;
-    [Team.TeamA]: {
-        name: string;
-        score: number;
-    };
-    [Team.TeamB]: {
-        name: string;
-        score: number;
-    };
-    whoseTurn?: Team;
+    teams: TeamState[];
+    whoseTurn?: string; // a TeamState.id
     currentGame: CurrentGame;
     showTimer?: boolean;
     isDoubleJeopardy: boolean;
     answered: { [key: string]: number[] };
     doubleJeopardyAnswered: { [key: string]: number[] };
+}
+
+export function clampTeamCount(count: number): number {
+    return Math.min(Math.max(Math.trunc(count) || MIN_TEAMS, MIN_TEAMS), MAX_TEAMS);
+}
+
+const TEAM_NAME_LETTERS = ["A", "B", "C", "D"];
+
+export function createDefaultTeams(count: number): TeamState[] {
+    const n = clampTeamCount(count);
+    return Array.from({ length: n }, (_, i) => ({
+        id: `team-${i + 1}`,
+        name: `Team ${TEAM_NAME_LETTERS[i]}`,
+        score: 0,
+    }));
 }
 
 export interface CurrentGame {

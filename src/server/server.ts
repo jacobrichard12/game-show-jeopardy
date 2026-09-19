@@ -3,7 +3,7 @@ import express from "express";
 import http from "http";
 import path from "path";
 import { Server, Socket } from "socket.io";
-import { GameName, GameState, Team } from "../shared/types";
+import { clampTeamCount, createDefaultTeams, GameName, GameState } from "../shared/types";
 import { createRoomGameData, fetchMillionairePool, MillionairePool } from "./datagen";
 
 interface ServerToClientEvents {
@@ -20,7 +20,7 @@ interface ServerToClientEvents {
 }
 
 interface ClientToServerEvents {
-  createGame: (data: { adminToken?: string }) => void;
+  createGame: (data: { adminToken?: string; teamCount?: number }) => void;
   joinGame: (data: { code: string; adminKey?: string; adminToken?: string }) => void;
   gameStateUpdate: (data: { code: string; gameState: GameState }) => void;
   resetGameState: (data: { code: string }) => void;
@@ -71,8 +71,8 @@ function isPlausibleGameState(value: unknown): value is GameState {
   return (
     !!candidate.gameData &&
     typeof candidate.gameData === "object" &&
-    !!candidate[Team.TeamA] &&
-    !!candidate[Team.TeamB] &&
+    Array.isArray(candidate.teams) &&
+    candidate.teams.length >= 2 &&
     !!candidate.currentGame &&
     typeof candidate.currentGame === "object"
   );
@@ -115,11 +115,10 @@ const millionairePoolPromise: Promise<MillionairePool> = fetchMillionairePool().
   return { easy: [], mediumHard: [] };
 });
 
-async function buildInitialGameState(pool: MillionairePool): Promise<GameState> {
+async function buildInitialGameState(pool: MillionairePool, teamCount: number): Promise<GameState> {
   return {
     started: false,
-    TeamA: { name: "Team A", score: 0 },
-    TeamB: { name: "Team B", score: 0 },
+    teams: createDefaultTeams(teamCount),
     currentGame: {
       gameName: GameName.BOARD,
       gameTitle: "GameBoard",
@@ -183,7 +182,7 @@ io.on("connection", (socket) => {
     const code = generateRoomCode();
     const adminKey = generateAdminKey();
     const pool = await millionairePoolPromise;
-    const gameState = await buildInitialGameState(pool);
+    const gameState = await buildInitialGameState(pool, clampTeamCount(data?.teamCount ?? 2));
     const room: Room = { code, gameState, adminKey, lastActivity: Date.now() };
     rooms.set(code, room);
 
@@ -252,7 +251,9 @@ io.on("connection", (socket) => {
     }
 
     const pool = await millionairePoolPromise;
-    room.gameState = await buildInitialGameState(pool);
+    // Team count is fixed at creation, so a reset keeps whatever this room
+    // already had rather than dropping back to a 2-team default.
+    room.gameState = await buildInitialGameState(pool, room.gameState.teams.length);
     room.lastActivity = Date.now();
     io.to(code).emit("gameStateUpdate", { code, gameState: room.gameState });
     console.log(`Room ${code} has been reset.`);

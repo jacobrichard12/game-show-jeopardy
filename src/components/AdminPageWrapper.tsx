@@ -1,6 +1,6 @@
 import React from "react";
 import gameBoardData from "../data/gameBoard.json";
-import { GameName, GameState, Team } from "../shared/types";
+import { GameName, GameState } from "../shared/types";
 import AdminPointsButtons from "./AddPointsButtons";
 import FamilyFeud from "./FamilyFeud";
 import GameBoard from "./GameBoard";
@@ -12,9 +12,10 @@ import TitlePage from "./TitlePage";
 
 interface AdminPageWrapperProps {
   gameState: GameState;
+  code?: string;
   handleUpdateCurrentGame: (newGame: GameName, points: number) => void;
   handleAddPoints: (
-    team: Team,
+    teamId: string,
     points: number,
     gameName: GameName,
     noPointsOverride: boolean
@@ -22,11 +23,12 @@ interface AdminPageWrapperProps {
   handleRevealQuestion: () => void;
   handleBackButon: () => void;
   sendGameStateToServer: (gameState: GameState) => void;
-  handleUpdateTurn: (team: Team) => void;
+  handleUpdateTurn: (teamId: string) => void;
 }
 
 const AdminPageWrapper: React.FC<AdminPageWrapperProps> = ({
   gameState,
+  code,
   handleUpdateCurrentGame,
   handleAddPoints,
   handleRevealQuestion,
@@ -47,6 +49,7 @@ const AdminPageWrapper: React.FC<AdminPageWrapperProps> = ({
       return (
         <TitlePage
           isAdmin={true}
+          code={code}
           gameState={gameState}
           sendGameStateToServer={sendGameStateToServer}
         />
@@ -107,10 +110,10 @@ const AdminPageWrapper: React.FC<AdminPageWrapperProps> = ({
       <div className="p-4">
         {/* Title Section */}
 
-        <div className="absolute top-4 left-4">
+        <div className="absolute top-2 left-2 sm:top-4 sm:left-4 flex flex-wrap items-center gap-1 sm:gap-2 max-w-[160px] sm:max-w-none">
           <button
             onClick={handleToggleDoubleJeopardy}
-            className={`p-2 rounded ${
+            className={`p-1.5 sm:p-2 text-xs sm:text-base rounded ${
               gameState.isDoubleJeopardy ? "bg-red-600" : "bg-yellow-500"
             } text-white`}
           >
@@ -118,8 +121,17 @@ const AdminPageWrapper: React.FC<AdminPageWrapperProps> = ({
               ? "Double Jeopardy: ON"
               : "Double Jeopardy: OFF"}
           </button>
+          {code && (
+            <div className="p-1.5 sm:p-2 text-xs sm:text-base bg-white border rounded font-mono font-bold tracking-widest">
+              {code}
+            </div>
+          )}
         </div>
-        <div className="text-center mb-4">
+        {/* pt-16 clears the corner boxes above (the Double Jeopardy/code
+            group and Admin's fixed toolbar), which can each wrap to a
+            couple of lines on narrow screens; not needed once they fit in
+            one row alongside this title at sm: and up. */}
+        <div className="text-center mb-4 pt-16 sm:pt-0">
           <h1 className="text-2xl font-bold mb-2">Admin Page - Board</h1>
         </div>
         <GameBoard
@@ -142,7 +154,10 @@ const AdminPageWrapper: React.FC<AdminPageWrapperProps> = ({
     return (
       <div className="p-4">
         {/* Title Section */}
-        <div className="text-center mb-4">
+        {/* pt-16 clears Admin's fixed toolbar above, which can wrap to a
+            couple of lines on narrow screens; not needed once it fits in
+            one row at sm: and up. */}
+        <div className="text-center mb-4 pt-16 sm:pt-0">
           <h1 className="text-2xl font-bold mb-2">
             Admin Page - {gameState.currentGame.gameName} -{" "}
             {gameState.currentGame.value}

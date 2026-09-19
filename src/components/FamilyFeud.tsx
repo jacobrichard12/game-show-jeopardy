@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   FamilyFeudQuestionState,
   getCurrentQuestion,
@@ -7,6 +7,7 @@ import {
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faTimesCircle } from "@fortawesome/free-solid-svg-icons";
 import { buzzerAudio, dingAudio, familyFeudTheme } from "../shared/audio";
+import { createAudio } from "../shared/sound";
 import NoQuestionAvailable from "./NoQuestionAvailable";
 
 interface FamilyFeudProps extends QuestionProps {}
@@ -16,7 +17,7 @@ const FamilyFeud: React.FC<FamilyFeudProps> = ({
   gameState,
   sendGameStateToServer,
 }) => {
-  const audioRef = useRef(new Audio(familyFeudTheme));
+  const audioRef = useRef(createAudio(familyFeudTheme));
 
   // Play the theme + reveal/wrong-answer stings from the display side only
   // (isAdmin=false) so, on a single machine with both tabs open, sound
@@ -67,19 +68,26 @@ const FamilyFeud: React.FC<FamilyFeudProps> = ({
   useEffect(() => {
     if (isAdmin) return;
     if (revealedCount > prevRevealedCount.current) {
-      new Audio(dingAudio).play();
+      createAudio(dingAudio).play();
     }
     prevRevealedCount.current = revealedCount;
   }, [isAdmin, revealedCount]);
 
-  // Buzzer on each new wrong guess.
+  // Buzzer + a full-screen red X on each new wrong guess (display side only).
+  const [showStrike, setShowStrike] = useState(false);
   const prevWrongGuesses = useRef(wrongGuesses);
   useEffect(() => {
     if (isAdmin) return;
+    let timer: ReturnType<typeof setTimeout> | undefined;
     if (wrongGuesses > prevWrongGuesses.current) {
-      new Audio(buzzerAudio).play();
+      createAudio(buzzerAudio).play();
+      setShowStrike(true);
+      timer = setTimeout(() => setShowStrike(false), 1300);
     }
     prevWrongGuesses.current = wrongGuesses;
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
   }, [isAdmin, wrongGuesses]);
 
   if (!questionData) {
@@ -126,29 +134,46 @@ const FamilyFeud: React.FC<FamilyFeudProps> = ({
   return (
     <div className="p-4">
       {/* Container for the prompt */}
-      <div className="bg-white shadow-md rounded-lg p-6 mx-auto max-w-4xl">
+      {showStrike && (
+        <div className="pointer-events-none fixed inset-0 z-50 flex items-center justify-center bg-black/40 animate-strike">
+          <FontAwesomeIcon
+            icon={faTimesCircle}
+            className="text-red-600 drop-shadow-2xl"
+            style={{ fontSize: "min(70vh, 70vw)" }}
+          />
+        </div>
+      )}
+      <div className="bg-ink border-2 border-accent/50 shadow-md rounded-lg p-3 sm:p-6 mx-auto max-w-4xl xl:max-w-6xl">
         {questionState.showFeudPrompt && (
-          <p className="text-3xl font-semibold mb-4 text-center">
+          <p className="text-lg sm:text-2xl md:text-3xl xl:text-5xl font-display font-semibold text-white mb-4 text-center">
             {questionData.prompt}
           </p>
         )}
       </div>
 
       {/* Container for the answer board */}
-      <div className="bg-white shadow-md rounded-lg p-6 mx-auto max-w-lg mt-6">
-        <ul className="space-y-4">
+      <div className="bg-ink border-2 border-accent/50 shadow-md rounded-lg p-3 sm:p-6 mx-auto max-w-lg xl:max-w-4xl mt-6">
+        <ul className="space-y-2 sm:space-y-4">
           {questionData.answers.map((answer, index) => (
             <li
               key={index}
-              className={`p-4 border rounded-lg text-2xl text-white flex justify-between ${
-                revealedAnswers[index] ? "bg-blue-600" : "bg-blue-400"
-              }`}
+              className={`p-2 sm:p-4 xl:p-6 border-2 border-black/50 rounded-lg font-display font-semibold text-base sm:text-xl md:text-2xl xl:text-5xl text-white flex items-center justify-between ${
+                revealedAnswers[index]
+                  ? "bg-gradient-to-b from-sky-400 to-tile animate-flip-in"
+                  : "bg-tile"
+              } ${isAdmin ? "cursor-pointer hover:brightness-125" : ""}`}
               onClick={() => (isAdmin ? handleReveal(index) : null)}
             >
-              <span>{revealedAnswers[index] || isAdmin ? answer.answer : `${index + 1}`}</span>
+              {revealedAnswers[index] || isAdmin ? (
+                <span>{answer.answer}</span>
+              ) : (
+                <span className="mx-auto rounded-full bg-accent px-4 text-ink">
+                  {index + 1}
+                </span>
+              )}
               {/* Show points if answer is revealed */}
               {revealedAnswers[index] && (
-                <span className="ml-4 text-2xl font-bold">
+                <span className="ml-4 rounded bg-ink px-3 text-accent text-base sm:text-xl md:text-2xl xl:text-5xl">
                   {answer.points}
                 </span>
               )}
@@ -158,7 +183,7 @@ const FamilyFeud: React.FC<FamilyFeudProps> = ({
 
         <div className="mt-4">
           {isAdmin && (
-            <span className="flex space-x-4">
+            <span className="flex flex-wrap gap-2 sm:gap-4">
               <button
                 onClick={wrongAnswer}
                 className="bg-red-500 text-white py-2 px-4 rounded"
@@ -180,9 +205,9 @@ const FamilyFeud: React.FC<FamilyFeudProps> = ({
           {Array.from({ length: wrongGuesses }, (_, index) => (
             <div
               key={index}
-              className="text-red-500 flex items-center space-x-2 mb-2"
+              className="text-red-500 flex items-center space-x-2 mb-2 text-3xl sm:text-5xl xl:text-7xl"
             >
-              <FontAwesomeIcon icon={faTimesCircle} size="5x" />
+              <FontAwesomeIcon icon={faTimesCircle} />
             </div>
           ))}
         </div>

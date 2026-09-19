@@ -1,10 +1,11 @@
 import React from "react";
-import { GameName, GameState, Team } from "../shared/types";
+import { teamColor } from "../shared/teamColors";
+import { GameName, GameState } from "../shared/types";
 
 interface AdminPointsButtonsProps {
   gameState: GameState;
   handleAddPoints: (
-    team: Team,
+    teamId: string,
     points: number,
     gameName: GameName,
     noPointsOverride: boolean
@@ -33,51 +34,44 @@ const AdminPointsButtons: React.FC<AdminPointsButtonsProps> = ({
     }
   };
 
-  const handleAwardPointsClick = (team: Team, noPointsOverride: boolean) => {
+  const handleAwardPointsClick = (teamId: string, noPointsOverride: boolean) => {
     handleAddPoints(
-      team,
+      teamId,
       gameState.currentGame.value,
       gameState.currentGame.gameName,
       noPointsOverride
     );
   };
 
+  const disabled = havePointsBeenAwarded();
+
   return (
-    <div className="flex justify-around items-center">
-      <button
-        onClick={() => handleAwardPointsClick(Team.TeamA, false)}
-        disabled={havePointsBeenAwarded()} // Disable if points have been awarded
-        className={`p-2 rounded ${
-          havePointsBeenAwarded()
-            ? "bg-gray-400 text-gray-700 cursor-not-allowed"
-            : "bg-green-500 hover:bg-green-600 text-white"
-        }`}
-      >
-        Add {gameState.currentGame.value} points to {gameState[Team.TeamA].name}
-      </button>
+    <div className="flex flex-wrap justify-around items-center gap-2">
+      {gameState.teams.map((team, index) => (
+        <button
+          key={team.id}
+          onClick={() => handleAwardPointsClick(team.id, false)}
+          disabled={disabled}
+          className={`p-2 rounded text-white ${
+            disabled
+              ? "bg-gray-400 text-gray-700 cursor-not-allowed"
+              : teamColor(index).button
+          }`}
+        >
+          Add {gameState.currentGame.value} points to {team.name}
+        </button>
+      ))}
 
       <button
-        onClick={() => handleAwardPointsClick(Team.TeamA, true)}
-        disabled={havePointsBeenAwarded()} // Disable if points have been awarded
+        onClick={() => handleAwardPointsClick(gameState.teams[0].id, true)}
+        disabled={disabled}
         className={`p-2 rounded ${
-          havePointsBeenAwarded()
+          disabled
             ? "bg-gray-400 text-gray-700 cursor-not-allowed"
             : "bg-blue-500 hover:bg-blue-600 text-white"
         }`}
       >
         No One Gets Points
-      </button>
-
-      <button
-        onClick={() => handleAwardPointsClick(Team.TeamB, false)}
-        disabled={havePointsBeenAwarded()} // Disable if points have been awarded
-        className={`p-2 rounded ${
-          havePointsBeenAwarded()
-            ? "bg-gray-400 text-gray-700 cursor-not-allowed"
-            : "bg-red-500 hover:bg-red-600 text-white"
-        }`}
-      >
-        Add {gameState.currentGame.value} points to {gameState[Team.TeamB].name}
       </button>
     </div>
   );

@@ -91,9 +91,17 @@ const PageWrapper: React.FC<PageWrapperProps> = ({
   };
 
   return (
-    <div className="p-4">
-      <div className="bg-white p-4 rounded shadow-lg">{getComponent()}</div>
-      <ScoreBoard gameState={gameState} isAdmin={false} />
+    // At lg: and up the display is exactly one screen tall: the scoreboard is
+    // pinned to the bottom and the board/question area takes the rest (and
+    // scrolls internally only as a last resort), so scores never fall below
+    // the fold on a wide-but-short window.
+    <div className="p-2 sm:p-4 lg:h-screen lg:flex lg:flex-col lg:gap-2 lg:overflow-hidden">
+      <div className="p-2 lg:flex lg:flex-col lg:flex-1 lg:min-h-0 lg:overflow-y-auto">
+        {getComponent()}
+      </div>
+      <div className="lg:shrink-0">
+        <ScoreBoard gameState={gameState} isAdmin={false} />
+      </div>
     </div>
   );
 };

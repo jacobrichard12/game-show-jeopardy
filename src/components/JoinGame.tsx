@@ -16,8 +16,8 @@ const JoinGame: React.FC = () => {
   };
 
   return (
-    <div className="relative h-screen w-screen bg-gradient-to-br from-blue-700 via-purple-800 to-black flex items-center justify-center overflow-hidden">
-      <div className="relative bg-white p-8 rounded-lg shadow-lg w-full max-w-sm text-center">
+    <div className="relative min-h-screen w-full bg-gradient-to-br from-indigo-900 via-ink to-ink flex items-center justify-center overflow-hidden px-4 py-8">
+      <div className="relative bg-white p-6 sm:p-8 rounded-lg shadow-lg w-full max-w-sm text-center">
         <h1 className="text-2xl font-bold mb-6">Game Show Jeopardy</h1>
 
         {!showJoinForm ? (

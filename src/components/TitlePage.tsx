@@ -1,14 +1,18 @@
 import React from "react";
+import { teamColor } from "../shared/teamColors";
 import { GameState } from "../shared/types";
 
 interface TitlePageProps {
   isAdmin: boolean;
+  // Room code, shown large so people across the room can join.
+  code?: string;
   gameState: GameState;
   sendGameStateToServer: (updatedGameState: GameState) => void;
 }
 
 const TitlePage: React.FC<TitlePageProps> = ({
   isAdmin,
+  code,
   gameState,
   sendGameStateToServer,
 }) => {
@@ -21,7 +25,7 @@ const TitlePage: React.FC<TitlePageProps> = ({
   };
 
   return (
-    <div className="relative h-screen w-screen bg-gradient-to-br from-blue-700 via-purple-800 to-black flex items-center justify-center overflow-hidden">
+    <div className="relative min-h-screen w-full bg-gradient-to-br from-indigo-900 via-ink to-ink flex items-center justify-center overflow-hidden px-4 py-16">
       {/* Background animation */}
       <div className="absolute top-0 left-0 w-full h-full animate-pulse opacity-20">
         <div className="absolute inset-0 bg-gradient-radial from-blue-500 via-purple-500 to-transparent blur-3xl mix-blend-overlay"></div>
@@ -29,20 +33,45 @@ const TitlePage: React.FC<TitlePageProps> = ({
 
       {/* Animated Title */}
       <div className="relative text-center">
-        <h1 className="text-6xl md:text-8xl font-extrabold text-yellow-400 drop-shadow-md animate-gentle-bounce">
+        <h1 className="text-4xl sm:text-6xl md:text-8xl xl:text-9xl font-display font-semibold text-accent drop-shadow-md animate-gentle-bounce">
           Game Show Jeopardy
         </h1>
-        <p className="text-xl md:text-2xl text-white mt-4 animate-fade-in">
+        <p className="text-lg sm:text-xl md:text-2xl xl:text-4xl text-white mt-4 animate-fade-in">
           Welcome to the Ultimate Game Experience!
         </p>
+
+        {/* Lobby: everything a latecomer needs to join, readable from across
+            the room, instead of a wasted welcome screen. */}
+        {code && (
+          <div className="mt-8 xl:mt-14">
+            <p className="text-base sm:text-xl xl:text-3xl text-white/80">
+              Join at {window.location.host} with code
+            </p>
+            <p className="font-mono font-extrabold text-white text-5xl sm:text-7xl md:text-8xl xl:text-9xl tracking-[0.25em] pl-[0.25em]">
+              {code}
+            </p>
+          </div>
+        )}
+        <div className="mt-6 flex flex-wrap justify-center gap-2 xl:gap-4">
+          {gameState.teams.map((team, index) => (
+            <span
+              key={team.id}
+              className={`rounded-full px-4 py-1 font-display font-semibold text-white text-base sm:text-xl xl:text-3xl ${
+                teamColor(index).chip
+              }`}
+            >
+              {team.name}
+            </span>
+          ))}
+        </div>
       </div>
 
       {/* Bottom Note or Button */}
-      <div className="absolute bottom-10 text-center w-full">
+      <div className="absolute bottom-6 sm:bottom-10 text-center w-full">
         {isAdmin && (
           <button
             onClick={startGame}
-            className="bg-yellow-400 hover:bg-yellow-500 text-black font-bold py-2 px-6 rounded-lg shadow-lg transition duration-300"
+            className="bg-accent hover:brightness-110 text-ink font-semibold py-2 px-6 rounded-lg shadow-lg transition duration-300"
           >
             Start Game
           </button>

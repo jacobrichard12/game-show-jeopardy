@@ -10,6 +10,7 @@ import {
   MillionaireQuestionState,
   QuestionProps,
 } from "../shared/types";
+import { createAudio } from "../shared/sound";
 import NoQuestionAvailable from "./NoQuestionAvailable";
 
 interface MillionaireProps extends QuestionProps {}
@@ -19,10 +20,10 @@ const Millionaire: React.FC<MillionaireProps> = ({
   gameState,
   sendGameStateToServer,
 }) => {
-  const audioRef = useRef(new Audio());
+  const audioRef = useRef(createAudio());
 
-  const [correctAudio] = useState(new Audio(getRandomAudio(happyFiles)));
-  const [incorrectAudio] = useState(new Audio(getRandomAudio(sadFiles)));
+  const [correctAudio] = useState(() => createAudio(getRandomAudio(happyFiles)));
+  const [incorrectAudio] = useState(() => createAudio(getRandomAudio(sadFiles)));
 
   const questionState = gameState.currentGame
     .questionState as MillionaireQuestionState;
@@ -156,41 +157,41 @@ const Millionaire: React.FC<MillionaireProps> = ({
       {questionState.promptVisible && (
         <div>
           {/* Display the category */}
-          <h2 className="text-2xl font-semibold mb-2 text-center">
+          <h2 className="text-lg sm:text-xl md:text-2xl xl:text-4xl font-semibold mb-2 text-center">
             Category: {currentSubquestion.category}
           </h2>
 
           {/* Display the question */}
-          <h1 className="text-5xl font-bold mb-4 text-center">
+          <h1 className="text-2xl sm:text-3xl md:text-5xl xl:text-7xl font-bold mb-4 text-center">
             Question {questionState.questionIdx + 1}:{" "}
             {currentSubquestion.question}
           </h1>
         </div>
       )}
 
-      <div className="grid grid-cols-2 gap-4 mx-auto max-w-xl">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4 mx-auto max-w-xl xl:max-w-5xl px-2">
         {currentSubquestion.answers.map((answer, index) => {
           let buttonClass =
-            "border p-4 text-3xl rounded-lg shadow-md text-left ";
+            "border-2 p-2 sm:p-4 xl:p-6 text-base sm:text-xl md:text-3xl xl:text-5xl rounded-full shadow-md text-left px-5 sm:px-8 transition-colors ";
           const isRevealed = index < questionState.revealedAnswers;
           const isSelected = index === questionState.answeredQuestionIdx;
 
           if (hasAnswerBeenSelected()) {
             if (isSelected) {
               buttonClass += isSelectionCorrect(index)
-                ? "bg-green-500 text-white"
-                : "bg-red-500 text-white";
+                ? "bg-green-500 border-green-200 text-white"
+                : "bg-red-600 border-red-300 text-white";
             } else if (questionState.showCorrectAnswer) {
               buttonClass += isSelectionCorrect(index)
-                ? "bg-green-500 text-white"
-                : "bg-red-500 text-white";
+                ? "bg-green-500 border-green-200 text-white"
+                : "bg-red-600 border-red-300 text-white";
             } else {
-              buttonClass += "bg-gray-300 cursor-not-allowed";
+              buttonClass += "bg-slate-800 border-slate-600 text-slate-500 cursor-not-allowed";
             }
           } else if (!isRevealed) {
-            buttonClass += "bg-gray-300 cursor-not-allowed";
+            buttonClass += "bg-slate-800 border-slate-600 text-slate-500 cursor-not-allowed";
           } else {
-            buttonClass += "bg-blue-500 text-white hover:bg-blue-600";
+            buttonClass += "bg-gradient-to-b from-tile to-surface border-accent text-white hover:brightness-125";
           }
 
           return (
@@ -204,7 +205,7 @@ const Millionaire: React.FC<MillionaireProps> = ({
                 !areAllAnswersRevealed()
               }
             >
-              <span className="font-bold mr-2">{prefix[index]}</span>
+              <span className="font-display font-semibold text-accent mr-3">{prefix[index].toUpperCase()}</span>
               {isRevealed ? answer : "???"}
             </button>
           );
@@ -212,7 +213,7 @@ const Millionaire: React.FC<MillionaireProps> = ({
       </div>
 
       {isAdmin && (
-        <div className="mt-4 flex justify-center space-x-4">
+        <div className="mt-4 flex flex-wrap justify-center gap-2 sm:gap-4 px-2">
           <button
             onClick={revealNextAnswer}
             disabled={areAllAnswersRevealed()}
