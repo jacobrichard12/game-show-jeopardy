@@ -1,7 +1,7 @@
 import React from "react";
 import gameBoardData from "../data/gameBoard.json";
 import { GameName, GameState } from "../shared/types";
-import AdminPointsButtons from "./AddPointsButtons";
+import AdminPointsButtons, { NoPointsButton } from "./AddPointsButtons";
 import FamilyFeud from "./FamilyFeud";
 import GameBoard from "./GameBoard";
 import HeadToHead from "./HeadToHead";
@@ -198,6 +198,12 @@ const AdminPageWrapper: React.FC<AdminPageWrapperProps> = ({
           isAdmin={true}
           handleUpdateTurn={handleUpdateTurn}
         />
+        {gameState.currentGame.questionState.promptVisible && (
+          <NoPointsButton
+            gameState={gameState}
+            handleAddPoints={handleAddPoints}
+          />
+        )}
       </div>
     );
   };

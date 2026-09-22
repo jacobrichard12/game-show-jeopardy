@@ -4,7 +4,14 @@ import Admin from "./components/Admin";
 import CreateGame from "./components/CreateGame";
 import Display from "./components/Display";
 import JoinGame from "./components/JoinGame";
+import Sandbox from "./components/Sandbox";
 import { SocketProvider } from "./components/SocketContext";
+
+// /sandbox is a local test bench for the party games (no server needed). It's
+// on in development, and off in production builds unless REACT_APP_SANDBOX is
+// "true" at build time, so the live site doesn't expose unfinished games.
+const SANDBOX_ENABLED =
+  process.env.NODE_ENV !== "production" || process.env.REACT_APP_SANDBOX === "true";
 
 // Each room is its own isolated game, addressed by a short code:
 //  /            - enter a code to watch a game (display/spectator)
@@ -21,6 +28,7 @@ const App: React.FC = () => {
         <Route path="/watch/:code" element={<Display />} />
         <Route path="/admin" element={<CreateGame />} />
         <Route path="/admin/:code" element={<Admin />} />
+        {SANDBOX_ENABLED && <Route path="/sandbox" element={<Sandbox />} />}
       </Routes>
     </div>
   );

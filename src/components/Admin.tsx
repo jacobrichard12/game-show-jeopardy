@@ -106,7 +106,27 @@ const Admin: React.FC = () => {
     if (!gameState) return;
     const updatedGameState = { ...gameState };
     updatedGameState.showTimer = !updatedGameState.showTimer;
+    // Each time the timer appears it starts paused, ready for the host to
+    // press play.
+    updatedGameState.timerPlaying = false;
     sendGameStateToServer(updatedGameState);
+  };
+
+  const handleTimerPlayPause = () => {
+    if (!gameState) return;
+    sendGameStateToServer({
+      ...gameState,
+      timerPlaying: !gameState.timerPlaying,
+    });
+  };
+
+  const handleTimerRestart = () => {
+    if (!gameState) return;
+    sendGameStateToServer({
+      ...gameState,
+      timerPlaying: false,
+      timerRestart: (gameState.timerRestart ?? 0) + 1,
+    });
   };
 
   const handleUpdateCurrentGame = (newGame: GameName, points: number) => {
@@ -341,6 +361,22 @@ const Admin: React.FC = () => {
           >
             Toggle Timer
           </button>
+          {gameState.showTimer && (
+            <>
+              <button
+                onClick={handleTimerPlayPause}
+                className="p-1.5 sm:p-2 text-xs sm:text-base bg-blue-500 text-white rounded"
+              >
+                {gameState.timerPlaying ? "⏸ Pause" : "▶ Play"}
+              </button>
+              <button
+                onClick={handleTimerRestart}
+                className="p-1.5 sm:p-2 text-xs sm:text-base bg-gray-500 text-white rounded"
+              >
+                ↺ Restart
+              </button>
+            </>
+          )}
           <button
             onClick={() => setIsSettingsOpen(true)}
             className="p-1.5 sm:p-2 text-xs sm:text-base bg-blue-500 text-white rounded"

@@ -20,7 +20,12 @@ const PageWrapper: React.FC<PageWrapperProps> = ({
 }) => {
   const getComponent = (): React.ReactNode => {
     if (gameState.showTimer) {
-      return <Timer/>;
+      return (
+        <Timer
+          playing={gameState.timerPlaying ?? false}
+          restartToken={gameState.timerRestart ?? 0}
+        />
+      );
     }
     switch (gameState.currentGame.gameName) {
       case GameName.BOARD:

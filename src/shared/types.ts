@@ -17,6 +17,9 @@ export interface GameState {
     whoseTurn?: string; // a TeamState.id
     currentGame: CurrentGame;
     showTimer?: boolean;
+    // Same host-driven play/pause/restart for the timer clip.
+    timerPlaying?: boolean;
+    timerRestart?: number;
     isDoubleJeopardy: boolean;
     answered: { [key: string]: number[] };
     doubleJeopardyAnswered: { [key: string]: number[] };
@@ -63,6 +66,13 @@ export interface GameData {
     minute: MinuteQuestions;
     millionaire: MillionaireQuestions;
     head: HeadToHeadQuestions;
+    // Party games. Optional until they're on the real board and the server
+    // builds them (ROADMAP Tier 5); today only the /sandbox page fills them.
+    wheel?: WheelPuzzles;
+    act?: PerformPrompts;
+    scavenger?: ScavengerItems;
+    closest?: ClosestQuestions;
+    order?: OrderPuzzles;
 }
 
 export type FamilyFeudQuestions = Record<string, FamilyFeudQuestion>;
@@ -111,7 +121,12 @@ export interface FamilyFeudQuestionState extends QuestionState {
     wrongGuesses: number;
 }
 
-export interface MinuteQuestionState extends QuestionState {}
+// The host drives the display's video: `videoPlaying` is play/pause, and
+// bumping `videoRestart` rewinds it to the start.
+export interface MinuteQuestionState extends QuestionState {
+    videoPlaying?: boolean;
+    videoRestart?: number;
+}
 
 export interface HeadToHeadQuestionState extends QuestionState {
     showTitle: boolean;
@@ -124,6 +139,94 @@ export interface MillionaireQuestionState extends QuestionState {
     showCorrectAnswer?: boolean;
 }
 
+// ---- Party games (ROADMAP Tier 5) -----------------------------------------
+// Banks are keyed by board slot like the others; see partyGames.ts for the
+// pure helpers and initial-state factories.
+
+export type WheelPuzzles = Record<string, WheelPuzzle>;
+export interface WheelPuzzle extends Question {
+    category: string;
+    phrase: string;
+}
+
+export type PerformMode = "act" | "draw" | "describe";
+export type PerformPrompts = Record<string, PerformPrompt>;
+export interface PerformPrompt extends Question {
+    mode: PerformMode;
+    word: string;
+    // Off-limits words, for describe mode.
+    taboo?: string[];
+    seconds?: number;
+}
+
+export type ScavengerItems = Record<string, ScavengerItem>;
+export interface ScavengerItem extends Question {
+    item: string;
+    seconds?: number;
+}
+
+export type ClosestRule = "closest" | "noOver";
+export type ClosestQuestions = Record<string, ClosestQuestion>;
+export interface ClosestQuestion extends Question {
+    prompt: string;
+    answer: number;
+    unit?: string;
+    // "closest" (default) or "noOver" (closest without going over).
+    rule?: ClosestRule;
+    // Show without thousands separators (years).
+    plain?: boolean;
+}
+
+export type OrderPuzzles = Record<string, OrderPuzzle>;
+export interface OrderPuzzle extends Question {
+    prompt: string;
+    // What "first" means, e.g. "closest to the Sun first".
+    direction: string;
+    // The items in their CORRECT order (the display scrambles them).
+    items: string[];
+}
+
+// A countdown both screens can run without clock skew: state carries the time
+// left at the moment it starts/pauses, and each screen counts down locally
+// from when it receives that change. `runId` bumps on every start/pause/reset
+// so identical consecutive values still register as a change.
+export interface ClockState {
+    durationMs: number;
+    remainingMs: number;
+    running: boolean;
+    runId: number;
+}
+
+export interface WheelQuestionState extends QuestionState {
+    guessedLetters: string[];
+    solved: boolean;
+}
+
+export interface PerformQuestionState extends QuestionState {
+    clock: ClockState;
+    // Host-controlled: show the secret word on the TV (after time's up).
+    wordRevealed: boolean;
+}
+
+export interface ScavengerQuestionState extends QuestionState {
+    clock: ClockState;
+}
+
+export interface ClosestQuestionState extends QuestionState {
+    // teamId -> locked-in guess (null until locked in).
+    guesses: Record<string, number | null>;
+    revealed: boolean;
+}
+
+export interface OrderQuestionState extends QuestionState {
+    // Seeds the shuffle so host and TV show the same scrambled order.
+    seed: number;
+    revealedCount: number;
+    // teamId -> how many positions that team got right (host-entered).
+    correctCounts: Record<string, number | null>;
+    showResults: boolean;
+}
+
 export enum GameName {
     BOARD = "board",
     FAMILY_FEUD = "feud",
@@ -131,6 +234,12 @@ export enum GameName {
     MINUTE = "minute",
     HEAD_TO_HEAD = "head",
     TIMER = "timer",
+    // Party games (sandbox-only until integrated into the board).
+    WHEEL = "wheel",
+    ACT = "act",
+    SCAVENGER = "scavenger",
+    CLOSEST = "closest",
+    ORDER = "order",
 }
 
 /**
@@ -161,6 +270,16 @@ export function getGameTitle(gameName: GameName): string {
             return "Minute To Win It";
         case GameName.HEAD_TO_HEAD:
             return "Head To Head";
+        case GameName.WHEEL:
+            return "Wheel Puzzle";
+        case GameName.ACT:
+            return "Act, Draw, Describe";
+        case GameName.SCAVENGER:
+            return "Scavenger Sprint";
+        case GameName.CLOSEST:
+            return "Closest Wins";
+        case GameName.ORDER:
+            return "Put It In Order";
         default:
             return "No Entry for Game Yet";
     }

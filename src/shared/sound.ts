@@ -37,6 +37,14 @@ export function createAudio(src?: string): HTMLAudioElement {
   return audio;
 }
 
+// Fire-and-forget: plays a one-shot sound and swallows the rejection a browser
+// raises when autoplay hasn't been unlocked yet (the display's "Enable sound"
+// overlay handles that), so a blocked sound never becomes an unhandled error.
+export function playSound(src: string): void {
+  const result = createAudio(src).play();
+  if (result && typeof result.catch === "function") result.catch(() => {});
+}
+
 export function setMuted(value: boolean): void {
   muted = value;
   try {

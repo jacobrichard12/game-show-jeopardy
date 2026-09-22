@@ -1,0 +1,107 @@
+{
+  "wheel": {
+    "easy": [
+      { "category": "Movie", "phrase": "FINDING NEMO" },
+      { "category": "Phrase", "phrase": "PIECE OF CAKE" },
+      { "category": "Food & Drink", "phrase": "PEANUT BUTTER AND JELLY" },
+      { "category": "Holiday", "phrase": "TRICK OR TREAT" },
+      { "category": "Thing", "phrase": "ROLLER COASTER" }
+    ],
+    "medium": [
+      { "category": "Phrase", "phrase": "BREAKING THE ICE" },
+      { "category": "Phrase", "phrase": "HOME SWEET HOME" },
+      { "category": "Food & Drink", "phrase": "SPAGHETTI AND MEATBALLS" },
+      { "category": "Place", "phrase": "THE GREAT BARRIER REEF" },
+      { "category": "Phrase", "phrase": "A DIME A DOZEN" }
+    ],
+    "hard": [
+      { "category": "Phrase", "phrase": "JUMPING TO CONCLUSIONS" },
+      { "category": "Landmark", "phrase": "THE LEANING TOWER OF PISA" },
+      { "category": "Phrase", "phrase": "BETTER LATE THAN NEVER" }
+    ]
+  },
+  "act": {
+    "easy": [
+      { "mode": "act", "word": "Riding a roller coaster" },
+      { "mode": "draw", "word": "Pizza" },
+      { "mode": "act", "word": "Brushing your teeth" },
+      { "mode": "draw", "word": "Snowman" },
+      { "mode": "describe", "word": "Sandwich", "taboo": ["Bread", "Lunch", "Peanut butter"] }
+    ],
+    "medium": [
+      { "mode": "act", "word": "A chicken laying an egg" },
+      { "mode": "draw", "word": "Bicycle" },
+      { "mode": "describe", "word": "Vacation", "taboo": ["Beach", "Trip", "Travel"] },
+      { "mode": "act", "word": "Walking a dog that is much too big" },
+      { "mode": "draw", "word": "Lighthouse" }
+    ],
+    "hard": [
+      { "mode": "describe", "word": "Procrastinate", "taboo": ["Later", "Delay", "Tomorrow"], "seconds": 90 },
+      { "mode": "draw", "word": "Traffic jam", "seconds": 90 },
+      { "mode": "act", "word": "Assembling furniture without instructions", "seconds": 90 }
+    ]
+  },
+  "scavenger": {
+    "easy": [
+      { "item": "Something blue" },
+      { "item": "A phone charger" },
+      { "item": "A single sock" },
+      { "item": "A book" },
+      { "item": "A remote control" }
+    ],
+    "medium": [
+      { "item": "Something older than the person holding it" },
+      { "item": "Something round" },
+      { "item": "Three pens of three different colors" },
+      { "item": "A shoe that is not on a foot" },
+      { "item": "A wallet" }
+    ],
+    "hard": [
+      { "item": "A coin dated before 1990", "seconds": 90 },
+      { "item": "A photo on a phone of an animal that isn't a cat or a dog", "seconds": 90 },
+      { "item": "Something in this house that is older than 30 years", "seconds": 90 }
+    ]
+  },
+  "closest": {
+    "easy": [
+      { "prompt": "How many keys are on a standard piano?", "answer": 88 },
+      { "prompt": "How many teeth does a typical adult have, wisdom teeth included?", "answer": 32 },
+      { "prompt": "How tall is a basketball hoop?", "answer": 10, "unit": "feet" },
+      { "prompt": "How many squares are on a chessboard?", "answer": 64 },
+      { "prompt": "How many stripes are on the U.S. flag?", "answer": 13 }
+    ],
+    "medium": [
+      { "prompt": "What is the boiling point of water at sea level?", "answer": 212, "unit": "°F" },
+      { "prompt": "How many bones are in the adult human body?", "answer": 206 },
+      { "prompt": "How many elements are on the periodic table?", "answer": 118 },
+      { "prompt": "In what year was the first iPhone released?", "answer": 2007, "plain": true },
+      { "prompt": "In what year did the Berlin Wall fall?", "answer": 1989, "plain": true }
+    ],
+    "hard": [
+      { "prompt": "How many countries are members of the United Nations?", "answer": 193 },
+      { "prompt": "How tall is Mount Everest? Closest without going over.", "answer": 29032, "unit": "feet", "rule": "noOver" },
+      { "prompt": "How far away is the Moon, on average?", "answer": 238855, "unit": "miles" }
+    ]
+  },
+  "order": {
+    "easy": [
+      { "prompt": "The planets", "direction": "closest to the Sun first", "items": ["Mercury", "Venus", "Earth", "Mars", "Jupiter"] },
+      { "prompt": "Animals by number of legs", "direction": "fewest legs first", "items": ["Bird", "Cat", "Ant", "Spider", "Crab"] },
+      { "prompt": "A butterfly's life", "direction": "first stage first", "items": ["Egg", "Caterpillar", "Chrysalis", "Butterfly"] },
+      { "prompt": "U.S. coins", "direction": "lowest value first", "items": ["Penny", "Nickel", "Dime", "Quarter", "Half dollar"] },
+      { "prompt": "Colors of the rainbow", "direction": "red end first", "items": ["Red", "Orange", "Yellow", "Green", "Blue"] }
+    ],
+    "medium": [
+      { "prompt": "Star Wars movies", "direction": "oldest release first", "items": ["A New Hope", "The Empire Strikes Back", "Return of the Jedi", "The Phantom Menace", "The Force Awakens"] },
+      { "prompt": "Inventions", "direction": "oldest first", "items": ["Telephone", "Light bulb", "Airplane", "Television", "World Wide Web"] },
+      { "prompt": "The first five U.S. presidents", "direction": "earliest in office first", "items": ["Washington", "Adams", "Jefferson", "Madison", "Monroe"] },
+      { "prompt": "The oceans", "direction": "largest first", "items": ["Pacific", "Atlantic", "Indian", "Southern", "Arctic"] },
+      { "prompt": "Game consoles", "direction": "oldest release first", "items": ["Atari 2600", "NES", "Sega Genesis", "PlayStation", "Xbox"] }
+    ],
+    "hard": [
+      { "prompt": "Mountains", "direction": "tallest first", "items": ["Mount Everest", "K2", "Kangchenjunga", "Lhotse", "Makalu"] },
+      { "prompt": "Continents", "direction": "largest area first", "items": ["Asia", "Africa", "North America", "South America", "Antarctica"] },
+      { "prompt": "Historic events", "direction": "earliest first", "items": ["Titanic sinks", "World War II ends", "Moon landing", "Berlin Wall falls", "First iPhone released"] }
+    ]
+  }
+}

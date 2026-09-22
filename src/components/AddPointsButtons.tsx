@@ -12,28 +12,27 @@ interface AdminPointsButtonsProps {
   ) => void;
 }
 
+const havePointsBeenAwarded = (gameState: GameState) => {
+  if (gameState.isDoubleJeopardy) {
+    return (
+      gameState.doubleJeopardyAnswered[gameState.currentGame.gameName] &&
+      gameState.doubleJeopardyAnswered[gameState.currentGame.gameName].includes(
+        gameState.currentGame.value
+      )
+    );
+  }
+  return (
+    gameState.answered[gameState.currentGame.gameName] &&
+    gameState.answered[gameState.currentGame.gameName].includes(
+      gameState.currentGame.value
+    )
+  );
+};
+
 const AdminPointsButtons: React.FC<AdminPointsButtonsProps> = ({
   gameState,
   handleAddPoints,
 }) => {
-  const havePointsBeenAwarded = () => {
-    if (gameState.isDoubleJeopardy) {
-      return (
-        gameState.doubleJeopardyAnswered[gameState.currentGame.gameName] &&
-        gameState.doubleJeopardyAnswered[
-          gameState.currentGame.gameName
-        ].includes(gameState.currentGame.value)
-      );
-    } else {
-      return (
-        gameState.answered[gameState.currentGame.gameName] &&
-        gameState.answered[gameState.currentGame.gameName].includes(
-          gameState.currentGame.value
-        )
-      );
-    }
-  };
-
   const handleAwardPointsClick = (teamId: string, noPointsOverride: boolean) => {
     handleAddPoints(
       teamId,
@@ -43,7 +42,7 @@ const AdminPointsButtons: React.FC<AdminPointsButtonsProps> = ({
     );
   };
 
-  const disabled = havePointsBeenAwarded();
+  const disabled = !!havePointsBeenAwarded(gameState);
 
   return (
     <div className="flex flex-wrap justify-around items-center gap-2">
@@ -61,9 +60,28 @@ const AdminPointsButtons: React.FC<AdminPointsButtonsProps> = ({
           Add {gameState.currentGame.value} points to {team.name}
         </button>
       ))}
+    </div>
+  );
+};
 
+// Rendered separately (below the scoreboard) since it isn't tied to any one
+// team; the tile still gets marked answered, nobody's score changes.
+export const NoPointsButton: React.FC<AdminPointsButtonsProps> = ({
+  gameState,
+  handleAddPoints,
+}) => {
+  const disabled = !!havePointsBeenAwarded(gameState);
+  return (
+    <div className="flex justify-center mt-3">
       <button
-        onClick={() => handleAwardPointsClick(gameState.teams[0].id, true)}
+        onClick={() =>
+          handleAddPoints(
+            gameState.teams[0].id,
+            gameState.currentGame.value,
+            gameState.currentGame.gameName,
+            true
+          )
+        }
         disabled={disabled}
         className={`p-2 rounded ${
           disabled

@@ -3,6 +3,7 @@ import { useParams } from "react-router-dom";
 import gameBoardData from "../data/gameBoard.json";
 import { hasUserActivation, setMuted, unlockAudio, useMuted } from "../shared/sound";
 import { GameState } from "../shared/types";
+import { useWakeLock } from "../shared/wakeLock";
 import PageWrapper from "./PageWrapper";
 import { useSocket } from "./SocketContext";
 import TitlePage from "./TitlePage";
@@ -79,6 +80,10 @@ const Display: React.FC = () => {
       socket.off("gameStateUpdate", handleGameStateUpdate);
     };
   }, [socket, code]);
+
+  // The TV is never clicked, so keep it from sleeping while a game is up.
+  // Called before the early returns below (hooks can't be conditional).
+  useWakeLock(status === "joined");
 
   if (status === "not_found") {
     return (

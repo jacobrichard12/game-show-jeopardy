@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import SyncedYouTube from "./SyncedYouTube";
 
 const timerLinks = [
   "https://www.youtube.com/watch?v=qLWVVnPfCEY",
@@ -12,9 +13,12 @@ const timerLinks = [
   "https://www.youtube.com/watch?v=ofx4rrSCIbk",
 ];
 
-interface TimerProps {}
+interface TimerProps {
+  playing: boolean;
+  restartToken: number;
+}
 
-const Timer: React.FC<TimerProps> = () => {
+const Timer: React.FC<TimerProps> = ({ playing, restartToken }) => {
   // Pick a video once on mount so parent re-renders don't reload the iframe.
   const [videoId] = useState(() => {
     const randomLink = timerLinks[Math.floor(Math.random() * timerLinks.length)];
@@ -23,13 +27,12 @@ const Timer: React.FC<TimerProps> = () => {
 
   return (
     <div className="flex justify-around items-center px-4">
-      <iframe
+      <SyncedYouTube
+        videoId={videoId}
+        playing={playing}
+        restartToken={restartToken}
         className="w-full max-w-3xl xl:max-w-6xl aspect-video"
-        src={`https://www.youtube.com/embed/${videoId}`}
-        title="YouTube video player"
-        allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
-        allowFullScreen
-      ></iframe>
+      />
     </div>
   );
 };

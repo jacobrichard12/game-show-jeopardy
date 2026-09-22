@@ -1,0 +1,380 @@
+{
+  "easy": [
+    {
+      "question": "What is the capital of France?",
+      "category": "Geography",
+      "answers": [
+        "Rome",
+        "Paris",
+        "Berlin",
+        "Madrid"
+      ],
+      "correctAnswerIdx": 1
+    },
+    {
+      "question": "How many days are in a leap year?",
+      "category": "Mathematics",
+      "answers": [
+        "365",
+        "366",
+        "367",
+        "364"
+      ],
+      "correctAnswerIdx": 1
+    },
+    {
+      "question": "Which planet is known as the Red Planet?",
+      "category": "Science",
+      "answers": [
+        "Jupiter",
+        "Venus",
+        "Mars",
+        "Saturn"
+      ],
+      "correctAnswerIdx": 2
+    },
+    {
+      "question": "What color do you get by mixing blue and yellow?",
+      "category": "Art",
+      "answers": [
+        "Brown",
+        "Green",
+        "Purple",
+        "Orange"
+      ],
+      "correctAnswerIdx": 1
+    },
+    {
+      "question": "Which animal is known as the 'King of the Jungle'?",
+      "category": "Animals",
+      "answers": [
+        "Gorilla",
+        "Tiger",
+        "Elephant",
+        "Lion"
+      ],
+      "correctAnswerIdx": 3
+    },
+    {
+      "question": "How many continents are there?",
+      "category": "Geography",
+      "answers": [
+        "6",
+        "5",
+        "7",
+        "8"
+      ],
+      "correctAnswerIdx": 2
+    },
+    {
+      "question": "What is the largest mammal in the world?",
+      "category": "Animals",
+      "answers": [
+        "Blue whale",
+        "Hippopotamus",
+        "Giraffe",
+        "African elephant"
+      ],
+      "correctAnswerIdx": 0
+    },
+    {
+      "question": "What is H2O commonly known as?",
+      "category": "Science",
+      "answers": [
+        "Salt",
+        "Water",
+        "Hydrogen",
+        "Oxygen"
+      ],
+      "correctAnswerIdx": 1
+    },
+    {
+      "question": "How many sides does a hexagon have?",
+      "category": "Mathematics",
+      "answers": [
+        "7",
+        "8",
+        "5",
+        "6"
+      ],
+      "correctAnswerIdx": 3
+    },
+    {
+      "question": "Which is the largest ocean on Earth?",
+      "category": "Geography",
+      "answers": [
+        "Arctic",
+        "Pacific",
+        "Indian",
+        "Atlantic"
+      ],
+      "correctAnswerIdx": 1
+    },
+    {
+      "question": "What do bees make?",
+      "category": "Animals",
+      "answers": [
+        "Milk",
+        "Silk",
+        "Honey",
+        "Sugar"
+      ],
+      "correctAnswerIdx": 2
+    },
+    {
+      "question": "Which gas do plants absorb from the air?",
+      "category": "Science",
+      "answers": [
+        "Helium",
+        "Carbon dioxide",
+        "Oxygen",
+        "Nitrogen"
+      ],
+      "correctAnswerIdx": 1
+    },
+    {
+      "question": "What is the freezing point of water in degrees Celsius?",
+      "category": "Science",
+      "answers": [
+        "0",
+        "32",
+        "10",
+        "-10"
+      ],
+      "correctAnswerIdx": 0
+    },
+    {
+      "question": "Which country is home to the kangaroo?",
+      "category": "Geography",
+      "answers": [
+        "New Zealand",
+        "Brazil",
+        "South Africa",
+        "Australia"
+      ],
+      "correctAnswerIdx": 3
+    }
+  ],
+  "mediumHard": [
+    {
+      "question": "Who painted the Mona Lisa?",
+      "category": "Art",
+      "answers": [
+        "Leonardo da Vinci",
+        "Raphael",
+        "Vincent van Gogh",
+        "Michelangelo"
+      ],
+      "correctAnswerIdx": 0
+    },
+    {
+      "question": "What is the chemical symbol for gold?",
+      "category": "Science",
+      "answers": [
+        "Gd",
+        "Go",
+        "Au",
+        "Ag"
+      ],
+      "correctAnswerIdx": 2
+    },
+    {
+      "question": "Which is the longest river in South America?",
+      "category": "Geography",
+      "answers": [
+        "Paraná",
+        "Orinoco",
+        "Amazon",
+        "São Francisco"
+      ],
+      "correctAnswerIdx": 2
+    },
+    {
+      "question": "In what year did World War II end?",
+      "category": "History",
+      "answers": [
+        "1945",
+        "1943",
+        "1944",
+        "1946"
+      ],
+      "correctAnswerIdx": 0
+    },
+    {
+      "question": "What is the smallest prime number?",
+      "category": "Mathematics",
+      "answers": [
+        "1",
+        "2",
+        "0",
+        "3"
+      ],
+      "correctAnswerIdx": 1
+    },
+    {
+      "question": "Which element has the atomic number 1?",
+      "category": "Science",
+      "answers": [
+        "Helium",
+        "Lithium",
+        "Oxygen",
+        "Hydrogen"
+      ],
+      "correctAnswerIdx": 3
+    },
+    {
+      "question": "What is the capital of Canada?",
+      "category": "Geography",
+      "answers": [
+        "Ottawa",
+        "Vancouver",
+        "Montreal",
+        "Toronto"
+      ],
+      "correctAnswerIdx": 0
+    },
+    {
+      "question": "What is the hardest natural substance on Earth?",
+      "category": "Science",
+      "answers": [
+        "Iron",
+        "Quartz",
+        "Diamond",
+        "Granite"
+      ],
+      "correctAnswerIdx": 2
+    },
+    {
+      "question": "Which empire built Machu Picchu?",
+      "category": "History",
+      "answers": [
+        "Inca",
+        "Aztec",
+        "Olmec",
+        "Maya"
+      ],
+      "correctAnswerIdx": 0
+    },
+    {
+      "question": "How many bones are in the adult human body?",
+      "category": "Science",
+      "answers": [
+        "226",
+        "256",
+        "186",
+        "206"
+      ],
+      "correctAnswerIdx": 3
+    },
+    {
+      "question": "What is the capital of Australia?",
+      "category": "Geography",
+      "answers": [
+        "Sydney",
+        "Perth",
+        "Canberra",
+        "Melbourne"
+      ],
+      "correctAnswerIdx": 2
+    },
+    {
+      "question": "What is the powerhouse of the cell?",
+      "category": "Science",
+      "answers": [
+        "Nucleus",
+        "Golgi apparatus",
+        "Ribosome",
+        "Mitochondria"
+      ],
+      "correctAnswerIdx": 3
+    },
+    {
+      "question": "In which year did the Berlin Wall fall?",
+      "category": "History",
+      "answers": [
+        "1991",
+        "1989",
+        "1985",
+        "1987"
+      ],
+      "correctAnswerIdx": 1
+    },
+    {
+      "question": "Which is the largest desert in the world, counting polar deserts?",
+      "category": "Geography",
+      "answers": [
+        "Arabian",
+        "Antarctic",
+        "Sahara",
+        "Gobi"
+      ],
+      "correctAnswerIdx": 1
+    },
+    {
+      "question": "Which language has the most native speakers?",
+      "category": "Languages",
+      "answers": [
+        "Hindi",
+        "Spanish",
+        "English",
+        "Mandarin Chinese"
+      ],
+      "correctAnswerIdx": 3
+    },
+    {
+      "question": "What is the square root of 144?",
+      "category": "Mathematics",
+      "answers": [
+        "10",
+        "14",
+        "11",
+        "12"
+      ],
+      "correctAnswerIdx": 3
+    },
+    {
+      "question": "Who was the first person to walk on the Moon?",
+      "category": "History",
+      "answers": [
+        "Neil Armstrong",
+        "Buzz Aldrin",
+        "John Glenn",
+        "Yuri Gagarin"
+      ],
+      "correctAnswerIdx": 0
+    },
+    {
+      "question": "Which vitamin does the skin produce when exposed to sunlight?",
+      "category": "Science",
+      "answers": [
+        "Vitamin K",
+        "Vitamin A",
+        "Vitamin D",
+        "Vitamin C"
+      ],
+      "correctAnswerIdx": 2
+    },
+    {
+      "question": "What is the capital of Turkey?",
+      "category": "Geography",
+      "answers": [
+        "Istanbul",
+        "Ankara",
+        "Izmir",
+        "Bursa"
+      ],
+      "correctAnswerIdx": 1
+    },
+    {
+      "question": "Roughly how fast does light travel in a vacuum?",
+      "category": "Science",
+      "answers": [
+        "300,000 km/s",
+        "3,000 km/s",
+        "300 km/s",
+        "3,000,000 km/s"
+      ],
+      "correctAnswerIdx": 0
+    }
+  ]
+}

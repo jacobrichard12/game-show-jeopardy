@@ -1,5 +1,10 @@
 import React from "react";
-import { getCurrentQuestion, QuestionProps } from "../shared/types";
+import {
+  getCurrentQuestion,
+  MinuteQuestionState,
+  QuestionProps,
+} from "../shared/types";
+import SyncedYouTube from "./SyncedYouTube";
 import NoQuestionAvailable from "./NoQuestionAvailable";
 
 interface MinuteProps extends QuestionProps {}
@@ -16,6 +21,20 @@ const Minute: React.FC<MinuteProps> = ({
   }
 
   const title = questionData.title;
+  const questionState = gameState.currentGame
+    .questionState as MinuteQuestionState;
+  const playing = questionState.videoPlaying ?? false;
+
+  // Host controls for the video on the display screen.
+  const updateVideo = (changes: Partial<MinuteQuestionState>) => {
+    if (!isAdmin) return;
+    const updatedGameState = { ...gameState };
+    updatedGameState.currentGame.questionState = {
+      ...questionState,
+      ...changes,
+    };
+    sendGameStateToServer(updatedGameState);
+  };
 
   // Extract the YouTube video ID from the link
   const videoId = questionData.link.split("v=")[1]?.split("&")[0];
@@ -27,19 +46,44 @@ const Minute: React.FC<MinuteProps> = ({
 
       {/* Video and Timer Layout */}
       <div className="flex justify-center items-center">
-        {/* Embed the YouTube video. w-full + aspect-video (instead of a
-            literal width/height) so it scales down on narrow screens instead
-            of overflowing and forcing horizontal scroll. */}
+        {/* The video lives on the display; w-full + aspect-video (instead of
+            a literal width/height) so it scales down on narrow screens. */}
         {videoId && !isAdmin && (
-          <iframe
+          <SyncedYouTube
+            videoId={videoId}
+            playing={playing}
+            restartToken={questionState.videoRestart ?? 0}
             className="w-full max-w-3xl xl:max-w-6xl aspect-video"
-            src={`https://www.youtube.com/embed/${videoId}`}
-            title="YouTube video player"
-            allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
-            allowFullScreen
-          ></iframe>
+          />
         )}
       </div>
+
+      {isAdmin && (
+        <div className="mt-4 flex flex-col items-center gap-2">
+          <div className="flex flex-wrap justify-center gap-2">
+            <button
+              onClick={() => updateVideo({ videoPlaying: !playing })}
+              className="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600"
+            >
+              {playing ? "⏸ Pause video" : "▶ Play video"}
+            </button>
+            <button
+              onClick={() =>
+                updateVideo({
+                  videoPlaying: false,
+                  videoRestart: (questionState.videoRestart ?? 0) + 1,
+                })
+              }
+              className="bg-gray-200 text-gray-800 py-2 px-4 rounded hover:bg-gray-300"
+            >
+              ↺ Restart
+            </button>
+          </div>
+          <p className="text-sm text-gray-500">
+            Video on the display is {playing ? "playing" : "paused"}.
+          </p>
+        </div>
+      )}
     </div>
   );
 };
