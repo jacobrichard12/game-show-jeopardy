@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from "react";
-import { buzzerAudio, dingAudio } from "../shared/audio";
+import { buzzerAudio, dingAudio, getRandomAudio, happyFiles, puzzleDisplayAudio } from "../shared/audio";
 import {
   ALPHABET,
   countRevealedLetters,
@@ -17,11 +17,13 @@ import {
   WheelQuestionState,
 } from "../shared/types";
 import NoQuestionAvailable from "./NoQuestionAvailable";
+import StrikeFlash from "./StrikeFlash";
 
-// Hangman-style phrase board. Teams take turns calling letters; the host taps
-// them. A hit reveals every copy of the letter and the team keeps the turn; a
-// miss passes the turn. When the phrase is solved (or the host gives up) the
-// host awards the tile through the normal points buttons.
+// "Guess That Word": a hangman-style phrase board. Teams take turns calling
+// letters; the host taps them. A hit reveals every copy of the letter and the
+// team keeps the turn; a miss passes the turn. A wrong attempt at the whole
+// answer flashes a Feud-style X and passes the turn. When the phrase is solved
+// (or the host reveals it) the host awards the tile with the points buttons.
 const WheelPuzzle: React.FC<QuestionProps> = ({
   isAdmin,
   gameState,
@@ -31,18 +33,37 @@ const WheelPuzzle: React.FC<QuestionProps> = ({
   const questionState = gameState.currentGame.questionState as WheelQuestionState;
   const guessed = questionState.guessedLetters ?? [];
   const solved = !!questionState.solved;
+  const wrongGuesses = questionState.wrongGuesses ?? 0;
   const phrase = puzzle?.phrase ?? "";
   const revealedLetters = countRevealedLetters(phrase, guessed);
 
-  // Ding on a hit, buzzer on a miss: detected from state changes so it plays
-  // on the TV, not from the host's click.
-  const prev = useRef({ guessed: guessed.length, revealed: revealedLetters });
+  // Sting when the puzzle first appears on the TV (this component mounts on
+  // the TV when the host reveals the question). The ref keeps StrictMode's
+  // double mount in dev, or a TV reload mid-puzzle, from replaying it.
+  const displayPlayed = useRef(false);
+  useEffect(() => {
+    if (isAdmin || displayPlayed.current) return;
+    displayPlayed.current = true;
+    if (guessed.length === 0 && !solved) playSound(puzzleDisplayAudio);
+    // Mount only: this is about the puzzle appearing, not later changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Ding on a hit, buzzer on a miss, a cheer when the word is solved or
+  // revealed: detected from state changes so it plays on the TV, not from the
+  // host's click.
+  const prev = useRef({ guessed: guessed.length, revealed: revealedLetters, solved });
   useEffect(() => {
     const before = prev.current;
-    prev.current = { guessed: guessed.length, revealed: revealedLetters };
-    if (isAdmin || guessed.length <= before.guessed) return;
+    prev.current = { guessed: guessed.length, revealed: revealedLetters, solved };
+    if (isAdmin) return;
+    if (solved && !before.solved) {
+      playSound(getRandomAudio(happyFiles));
+      return;
+    }
+    if (guessed.length <= before.guessed) return;
     playSound(revealedLetters > before.revealed ? dingAudio : buzzerAudio);
-  }, [isAdmin, guessed.length, revealedLetters]);
+  }, [isAdmin, guessed.length, revealedLetters, solved]);
 
   if (!puzzle) {
     return <NoQuestionAvailable />;
@@ -73,6 +94,14 @@ const WheelPuzzle: React.FC<QuestionProps> = ({
     sendGameStateToServer({ ...gameState, whoseTurn: nextTeamId(teams, turnId) });
   };
 
+  const wrongGuess = () => {
+    if (!isAdmin || solved) return;
+    sendGameStateToServer({
+      ...updateQuestionState<WheelQuestionState>(gameState, { wrongGuesses: wrongGuesses + 1 }),
+      whoseTurn: nextTeamId(teams, turnId),
+    });
+  };
+
   const revealPuzzle = () => {
     if (!isAdmin) return;
     sendGameStateToServer(updateQuestionState<WheelQuestionState>(gameState, { solved: true }));
@@ -82,6 +111,7 @@ const WheelPuzzle: React.FC<QuestionProps> = ({
 
   return (
     <div className="rounded-xl bg-ink p-3 text-center text-white sm:p-6">
+      <StrikeFlash count={wrongGuesses} isAdmin={isAdmin} />
       <p className="mb-4 font-display text-lg font-semibold uppercase tracking-widest text-accent sm:text-2xl xl:text-5xl">
         {puzzle.category}
       </p>
@@ -167,6 +197,14 @@ const WheelPuzzle: React.FC<QuestionProps> = ({
             className="rounded bg-blue-500 px-4 py-2 text-white hover:bg-blue-600 disabled:opacity-50"
           >
             Pass turn
+          </button>
+          <button
+            type="button"
+            onClick={wrongGuess}
+            disabled={solved}
+            className="rounded bg-red-500 px-4 py-2 text-white hover:bg-red-600 disabled:opacity-50"
+          >
+            ✗ Wrong guess
           </button>
           <button
             type="button"

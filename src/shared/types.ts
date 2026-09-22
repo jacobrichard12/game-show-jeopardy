@@ -73,6 +73,7 @@ export interface GameData {
     scavenger?: ScavengerItems;
     closest?: ClosestQuestions;
     order?: OrderPuzzles;
+    charades?: CharadesPrompts;
 }
 
 export type FamilyFeudQuestions = Record<string, FamilyFeudQuestion>;
@@ -197,9 +198,19 @@ export interface ClockState {
     runId: number;
 }
 
+export type CharadesPrompts = Record<string, CharadesPrompt>;
+export interface CharadesPrompt extends Question {
+    category: string;
+    // Shared by every team in turn order; wraps around if a tile runs out.
+    words: string[];
+    seconds?: number;
+}
+
 export interface WheelQuestionState extends QuestionState {
     guessedLetters: string[];
     solved: boolean;
+    // Wrong attempts at solving the whole word (each flashes an X on the TV).
+    wrongGuesses: number;
 }
 
 export interface PerformQuestionState extends QuestionState {
@@ -210,6 +221,9 @@ export interface PerformQuestionState extends QuestionState {
 
 export interface ScavengerQuestionState extends QuestionState {
     clock: ClockState;
+    // The item stays hidden on the TV until the host shows it (which also
+    // starts the clock).
+    itemRevealed: boolean;
 }
 
 export interface ClosestQuestionState extends QuestionState {
@@ -222,9 +236,16 @@ export interface OrderQuestionState extends QuestionState {
     // Seeds the shuffle so host and TV show the same scrambled order.
     seed: number;
     revealedCount: number;
-    // teamId -> how many positions that team got right (host-entered).
-    correctCounts: Record<string, number | null>;
-    showResults: boolean;
+}
+
+export interface CharadesQuestionState extends QuestionState {
+    clock: ClockState;
+    // The team currently acting, or null before the first turn starts.
+    activeTeamId: string | null;
+    // Position in the tile's word list; every team continues from here.
+    wordIndex: number;
+    // teamId -> words guessed (null until that team has had a turn).
+    scores: Record<string, number | null>;
 }
 
 export enum GameName {
@@ -240,6 +261,7 @@ export enum GameName {
     SCAVENGER = "scavenger",
     CLOSEST = "closest",
     ORDER = "order",
+    CHARADES = "charades",
 }
 
 /**
@@ -271,7 +293,7 @@ export function getGameTitle(gameName: GameName): string {
         case GameName.HEAD_TO_HEAD:
             return "Head To Head";
         case GameName.WHEEL:
-            return "Wheel Puzzle";
+            return "Guess That Word";
         case GameName.ACT:
             return "Act, Draw, Describe";
         case GameName.SCAVENGER:
@@ -280,6 +302,8 @@ export function getGameTitle(gameName: GameName): string {
             return "Closest Wins";
         case GameName.ORDER:
             return "Put It In Order";
+        case GameName.CHARADES:
+            return "Reverse Charades";
         default:
             return "No Entry for Game Yet";
     }

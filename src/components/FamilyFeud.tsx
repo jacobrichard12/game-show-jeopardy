@@ -144,8 +144,14 @@ const FamilyFeud: React.FC<FamilyFeudProps> = ({
         </div>
       )}
       <div className="bg-ink border-2 border-accent/50 shadow-md rounded-lg p-3 sm:p-6 mx-auto max-w-4xl xl:max-w-6xl">
-        {questionState.showFeudPrompt && (
-          <p className="text-lg sm:text-2xl md:text-3xl xl:text-5xl font-display font-semibold text-white mb-4 text-center">
+        {/* The host always sees the prompt (faint until shown on the TV), so
+            showing it doesn't push the host's buttons down. */}
+        {(questionState.showFeudPrompt || isAdmin) && (
+          <p
+            className={`text-lg sm:text-2xl md:text-3xl xl:text-5xl font-display font-semibold mb-4 text-center ${
+              questionState.showFeudPrompt ? "text-white" : "text-white/40"
+            }`}
+          >
             {questionData.prompt}
           </p>
         )}

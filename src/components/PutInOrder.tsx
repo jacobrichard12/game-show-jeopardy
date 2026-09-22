@@ -1,5 +1,7 @@
-import React from "react";
-import { bestTeams, scrambledOrder, updateQuestionState } from "../shared/partyGames";
+import React, { useEffect, useRef } from "react";
+import { dingAudio } from "../shared/audio";
+import { scrambledOrder, updateQuestionState } from "../shared/partyGames";
+import { playSound } from "../shared/sound";
 import { teamColor } from "../shared/teamColors";
 import {
   getCurrentQuestion,
@@ -10,11 +12,10 @@ import NoQuestionAvailable from "./NoQuestionAvailable";
 
 const LABELS = "ABCDEFGHIJ".split("");
 
-// The TV shows a scrambled list (labelled A, B, C…); every team writes down
-// the order they think is right at the same time. The host then reveals the
-// true order one position at a time for suspense, enters how many positions
-// each team got right, and the best team is highlighted. The host awards the
-// tile to that team with the normal buttons.
+// The TV shows a scrambled list (labelled A, B, C…) and one team — whoever has
+// the turn — works out the right order. The host then reveals the true order
+// one position at a time for suspense (a ding each time) and either awards the
+// tile to that team or marks it "No points".
 const PutInOrder: React.FC<QuestionProps> = ({
   isAdmin,
   gameState,
@@ -22,6 +23,15 @@ const PutInOrder: React.FC<QuestionProps> = ({
 }) => {
   const puzzle = getCurrentQuestion(gameState.gameData.order ?? {}, gameState);
   const questionState = gameState.currentGame.questionState as OrderQuestionState;
+  const revealedCount = questionState.revealedCount ?? 0;
+
+  // Ding on the TV each time more of the order is revealed.
+  const prevRevealed = useRef(revealedCount);
+  useEffect(() => {
+    const before = prevRevealed.current;
+    prevRevealed.current = revealedCount;
+    if (!isAdmin && revealedCount > before) playSound(dingAudio);
+  }, [isAdmin, revealedCount]);
 
   if (!puzzle) {
     return <NoQuestionAvailable />;
@@ -29,10 +39,9 @@ const PutInOrder: React.FC<QuestionProps> = ({
 
   const teams = gameState.teams;
   const total = puzzle.items.length;
-  const revealedCount = questionState.revealedCount ?? 0;
   const allRevealed = revealedCount >= total;
-  const counts = questionState.correctCounts ?? {};
-  const winners = bestTeams(counts);
+  const turnIndex = Math.max(0, teams.findIndex((team) => team.id === gameState.whoseTurn));
+  const turnTeam = teams[turnIndex];
   const scrambled = scrambledOrder(puzzle.items, questionState.seed);
   const labelFor = (item: string) => LABELS[scrambled.indexOf(item)];
 
@@ -45,20 +54,9 @@ const PutInOrder: React.FC<QuestionProps> = ({
   const revealAll = () => {
     if (isAdmin) patch({ revealedCount: total });
   };
-  const setCount = (teamId: string, value: string) => {
-    if (!isAdmin) return;
-    patch({
-      correctCounts: { ...counts, [teamId]: value === "" ? null : Number(value) },
-    });
-  };
   const resetRound = () => {
     if (!isAdmin) return;
-    patch({
-      seed: Math.floor(Math.random() * 2147483647),
-      revealedCount: 0,
-      correctCounts: Object.fromEntries(teams.map((team) => [team.id, null])),
-      showResults: false,
-    });
+    patch({ seed: Math.floor(Math.random() * 2147483647), revealedCount: 0 });
   };
 
   return (
@@ -70,6 +68,14 @@ const PutInOrder: React.FC<QuestionProps> = ({
         <p className="mt-2 text-base text-blue-100 sm:text-xl xl:text-4xl">
           {puzzle.prompt}: <span className="text-accent">{puzzle.direction}</span>
         </p>
+        {turnTeam && (
+          <p className="mt-3 text-lg sm:text-2xl xl:text-5xl">
+            Playing:{" "}
+            <span className={`font-display font-semibold ${teamColor(turnIndex).text}`}>
+              {turnTeam.name}
+            </span>
+          </p>
+        )}
       </div>
 
       <div className="mt-5 grid gap-4 sm:grid-cols-2">
@@ -110,8 +116,11 @@ const PutInOrder: React.FC<QuestionProps> = ({
                       {item} <span className="text-white/60">({labelFor(item)})</span>
                     </>
                   ) : isAdmin ? (
-                    // The host can see the answer, faintly, before it's revealed.
-                    <span className="text-white/30">{item}</span>
+                    // The host sees the answer faintly before it's revealed, in
+                    // the same text as after so the panel doesn't reflow.
+                    <span className="text-white/30">
+                      {item} ({labelFor(item)})
+                    </span>
                   ) : (
                     <span className="text-white/30">?</span>
                   )}
@@ -121,31 +130,6 @@ const PutInOrder: React.FC<QuestionProps> = ({
           </ol>
         </div>
       </div>
-
-      {questionState.showResults && (
-        <ul className="mx-auto mt-5 max-w-2xl space-y-2 text-center">
-          {teams.map((team, index) => {
-            const count = counts[team.id];
-            const isWinner = winners.includes(team.id);
-            return (
-              <li
-                key={team.id}
-                className={`flex justify-between rounded-lg border-2 p-3 text-lg sm:text-2xl xl:p-5 xl:text-5xl ${
-                  isWinner ? "border-amber-300 bg-amber-400/20" : "border-white/10 bg-surface"
-                }`}
-              >
-                <span className={`font-display font-semibold ${teamColor(index).text}`}>
-                  {isWinner && <span aria-hidden="true">🏆 </span>}
-                  {team.name}
-                </span>
-                <span>
-                  {count === null || count === undefined ? "—" : `${count} / ${total} correct`}
-                </span>
-              </li>
-            );
-          })}
-        </ul>
-      )}
 
       {isAdmin && (
         <div className="mt-5 space-y-4 text-center">
@@ -174,41 +158,9 @@ const PutInOrder: React.FC<QuestionProps> = ({
               Reset round
             </button>
           </div>
-
-          {allRevealed && (
-            <div className="rounded-lg bg-surface p-3">
-              <p className="mb-2 text-sm text-white/70">
-                How many positions did each team get right?
-              </p>
-              <div className="flex flex-wrap justify-center gap-3">
-                {teams.map((team) => (
-                  <label key={team.id} className="flex items-center gap-2">
-                    <span>{team.name}</span>
-                    <select
-                      aria-label={`${team.name} correct`}
-                      value={counts[team.id] ?? ""}
-                      onChange={(e) => setCount(team.id, e.target.value)}
-                      className="rounded border p-1 text-gray-900"
-                    >
-                      <option value="">–</option>
-                      {Array.from({ length: total + 1 }, (_, n) => (
-                        <option key={n} value={n}>
-                          {n}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                ))}
-              </div>
-              <button
-                type="button"
-                onClick={() => patch({ showResults: !questionState.showResults })}
-                className="mt-3 rounded bg-emerald-600 px-4 py-2 text-white hover:bg-emerald-700"
-              >
-                {questionState.showResults ? "Hide results" : "Show results on TV"}
-              </button>
-            </div>
-          )}
+          <p className="text-sm text-white/60">
+            Award the tile to the team if they got it right, or use No points.
+          </p>
         </div>
       )}
     </div>

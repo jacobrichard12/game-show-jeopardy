@@ -1,4 +1,5 @@
 import {
+  CharadesQuestionState,
   ClockState,
   ClosestQuestionState,
   ClosestRule,
@@ -24,6 +25,23 @@ export const DEFAULT_CLOCK_SECONDS = 60;
 export function createClock(seconds: number): ClockState {
   const durationMs = Math.max(1, Math.round(seconds)) * 1000;
   return { durationMs, remainingMs: durationMs, running: false, runId: 0 };
+}
+
+// Host-set clock length. Bounded so a typo can't make a zero or hour-long clock.
+export const MIN_CLOCK_SECONDS = 5;
+export const MAX_CLOCK_SECONDS = 600;
+
+// The same clock, reset and paused at a new length. `runId` bumps so both
+// screens pick up the change.
+export function setClockSeconds(clock: ClockState, seconds: number): ClockState {
+  const bounded = Math.min(MAX_CLOCK_SECONDS, Math.max(MIN_CLOCK_SECONDS, Math.round(seconds)));
+  const durationMs = bounded * 1000;
+  return { durationMs, remainingMs: durationMs, running: false, runId: clock.runId + 1 };
+}
+
+// The clock started from its current time left.
+export function startClock(clock: ClockState): ClockState {
+  return { ...clock, running: true, runId: clock.runId + 1 };
 }
 
 // ---- Immutable state updates ------------------------------------------------
@@ -171,9 +189,17 @@ export function computeClosestResult(
   return { winners, distances, eligible };
 }
 
-// ---- Put It In Order --------------------------------------------------------
+// ---- Reverse Charades -------------------------------------------------------
 
-// Team(s) with the most correct positions; nobody if no one scored.
+// The word at `index`, wrapping so a long game never runs off the list.
+export function charadesWord(words: readonly string[], index: number): string {
+  if (words.length === 0) return "";
+  return words[((index % words.length) + words.length) % words.length];
+}
+
+// ---- Scoring helpers --------------------------------------------------------
+
+// Team(s) with the highest count; nobody if no one scored.
 export function bestTeams(counts: Record<string, number | null>): string[] {
   const entries = Object.entries(counts).filter(
     (entry): entry is [string, number] => typeof entry[1] === "number"
@@ -228,7 +254,12 @@ export function createInitialQuestionState(
       return state;
     }
     case GameName.WHEEL: {
-      const state: WheelQuestionState = { promptVisible: false, guessedLetters: [], solved: false };
+      const state: WheelQuestionState = {
+        promptVisible: false,
+        guessedLetters: [],
+        solved: false,
+        wrongGuesses: 0,
+      };
       return state;
     }
     case GameName.ACT: {
@@ -236,7 +267,7 @@ export function createInitialQuestionState(
       return state;
     }
     case GameName.SCAVENGER: {
-      const state: ScavengerQuestionState = { promptVisible: false, clock: clock() };
+      const state: ScavengerQuestionState = { promptVisible: false, clock: clock(), itemRevealed: false };
       return state;
     }
     case GameName.CLOSEST: {
@@ -248,8 +279,16 @@ export function createInitialQuestionState(
         promptVisible: false,
         seed: Math.floor(Math.random() * 2147483647),
         revealedCount: 0,
-        correctCounts: nullPerTeam(),
-        showResults: false,
+      };
+      return state;
+    }
+    case GameName.CHARADES: {
+      const state: CharadesQuestionState = {
+        promptVisible: false,
+        clock: clock(),
+        activeTeamId: null,
+        wordIndex: 0,
+        scores: nullPerTeam(),
       };
       return state;
     }

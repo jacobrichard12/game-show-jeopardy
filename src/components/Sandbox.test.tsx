@@ -33,14 +33,25 @@ const host = () => screen.getByText("Host panel").closest("section") as HTMLElem
 const chooseGame = (title: string) => select(screen.getByLabelText("Game mode"), title);
 const revealToTv = () => click(screen.getByRole("button", { name: /Next \(reveal to TV\)/ }));
 
+// Sources of every sound played, in order (asset imports are file names in
+// tests, e.g. "http://localhost/yay.mp3").
+let played: string[] = [];
+const playedSince = (from: number) => played.slice(from);
+
 beforeEach(() => {
+  played = [];
   // jsdom doesn't implement media playback; the games play sounds on the TV.
-  window.HTMLMediaElement.prototype.play = jest.fn(() => Promise.resolve()) as any;
+  window.HTMLMediaElement.prototype.play = jest.fn(function (this: HTMLMediaElement) {
+    played.push(this.src);
+    return Promise.resolve();
+  }) as any;
   window.HTMLMediaElement.prototype.pause = jest.fn();
 });
 
+const HAPPY = /(yay|winning\d)\./;
+
 describe("Sandbox", () => {
-  it("starts on Wheel Puzzle with a host panel and a TV, hidden until 'Next'", () => {
+  it("starts on Guess That Word with a host panel and a TV, hidden until 'Next'", () => {
     render(<Sandbox />);
     expect(screen.getByText("Host panel")).toBeInTheDocument();
     expect(screen.getByText("TV display")).toBeInTheDocument();
@@ -109,11 +120,35 @@ describe("Sandbox", () => {
       }
     });
 
-    it("'Reveal puzzle' finishes it", () => {
+    it("plays the puzzle-display sting once when the puzzle appears on the TV", () => {
+      render(<Sandbox />);
+      expect(played).toEqual([]);
+      revealToTv();
+      expect(played).toEqual([expect.stringMatching(/puzzle-display/)]);
+    });
+
+    it("'Reveal puzzle' finishes it with a cheer on the TV", () => {
       render(<Sandbox />);
       revealToTv();
+      const before = played.length;
       click(screen.getByRole("button", { name: "Reveal puzzle" }));
       expect(within(tv()).getByText("Solved!")).toBeInTheDocument();
+      expect(playedSince(before)).toEqual([expect.stringMatching(HAPPY)]);
+    });
+
+    it("'Wrong guess' flashes an X with a buzzer on the TV and passes the turn", () => {
+      render(<Sandbox />);
+      revealToTv();
+      click(screen.getByRole("button", { name: /Show game state/ }));
+      expect(within(tv()).queryByRole("img", { name: "Wrong" })).not.toBeInTheDocument();
+
+      const before = played.length;
+      click(screen.getByRole("button", { name: /Wrong guess/ }));
+      expect(within(tv()).getByRole("img", { name: "Wrong" })).toBeInTheDocument();
+      // Only the TV flashes; the host panel doesn't get a full-screen X.
+      expect(within(host()).queryByRole("img", { name: "Wrong" })).not.toBeInTheDocument();
+      expect(playedSince(before)).toEqual([expect.stringMatching(/buzzer/)]);
+      expect(screen.getByText(/"whoseTurn": "team-2"/)).toBeInTheDocument();
     });
   });
 
@@ -141,13 +176,67 @@ describe("Sandbox", () => {
   });
 
   describe("Scavenger Sprint", () => {
-    it("shows the item and a clock on the TV", () => {
+    it("hides the item until the host shows it, which starts the clock", () => {
       render(<Sandbox />);
       chooseGame("Scavenger Sprint");
       revealToTv();
       expect(within(tv()).getByText(/Find it and bring it to the host/)).toBeInTheDocument();
+      expect(within(tv()).getByText("Get ready…")).toBeInTheDocument();
       expect(within(tv()).getByLabelText("Time remaining")).toBeInTheDocument();
-      expect(screen.getByRole("button", { name: /Start clock/ })).toBeInTheDocument();
+      expect(screen.getByText("Item (host only)")).toBeInTheDocument();
+      // No separate start: the clock starts with the reveal.
+      expect(screen.queryByRole("button", { name: /Start clock/ })).not.toBeInTheDocument();
+
+      click(screen.getByRole("button", { name: /Show item & start clock/ }));
+      expect(within(tv()).queryByText("Get ready…")).not.toBeInTheDocument();
+      expect(screen.getByText("On the TV now")).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: /Show item & start clock/ })).toBeDisabled();
+      expect(screen.getByRole("button", { name: /Pause clock/ })).toBeInTheDocument();
+    });
+  });
+
+  describe("Countdown clock", () => {
+    afterEach(() => {
+      jest.useRealTimers();
+    });
+
+    it("the host can change the seconds; the TV shows Time's up with a buzzer at zero", () => {
+      jest.useFakeTimers();
+      render(<Sandbox />);
+      chooseGame("Act, Draw, Describe");
+      revealToTv();
+
+      const seconds = screen.getByLabelText("Clock seconds");
+      act(() => {
+        userEvent.clear(seconds);
+      });
+      type(seconds, "90");
+      click(screen.getByRole("button", { name: "Set seconds" }));
+      expect(within(tv()).getByLabelText("Time remaining")).toHaveTextContent("1:30");
+
+      act(() => {
+        userEvent.clear(seconds);
+      });
+      type(seconds, "5");
+      click(screen.getByRole("button", { name: "Set seconds" }));
+      expect(within(tv()).getByLabelText("Time remaining")).toHaveTextContent("0:05");
+
+      click(screen.getByRole("button", { name: /Start clock/ }));
+      // The seconds box is locked while the clock runs.
+      expect(screen.getByLabelText("Clock seconds")).toBeDisabled();
+      const before = played.length;
+      // One second at a time, so each second renders (and sounds) on its own.
+      for (let i = 0; i < 6; i++) {
+        act(() => {
+          jest.advanceTimersByTime(1000);
+        });
+      }
+      expect(within(tv()).getByText("Time's up!")).toBeInTheDocument();
+      const sounds = playedSince(before);
+      // A tick (not the answer ding) for each of the last seconds, then the buzzer.
+      expect(sounds.filter((src) => /tick/.test(src)).length).toBeGreaterThanOrEqual(4);
+      expect(sounds.filter((src) => /yes-ding/.test(src))).toHaveLength(0);
+      expect(sounds.filter((src) => /buzzer/.test(src))).toHaveLength(1);
     });
   });
 
@@ -168,8 +257,10 @@ describe("Sandbox", () => {
       click(screen.getByRole("button", { name: "Lock in Team B" }));
       expect(within(tv()).getAllByText(/Locked in/)).toHaveLength(2);
 
+      const before = played.length;
       click(screen.getByRole("button", { name: "Reveal answer" }));
       expect(within(tv()).getByText("Winner: Team B")).toBeInTheDocument();
+      expect(playedSince(before)).toEqual([expect.stringMatching(HAPPY)]);
 
       // Award the tile to the winner with the normal points button.
       click(screen.getByRole("button", { name: /Add 100 points to Team B/ }));
@@ -188,26 +279,62 @@ describe("Sandbox", () => {
   });
 
   describe("Put It In Order", () => {
-    it("reveals the order step by step, then shows results", () => {
+    it("one team plays; the order is revealed step by step with a ding each time", () => {
       render(<Sandbox />);
       chooseGame("Put It In Order");
       revealToTv();
 
       expect(within(tv()).getByText("Scrambled")).toBeInTheDocument();
+      expect(within(tv()).getByText(/Playing:/)).toHaveTextContent("Playing: Team A");
       // Nothing revealed yet on the TV: only "?" placeholders in the answer column.
       expect(within(tv()).getAllByText("?").length).toBeGreaterThanOrEqual(3);
 
+      let before = played.length;
       click(screen.getByRole("button", { name: "Reveal next" }));
       expect(within(tv()).getAllByText("?").length).toBeGreaterThanOrEqual(2);
+      expect(playedSince(before)).toEqual([expect.stringMatching(/yes-ding/)]);
 
+      before = played.length;
+      click(screen.getByRole("button", { name: "Reveal next" }));
+      expect(playedSince(before)).toEqual([expect.stringMatching(/yes-ding/)]);
+
+      const hostText = host().textContent;
       click(screen.getByRole("button", { name: "Reveal all" }));
       expect(within(tv()).queryByText("?")).not.toBeInTheDocument();
+      expect(host().textContent).toBe(hostText);
+      // No per-team comparison any more.
+      expect(screen.queryByText(/positions did each team get right/)).not.toBeInTheDocument();
+    });
+  });
 
-      select(screen.getByLabelText("Team A correct"), "3");
-      select(screen.getByLabelText("Team B correct"), "1");
-      click(screen.getByRole("button", { name: "Show results on TV" }));
-      expect(within(tv()).getByText(/^3 \/ \d+ correct$/)).toBeInTheDocument();
-      expect(within(tv()).getByText(/^1 \/ \d+ correct$/)).toBeInTheDocument();
+  describe("Reverse Charades", () => {
+    it("each team takes a timed turn; Got it scores, Skip moves on", () => {
+      render(<Sandbox />);
+      chooseGame("Reverse Charades");
+      revealToTv();
+
+      // Before any turn the TV shows no word.
+      expect(within(tv()).getByText("Get ready…")).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: /Got it/ })).toBeDisabled();
+
+      click(screen.getByRole("button", { name: "Start Team A's turn" }));
+      expect(within(tv()).getByText(/Up now:/)).toHaveTextContent("Team A");
+      expect(screen.getByRole("button", { name: /Pause clock/ })).toBeInTheDocument();
+      const firstWord = within(tv()).getByLabelText("Current word").textContent!;
+      expect(firstWord.length).toBeGreaterThan(0);
+
+      const before = played.length;
+      click(screen.getByRole("button", { name: /Got it/ }));
+      expect(playedSince(before)).toEqual([expect.stringMatching(/yes-ding/)]);
+      click(screen.getByRole("button", { name: "Skip" }));
+      click(screen.getByRole("button", { name: /Got it/ }));
+      expect(within(tv()).getByText("2 words")).toBeInTheDocument();
+      expect(within(tv()).getByLabelText("Current word")).not.toHaveTextContent(firstWord);
+
+      click(screen.getByRole("button", { name: "Start Team B's turn" }));
+      expect(within(tv()).getByText(/Up now:/)).toHaveTextContent("Team B");
+      expect(within(tv()).getByText("0 words")).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "Redo Team A's turn" })).toBeInTheDocument();
     });
   });
 
@@ -222,6 +349,16 @@ describe("Sandbox", () => {
 
       click(within(host()).getAllByRole("listitem")[0]);
       expect(tvItems()[0]).not.toHaveTextContent(/^1$/); // now shows the answer + points
+    });
+
+    it("the host sees the prompt from the start, so showing it doesn't move the host's buttons", () => {
+      render(<Sandbox />);
+      chooseGame("Family Feud");
+      revealToTv();
+      const hostText = host().textContent;
+      expect(within(tv()).queryByText(/\?$/)).not.toBeInTheDocument();
+      click(screen.getByRole("button", { name: "Show Feud Prompt" }));
+      expect(host().textContent).toBe(hostText);
     });
 
     it("Show Feud Prompt is recorded", () => {
@@ -248,10 +385,15 @@ describe("Sandbox", () => {
       revealToTv();
 
       expect(within(tv()).getAllByText("???")).toHaveLength(4);
+      // The host already sees the answers, so revealing doesn't change the
+      // host panel's text (which is what made the buttons jump).
+      expect(within(host()).queryByText("???")).not.toBeInTheDocument();
+      const hostText = host().textContent;
       for (let i = 0; i < 4; i++) {
         click(screen.getByRole("button", { name: "Reveal Next Answer" }));
       }
       expect(within(tv()).queryByText("???")).not.toBeInTheDocument();
+      expect(host().textContent).toBe(hostText);
 
       expect(screen.getByRole("button", { name: "Highlight Correct Answer" })).toBeDisabled();
       click(answerButton("A"));
@@ -291,7 +433,7 @@ describe("Sandbox", () => {
     const games = Object.values(GameName).filter(
       (g) => !["board", "timer"].includes(g)
     );
-    expect(games).toHaveLength(9);
+    expect(games).toHaveLength(10);
 
     games.forEach((game) => {
       chooseGame(getGameTitle(game));

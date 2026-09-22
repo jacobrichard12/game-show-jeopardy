@@ -59,8 +59,8 @@ describe("partyGames.json content", () => {
   const banks = partyGames as unknown as Record<string, DifficultyBank<any>>;
   const games = Object.keys(banks);
 
-  it("covers all five party games", () => {
-    expect(games.sort()).toEqual(["act", "closest", "order", "scavenger", "wheel"]);
+  it("covers all six party games", () => {
+    expect(games.sort()).toEqual(["act", "charades", "closest", "order", "scavenger", "wheel"]);
   });
 
   it.each(games)("%s has enough entries for every board slot", (game) => {
@@ -92,6 +92,25 @@ describe("partyGames.json content", () => {
       expect(Number.isFinite(q.answer)).toBe(true);
       expect(["closest", "noOver", undefined]).toContain(q.rule);
     });
+  });
+
+  it("charades entries have a category and enough unique words for a few turns", () => {
+    all("charades").forEach((p) => {
+      expect(p.category.length).toBeGreaterThan(0);
+      expect(p.words.length).toBeGreaterThanOrEqual(10);
+      expect(new Set(p.words).size).toBe(p.words.length);
+    });
+  });
+
+  // Most act/charades words are imported from game-words
+  // (scripts/game-words/); a word should appear only once per game.
+  it.each([
+    ["act", (p: any) => [p.word]],
+    ["charades", (p: any) => p.words],
+  ])("%s has no repeated words across its entries", (game, wordsOf) => {
+    const words: string[] = all(game as string).flatMap(wordsOf as (p: any) => string[]);
+    const keys = words.map((w) => w.toLowerCase().replace(/[^a-z0-9]/g, ""));
+    expect(keys.filter((k, i) => keys.indexOf(k) !== i)).toEqual([]);
   });
 
   it("order puzzles have 3-10 unique items (the labels only go A-J)", () => {

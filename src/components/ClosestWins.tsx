@@ -1,5 +1,7 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
+import { getRandomAudio, happyFiles } from "../shared/audio";
 import { computeClosestResult, updateQuestionState } from "../shared/partyGames";
+import { playSound } from "../shared/sound";
 import { teamColor } from "../shared/teamColors";
 import {
   ClosestQuestion,
@@ -34,6 +36,15 @@ const ClosestWins: React.FC<QuestionProps> = ({
   const questionState = gameState.currentGame.questionState as ClosestQuestionState;
   // Host-side text boxes, before a guess is locked in.
   const [drafts, setDrafts] = useState<Record<string, string>>({});
+  const revealed = !!questionState.revealed;
+
+  // A cheer on the TV when the answer and winner are revealed.
+  const prevRevealed = useRef(revealed);
+  useEffect(() => {
+    const before = prevRevealed.current;
+    prevRevealed.current = revealed;
+    if (!isAdmin && revealed && !before) playSound(getRandomAudio(happyFiles));
+  }, [isAdmin, revealed]);
 
   if (!question) {
     return <NoQuestionAvailable />;
@@ -41,7 +52,6 @@ const ClosestWins: React.FC<QuestionProps> = ({
 
   const teams = gameState.teams;
   const guesses = questionState.guesses ?? {};
-  const revealed = !!questionState.revealed;
   const rule = question.rule ?? "closest";
   const result = computeClosestResult(question.answer, guesses, rule);
   const anyLocked = teams.some((team) => guesses[team.id] !== null && guesses[team.id] !== undefined);

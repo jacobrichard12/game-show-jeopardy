@@ -206,7 +206,15 @@ const Millionaire: React.FC<MillionaireProps> = ({
               }
             >
               <span className="font-display font-semibold text-accent mr-3">{prefix[index].toUpperCase()}</span>
-              {isRevealed ? answer : "???"}
+              {isRevealed ? (
+                answer
+              ) : isAdmin ? (
+                // The host sees unrevealed answers faintly, as the same text
+                // they'll become, so revealing doesn't reflow the panel.
+                <span className="opacity-60">{answer}</span>
+              ) : (
+                "???"
+              )}
             </button>
           );
         })}

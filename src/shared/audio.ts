@@ -12,6 +12,8 @@ import winning3 from "../assets/winning3.mp3";
 import buzzer from "../assets/buzzer.wav";
 import ding from "../assets/yes-ding.mp3";
 import feudTheme from "../assets/feudShort.mp3"
+import tick from "../assets/tick.wav";
+import puzzleDisplay from "../assets/puzzle-display.mp3";
 
 export const millionaireSoundtrackFiles = [soundtrack1, soundtrack2, soundtrack3];
 export const sadFiles = [oof, losing1, losing2, losing3];
@@ -19,6 +21,10 @@ export const happyFiles = [yay, winning1, winning2, winning3];
 export const buzzerAudio = buzzer;
 export const dingAudio = ding;  
 export const familyFeudTheme = feudTheme;
+// Countdown clocks, last 5 seconds (distinct from the answer-reveal ding).
+export const tickAudio = tick;
+// Guess That Word: when the puzzle first appears on the TV.
+export const puzzleDisplayAudio = puzzleDisplay;
 
 export const getRandomAudio = (files: string[]) => {
     return files[Math.floor(Math.random() * files.length)]

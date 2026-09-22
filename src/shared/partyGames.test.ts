@@ -1,5 +1,6 @@
 import {
   bestTeams,
+  charadesWord,
   computeClosestResult,
   countRevealedLetters,
   createClock,
@@ -9,16 +10,20 @@ import {
   phraseHasLetter,
   scrambledOrder,
   seededShuffle,
+  setClockSeconds,
+  startClock,
   updateQuestionState,
   wheelWords,
 } from "./partyGames";
 import {
+  CharadesQuestionState,
   ClosestQuestionState,
   createDefaultTeams,
   GameName,
   GameState,
   OrderQuestionState,
   PerformQuestionState,
+  ScavengerQuestionState,
   WheelQuestionState,
 } from "./types";
 
@@ -185,6 +190,39 @@ describe("createClock", () => {
   });
 });
 
+describe("setClockSeconds / startClock", () => {
+  const clock = { durationMs: 60000, remainingMs: 12000, running: true, runId: 3 };
+
+  it("resets and pauses at the new length, bumping runId", () => {
+    expect(setClockSeconds(clock, 90)).toEqual({
+      durationMs: 90000,
+      remainingMs: 90000,
+      running: false,
+      runId: 4,
+    });
+  });
+
+  it("keeps the length within bounds", () => {
+    expect(setClockSeconds(clock, 0).durationMs).toBe(5000);
+    expect(setClockSeconds(clock, 99999).durationMs).toBe(600000);
+    expect(setClockSeconds(clock, 12.4).durationMs).toBe(12000);
+  });
+
+  it("startClock runs from the time left", () => {
+    const paused = { ...clock, running: false };
+    expect(startClock(paused)).toEqual({ ...paused, running: true, runId: 4 });
+  });
+});
+
+describe("charadesWord", () => {
+  it("wraps around the list", () => {
+    const words = ["a", "b", "c"];
+    expect(charadesWord(words, 0)).toBe("a");
+    expect(charadesWord(words, 4)).toBe("b");
+    expect(charadesWord([], 2)).toBe("");
+  });
+});
+
 describe("createInitialQuestionState", () => {
   const teams = createDefaultTeams(3);
 
@@ -193,7 +231,14 @@ describe("createInitialQuestionState", () => {
       promptVisible: false,
       guessedLetters: [],
       solved: false,
+      wrongGuesses: 0,
     });
+  });
+
+  it("scavenger starts with the item hidden", () => {
+    const state = createInitialQuestionState(GameName.SCAVENGER, teams) as ScavengerQuestionState;
+    expect(state.itemRevealed).toBe(false);
+    expect(state.clock.running).toBe(false);
   });
 
   it("act/scavenger use the default clock, or the bank's override", () => {
@@ -210,12 +255,20 @@ describe("createInitialQuestionState", () => {
     expect(state.revealed).toBe(false);
   });
 
-  it("order starts unrevealed with a seed and null counts", () => {
+  it("order starts unrevealed with a seed", () => {
     const state = createInitialQuestionState(GameName.ORDER, teams) as OrderQuestionState;
     expect(typeof state.seed).toBe("number");
     expect(state.revealedCount).toBe(0);
-    expect(state.correctCounts).toEqual({ "team-1": null, "team-2": null, "team-3": null });
-    expect(state.showResults).toBe(false);
+  });
+
+  it("charades starts with no active team, a null score per team, and the bank's clock", () => {
+    const state = createInitialQuestionState(GameName.CHARADES, teams, {
+      seconds: 45,
+    }) as CharadesQuestionState;
+    expect(state.activeTeamId).toBeNull();
+    expect(state.wordIndex).toBe(0);
+    expect(state.scores).toEqual({ "team-1": null, "team-2": null, "team-3": null });
+    expect(state.clock.durationMs).toBe(45000);
   });
 
   it("the original games mirror what the host panel builds today", () => {

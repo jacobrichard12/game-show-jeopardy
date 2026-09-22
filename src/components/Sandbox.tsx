@@ -9,6 +9,7 @@ import { awardPoints } from "../shared/scoring";
 import { buildMillionaireQuestions, buildSlotBank, DifficultyBank, MillionairePool } from "../shared/slots";
 import { teamColor } from "../shared/teamColors";
 import {
+  CharadesPrompt,
   ClosestQuestion,
   createDefaultTeams,
   FamilyFeudQuestion,
@@ -36,6 +37,7 @@ import Millionaire from "./Millionaire";
 import Minute from "./Minute";
 import PutInOrder from "./PutInOrder";
 import QuestionWrapper from "./QuestionWrapper";
+import ReverseCharades from "./ReverseCharades";
 import ScavengerSprint from "./ScavengerSprint";
 import ScoreBoard from "./Scoreboard";
 import WheelPuzzle from "./WheelPuzzle";
@@ -46,7 +48,17 @@ import WheelPuzzle from "./WheelPuzzle";
 // host panel and as the TV — using the very same game components, scoring
 // buttons and scoreboard as a real room. "Sending" state is just setState here.
 
-type BankKey = "feud" | "minute" | "millionaire" | "head" | "wheel" | "act" | "scavenger" | "closest" | "order";
+type BankKey =
+  | "feud"
+  | "minute"
+  | "millionaire"
+  | "head"
+  | "wheel"
+  | "act"
+  | "scavenger"
+  | "closest"
+  | "order"
+  | "charades";
 
 interface ModeDef {
   name: GameName;
@@ -63,7 +75,7 @@ const MODES: ModeDef[] = [
     group: "party",
     Component: WheelPuzzle,
     howTo:
-      "Teams call letters in turn; tap each letter on the host panel. A miss passes the turn. Then award the tile.",
+      "Teams call letters in turn; tap each letter on the host panel. A miss passes the turn. If a team guesses the whole thing wrong, hit Wrong guess (big X on the TV, turn passes). Reveal puzzle plays a cheer. Then award the tile.",
   },
   {
     name: GameName.ACT,
@@ -78,7 +90,8 @@ const MODES: ModeDef[] = [
     bank: "scavenger",
     group: "party",
     Component: ScavengerSprint,
-    howTo: "Start the clock; first team to bring the item to the host wins the tile.",
+    howTo:
+      "The item stays hidden until you click Show item & start clock; first team to bring it to the host wins the tile.",
   },
   {
     name: GameName.CLOSEST,
@@ -86,7 +99,7 @@ const MODES: ModeDef[] = [
     group: "party",
     Component: ClosestWins,
     howTo:
-      "Enter and lock in each team's number, reveal, then award the tile to the highlighted team.",
+      "Enter and lock in each team's number, reveal (cheer on the TV), then award the tile to the highlighted team.",
   },
   {
     name: GameName.ORDER,
@@ -94,7 +107,15 @@ const MODES: ModeDef[] = [
     group: "party",
     Component: PutInOrder,
     howTo:
-      "Reveal the true order one at a time, enter each team's correct-position count, show results, then award the tile.",
+      "Set whose turn it is; that team orders the list. Reveal the true order one at a time (ding each time), then award the tile or use No points.",
+  },
+  {
+    name: GameName.CHARADES,
+    bank: "charades",
+    group: "party",
+    Component: ReverseCharades,
+    howTo:
+      "Start a team's turn (full clock starts); the team acts out the word on the TV for their guesser. Tap Got it or Skip. Repeat for each team, then award the tile to the most words.",
   },
   {
     name: GameName.FAMILY_FEUD,
@@ -151,6 +172,7 @@ function buildSandboxGameData(): GameData {
     scavenger: buildSlotBank(asBank<ScavengerItem>(partyGames.scavenger)),
     closest: buildSlotBank(asBank<ClosestQuestion>(partyGames.closest)),
     order: buildSlotBank(asBank<OrderPuzzle>(partyGames.order)),
+    charades: buildSlotBank(asBank<CharadesPrompt>(partyGames.charades)),
   };
 }
 
