@@ -1,4 +1,4 @@
-import { act, render, screen, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import partyGames from "../data/partyGames.json";
 import { ALPHABET } from "../shared/partyGames";
@@ -49,6 +49,7 @@ beforeEach(() => {
 });
 
 const HAPPY = /(yay|winning\d)\./;
+const SAD = /(oof|losing\d)\./;
 
 describe("Sandbox", () => {
   it("starts on Guess That Word with a host panel and a TV, hidden until 'Next'", () => {
@@ -279,31 +280,157 @@ describe("Sandbox", () => {
   });
 
   describe("Put It In Order", () => {
-    it("one team plays; the order is revealed step by step with a ding each time", () => {
-      render(<Sandbox />);
-      chooseGame("Put It In Order");
-      revealToTv();
+    // Pins the shuffle so the puzzle in the 100 slot (and its order) is known.
+    const withOrderPuzzle = (run: (items: string[]) => void) => {
+      const random = jest.spyOn(Math, "random").mockReturnValue(0.5);
+      try {
+        const { items } = buildSlotBank(
+          partyGames.order as unknown as DifficultyBank<{ items: string[] }>
+        )[100];
+        render(<Sandbox />);
+        chooseGame("Put It In Order");
+        revealToTv();
+        run(items);
+      } finally {
+        random.mockRestore();
+      }
+    };
+    const tvAnswer = () => within(tv()).getByRole("list", { name: "Team's answer" });
+    // What a TV answer slot shows, ignoring the invisible sizer text.
+    const tvSlotText = (n: number) => {
+      const clone = within(tvAnswer()).getAllByRole("listitem")[n - 1].cloneNode(true) as HTMLElement;
+      clone.querySelectorAll("[aria-hidden='true']").forEach((el) => el.remove());
+      return clone.textContent;
+    };
+    // The letter an item carries in the scrambled list, read off the TV.
+    const labelOf = (item: string) =>
+      within(tv()).getByText(item, { selector: "li" }).firstChild!.textContent;
+    const slot = (n: number) => screen.getByRole("button", { name: new RegExp(`^Slot ${n}:`) });
+    const pick = (item: string) => screen.getByRole("button", { name: `Pick ${item}` });
+    const place = (item: string, n: number) => {
+      click(pick(item));
+      click(slot(n));
+    };
+    const tvStatus = () => within(tv()).getByRole("status");
 
-      expect(within(tv()).getByText("Scrambled")).toBeInTheDocument();
-      expect(within(tv()).getByText(/Playing:/)).toHaveTextContent("Playing: Team A");
-      // Nothing revealed yet on the TV: only "?" placeholders in the answer column.
-      expect(within(tv()).getAllByText("?").length).toBeGreaterThanOrEqual(3);
+    it("two columns; Reveal all replaces the team's answer with the correct order", () => {
+      withOrderPuzzle((items) => {
+        expect(within(tv()).getByText("Scrambled")).toBeInTheDocument();
+        expect(within(tv()).getByText(/Playing:/)).toHaveTextContent("Playing: Team A");
+        // No separate correct-order column, and no step-by-step reveal.
+        expect(within(tv()).queryByText("Correct order")).not.toBeInTheDocument();
+        expect(screen.queryByRole("button", { name: "Reveal next" })).not.toBeInTheDocument();
+        // The host (only) sees the answer key as scrambled-list letters.
+        expect(within(host()).getByText(/^Answer:/)).toHaveTextContent(
+          `Answer: ${items.map((item) => labelOf(item)).join(" ")}`
+        );
+        expect(within(tv()).queryByText(/^Answer:/)).not.toBeInTheDocument();
 
-      let before = played.length;
-      click(screen.getByRole("button", { name: "Reveal next" }));
-      expect(within(tv()).getAllByText("?").length).toBeGreaterThanOrEqual(2);
-      expect(playedSince(before)).toEqual([expect.stringMatching(/yes-ding/)]);
+        // The team's (wrong) answer, then Reveal all overrides it.
+        [...items].reverse().forEach((item, i) => place(item, i + 1));
+        const before = played.length;
+        click(screen.getByRole("button", { name: "Reveal all" }));
+        expect(playedSince(before)).toEqual([expect.stringMatching(/yes-ding/)]);
+        expect(within(tv()).getByText("Correct order")).toBeInTheDocument();
+        items.forEach((item, i) => expect(tvSlotText(i + 1)).toBe(`${i + 1}.${labelOf(item)}${item}`));
+        within(tvAnswer())
+          .getAllByRole("listitem")
+          .forEach((li) => expect(li).toHaveClass("bg-emerald-700"));
+        expect(tvStatus()).toHaveTextContent("The correct order");
 
-      before = played.length;
-      click(screen.getByRole("button", { name: "Reveal next" }));
-      expect(playedSince(before)).toEqual([expect.stringMatching(/yes-ding/)]);
+        // Locked until Reset round.
+        expect(screen.getByRole("button", { name: "Check answer" })).toBeDisabled();
+        expect(slot(1)).toBeDisabled();
+        click(screen.getByRole("button", { name: "Reset round" }));
+        expect(slot(1)).toHaveAccessibleName("Slot 1: empty");
+        expect(within(tv()).queryByText("Correct order")).not.toBeInTheDocument();
+      });
+    });
 
-      const hostText = host().textContent;
-      click(screen.getByRole("button", { name: "Reveal all" }));
-      expect(within(tv()).queryByText("?")).not.toBeInTheDocument();
-      expect(host().textContent).toBe(hostText);
-      // No per-team comparison any more.
-      expect(screen.queryByText(/positions did each team get right/)).not.toBeInTheDocument();
+    it("the host clicks items into slots and the TV fills in live", () => {
+      withOrderPuzzle((items) => {
+        const checkButton = screen.getByRole("button", { name: "Check answer" });
+        expect(checkButton).toBeDisabled();
+        expect(within(tvAnswer()).getAllByRole("listitem")).toHaveLength(items.length);
+        expect(tvSlotText(1)).toBe("1.—");
+
+        place(items[0], 1);
+        expect(slot(1)).toHaveAccessibleName(`Slot 1: ${items[0]}`);
+        expect(tvSlotText(1)).toBe(`1.${labelOf(items[0])}${items[0]}`);
+
+        // Moving it to another slot empties the first.
+        click(slot(1));
+        click(slot(2));
+        expect(slot(1)).toHaveAccessibleName("Slot 1: empty");
+        expect(tvSlotText(2)).toBe(`2.${labelOf(items[0])}${items[0]}`);
+
+        // Removing sends it back to the pool.
+        click(screen.getByRole("button", { name: `Remove ${items[0]}` }));
+        expect(tvSlotText(2)).toBe("2.—");
+      });
+    });
+
+    it("Check answer marks the slots and plays a sad sound, then a cheer once fixed", () => {
+      withOrderPuzzle((items) => {
+        // Swap the first two: everything else is right.
+        items.forEach((item, i) => place(item, i === 0 ? 2 : i === 1 ? 1 : i + 1));
+        const checkButton = screen.getByRole("button", { name: "Check answer" });
+        expect(checkButton).toBeEnabled();
+
+        let before = played.length;
+        click(checkButton);
+        expect(tvStatus()).toHaveTextContent(
+          `Not quite: ${items.length - 2} of ${items.length} in the right place`
+        );
+        expect(within(tvAnswer()).getAllByRole("listitem")[0]).toHaveClass("bg-red-700");
+        expect(within(tvAnswer()).getAllByRole("listitem")[2]).toHaveClass("bg-emerald-700");
+        expect(playedSince(before)).toEqual([expect.stringMatching(SAD)]);
+
+        // Checking again replays the sound.
+        before = played.length;
+        click(checkButton);
+        expect(playedSince(before)).toEqual([expect.stringMatching(SAD)]);
+
+        // Editing clears the result.
+        click(slot(1));
+        click(slot(2));
+        expect(tvStatus().textContent?.trim()).toBe("");
+        expect(within(tvAnswer()).getAllByRole("listitem")[0]).toHaveClass("bg-tile");
+
+        before = played.length;
+        click(checkButton);
+        expect(tvStatus()).toHaveTextContent("Correct!");
+        expect(playedSince(before)).toEqual([expect.stringMatching(HAPPY)]);
+
+        // Reset round clears the answer and the result.
+        click(screen.getByRole("button", { name: "Reset round" }));
+        expect(tvStatus().textContent?.trim()).toBe("");
+        expect(slot(1)).toHaveAccessibleName("Slot 1: empty");
+        expect(screen.getByRole("button", { name: "Check answer" })).toBeDisabled();
+      });
+    });
+
+    it("the host can drag items into slots and back to the pool", () => {
+      withOrderPuzzle((items) => {
+        const drag = (from: HTMLElement, to: HTMLElement) => {
+          fireEvent.dragStart(from);
+          fireEvent.dragOver(to);
+          fireEvent.drop(to);
+          fireEvent.dragEnd(from);
+        };
+        drag(pick(items[0]), slot(3));
+        expect(tvSlotText(3)).toBe(`3.${labelOf(items[0])}${items[0]}`);
+
+        // Slot to slot swaps.
+        drag(pick(items[1]), slot(1));
+        drag(slot(3), slot(1));
+        expect(slot(1)).toHaveAccessibleName(`Slot 1: ${items[0]}`);
+        expect(slot(3)).toHaveAccessibleName(`Slot 3: ${items[1]}`);
+
+        // Dragging onto the scrambled list takes it back out.
+        drag(slot(1), pick(items[2]));
+        expect(slot(1)).toHaveAccessibleName("Slot 1: empty");
+      });
     });
   });
 

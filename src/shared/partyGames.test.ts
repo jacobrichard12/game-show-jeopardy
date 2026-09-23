@@ -6,8 +6,13 @@ import {
   createClock,
   createInitialQuestionState,
   isPhraseComplete,
+  isTeamOrderComplete,
   nextTeamId,
+  normalizeTeamOrder,
   phraseHasLetter,
+  placeOrderItem,
+  removeOrderItem,
+  scoreTeamOrder,
   scrambledOrder,
   seededShuffle,
   setClockSeconds,
@@ -26,6 +31,59 @@ import {
   ScavengerQuestionState,
   WheelQuestionState,
 } from "./types";
+
+describe("Put It In Order: team answer", () => {
+  it("normalizes to one slot per item", () => {
+    expect(normalizeTeamOrder([], 3)).toEqual([null, null, null]);
+    expect(normalizeTeamOrder(undefined, 2)).toEqual([null, null]);
+    expect(normalizeTeamOrder(["a", null, "c", "d"], 3)).toEqual(["a", null, "c"]);
+  });
+
+  it("places a pool item into an empty slot without mutating", () => {
+    const order = [null, null, null];
+    expect(placeOrderItem(order, "a", 1)).toEqual([null, "a", null]);
+    expect(order).toEqual([null, null, null]);
+  });
+
+  it("a pool item placed on an occupied slot sends the occupant back to the pool", () => {
+    expect(placeOrderItem(["a", null, null], "b", 0)).toEqual(["b", null, null]);
+  });
+
+  it("moves an item between slots, swapping with any occupant", () => {
+    expect(placeOrderItem(["a", null, null], "a", 2)).toEqual([null, null, "a"]);
+    expect(placeOrderItem(["a", "b", null], "a", 1)).toEqual(["b", "a", null]);
+    expect(placeOrderItem(["a", "b", null], "a", 0)).toEqual(["a", "b", null]);
+  });
+
+  it("ignores out-of-range slots", () => {
+    expect(placeOrderItem([null], "a", 3)).toEqual([null]);
+  });
+
+  it("removes an item back to the pool", () => {
+    expect(removeOrderItem(["a", "b", null], "a")).toEqual([null, "b", null]);
+  });
+
+  it("is complete only when every slot is filled", () => {
+    expect(isTeamOrderComplete([])).toBe(false);
+    expect(isTeamOrderComplete(["a", null])).toBe(false);
+    expect(isTeamOrderComplete(["a", "b"])).toBe(true);
+  });
+
+  it("scores each slot against the correct order", () => {
+    expect(scoreTeamOrder(["a", "b", "c"], ["a", "b", "c"])).toEqual({
+      slotCorrect: [true, true, true],
+      correctCount: 3,
+      total: 3,
+      allCorrect: true,
+    });
+    expect(scoreTeamOrder(["a", "c", "b"], ["a", "b", "c"])).toEqual({
+      slotCorrect: [true, false, false],
+      correctCount: 1,
+      total: 3,
+      allCorrect: false,
+    });
+  });
+});
 
 describe("seededShuffle / scrambledOrder", () => {
   const items = ["a", "b", "c", "d", "e"];
@@ -259,6 +317,9 @@ describe("createInitialQuestionState", () => {
     const state = createInitialQuestionState(GameName.ORDER, teams) as OrderQuestionState;
     expect(typeof state.seed).toBe("number");
     expect(state.revealedCount).toBe(0);
+    expect(state.teamOrder).toEqual([]);
+    expect(state.checked).toBe(false);
+    expect(state.checkCount).toBe(0);
   });
 
   it("charades starts with no active team, a null score per team, and the bank's clock", () => {

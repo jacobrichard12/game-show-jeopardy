@@ -203,6 +203,73 @@ export function computeClosestResult(
   return { winners, distances, eligible };
 }
 
+// ---- Put It In Order --------------------------------------------------------
+
+// The team's answer as exactly `size` slots (state starts as [] because the
+// initial state is built before the puzzle is known).
+export function normalizeTeamOrder(
+  order: readonly (string | null)[] | undefined,
+  size: number
+): (string | null)[] {
+  const result: (string | null)[] = [];
+  for (let i = 0; i < size; i++) result.push(order?.[i] ?? null);
+  return result;
+}
+
+// Puts `item` into `slot`. If the item was already in another slot, it swaps
+// with whatever was in the target slot; if it came from the pool, whatever
+// was in the target slot goes back to the pool. Each item is in at most one
+// slot afterwards.
+export function placeOrderItem(
+  order: readonly (string | null)[],
+  item: string,
+  slot: number
+): (string | null)[] {
+  const result = [...order];
+  if (slot < 0 || slot >= result.length) return result;
+  const from = result.indexOf(item);
+  const occupant = result[slot];
+  if (from === slot) return result;
+  if (from >= 0) result[from] = occupant;
+  result[slot] = item;
+  return result;
+}
+
+// Takes `item` out of its slot (back to the pool).
+export function removeOrderItem(
+  order: readonly (string | null)[],
+  item: string
+): (string | null)[] {
+  return order.map((entry) => (entry === item ? null : entry));
+}
+
+export function isTeamOrderComplete(order: readonly (string | null)[]): boolean {
+  return order.length > 0 && order.every((entry) => entry !== null);
+}
+
+export interface OrderCheckResult {
+  // Per slot: is the team's item the one that belongs there?
+  slotCorrect: boolean[];
+  correctCount: number;
+  total: number;
+  allCorrect: boolean;
+}
+
+// Compares the team's answer with the correct order (`items`).
+export function scoreTeamOrder(
+  order: readonly (string | null)[],
+  items: readonly string[]
+): OrderCheckResult {
+  const slotCorrect = items.map((item, i) => order[i] === item);
+  const correctCount = slotCorrect.filter(Boolean).length;
+  return {
+    slotCorrect,
+    correctCount,
+    total: items.length,
+    allCorrect: items.length > 0 && correctCount === items.length,
+  };
+}
+
 // ---- Reverse Charades -------------------------------------------------------
 
 // The word at `index`, wrapping so a long game never runs off the list.
@@ -293,6 +360,9 @@ export function createInitialQuestionState(
         promptVisible: false,
         seed: Math.floor(Math.random() * 2147483647),
         revealedCount: 0,
+        teamOrder: [],
+        checked: false,
+        checkCount: 0,
       };
       return state;
     }

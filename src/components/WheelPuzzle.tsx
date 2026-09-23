@@ -16,6 +16,7 @@ import {
   QuestionProps,
   WheelQuestionState,
 } from "../shared/types";
+import { isVowel, vowelsLocked } from "../shared/wheelRules";
 import NoQuestionAvailable from "./NoQuestionAvailable";
 import StrikeFlash from "./StrikeFlash";
 
@@ -24,6 +25,8 @@ import StrikeFlash from "./StrikeFlash";
 // team keeps the turn; a miss passes the turn. A wrong attempt at the whole
 // answer flashes a Feud-style X and passes the turn. When the phrase is solved
 // (or the host reveals it) the host awards the tile with the points buttons.
+// No two vowels in a row: after a correct vowel the other vowels grey out
+// until a consonant is called.
 const WheelPuzzle: React.FC<QuestionProps> = ({
   isAdmin,
   gameState,
@@ -36,6 +39,7 @@ const WheelPuzzle: React.FC<QuestionProps> = ({
   const wrongGuesses = questionState.wrongGuesses ?? 0;
   const phrase = puzzle?.phrase ?? "";
   const revealedLetters = countRevealedLetters(phrase, guessed);
+  const vowelLock = !solved && vowelsLocked(phrase, guessed);
 
   // Sting when the puzzle first appears on the TV (this component mounts on
   // the TV when the host reveals the question). The ref keeps StrictMode's
@@ -76,6 +80,7 @@ const WheelPuzzle: React.FC<QuestionProps> = ({
 
   const guessLetter = (letter: string) => {
     if (!isAdmin || solved || guessed.includes(letter)) return;
+    if (vowelLock && isVowel(letter)) return;
     const nextGuessed = [...guessed, letter];
     const complete = isPhraseComplete(phrase, nextGuessed);
     const hit = phraseHasLetter(phrase, letter);
@@ -165,18 +170,21 @@ const WheelPuzzle: React.FC<QuestionProps> = ({
         {ALPHABET.map((letter) => {
           const used = guessed.includes(letter);
           const hit = used && phraseHasLetter(phrase, letter);
+          const locked = !used && vowelLock && isVowel(letter);
           return (
             <button
               key={letter}
               type="button"
               onClick={() => guessLetter(letter)}
-              disabled={!isAdmin || used || solved}
+              disabled={!isAdmin || used || solved || locked}
               aria-label={`Guess ${letter}`}
               className={`h-9 w-9 rounded font-display text-lg font-semibold sm:h-12 sm:w-12 sm:text-2xl xl:h-16 xl:w-16 xl:text-4xl ${
                 used
                   ? hit
                     ? "bg-emerald-600 text-white"
                     : "bg-rose-900/70 text-white/40 line-through"
+                  : locked
+                  ? "bg-tile/40 text-white/25"
                   : isAdmin && !solved
                   ? "bg-tile text-accent hover:brightness-125"
                   : "bg-tile text-accent"
@@ -187,6 +195,16 @@ const WheelPuzzle: React.FC<QuestionProps> = ({
           );
         })}
       </div>
+
+      {/* Always rendered (invisible when off) so the panel doesn't reflow. */}
+      <p
+        aria-hidden={!vowelLock}
+        className={`mt-3 text-sm text-white/60 sm:text-base xl:text-3xl ${
+          vowelLock ? "" : "invisible"
+        }`}
+      >
+        {isAdmin ? "Vowels locked until a consonant is called" : "Next letter must be a consonant"}
+      </p>
 
       {isAdmin && (
         <div className="mt-5 flex flex-wrap justify-center gap-2">

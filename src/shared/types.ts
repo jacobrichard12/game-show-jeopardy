@@ -239,6 +239,15 @@ export interface OrderQuestionState extends QuestionState {
     // Seeds the shuffle so host and TV show the same scrambled order.
     seed: number;
     revealedCount: number;
+    // The team's answer as the host builds it: one entry per position, holding
+    // the item placed there or null. May be shorter than the puzzle (it starts
+    // as [] before the puzzle is known); read it via normalizeTeamOrder.
+    teamOrder: (string | null)[];
+    // True once the host checks a complete answer; editing clears it.
+    checked: boolean;
+    // Bumps on every check so the TV replays a sound even when two checks in a
+    // row give the same result.
+    checkCount: number;
 }
 
 export interface CharadesQuestionState extends QuestionState {

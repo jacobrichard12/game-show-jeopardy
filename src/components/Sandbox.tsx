@@ -76,7 +76,7 @@ const MODES: ModeDef[] = [
     group: "party",
     Component: WheelPuzzle,
     howTo:
-      "Teams call letters in turn; tap each letter on the host panel. A miss passes the turn. If a team guesses the whole thing wrong, hit Wrong guess (big X on the TV, turn passes). Reveal puzzle plays a cheer. Then award the tile.",
+      "Teams call letters in turn; tap each letter on the host panel. A miss passes the turn. If a team guesses the whole thing wrong, hit Wrong guess (big X on the TV, turn passes). Reveal puzzle plays a cheer. No two vowels in a row: after a correct vowel the other vowels grey out until a consonant is called. Then award the tile.",
   },
   {
     name: GameName.ACT,
@@ -108,7 +108,7 @@ const MODES: ModeDef[] = [
     group: "party",
     Component: PutInOrder,
     howTo:
-      "Set whose turn it is; that team orders the list. Reveal the true order one at a time (ding each time), then award the tile or use No points.",
+      "Set whose turn it is; that team orders the list. Drag their answer into the numbered slots (or click an item, then a slot) and it fills in on the TV. Check answer marks each slot and plays a cheer or a sad sound. Reveal all replaces the slots with the correct order. Then award the tile or use No points.",
   },
   {
     name: GameName.CHARADES,
