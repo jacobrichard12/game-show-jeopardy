@@ -1,12 +1,13 @@
 import React from "react";
-import gameBoardData from "../data/gameBoard.json";
-import { GameName, GameState } from "../shared/types";
+import { BoardPage, GameName, GameState } from "../shared/types";
 import AdminPointsButtons, { NoPointsButton } from "./AddPointsButtons";
+import { BOARD_PAGES, boardData } from "./boards";
 import FamilyFeud from "./FamilyFeud";
 import GameBoard from "./GameBoard";
 import HeadToHead from "./HeadToHead";
 import Millionaire from "./Millionaire";
 import Minute from "./Minute";
+import { PARTY_GAME_COMPONENTS } from "./partyGameComponents";
 import ScoreBoard from "./Scoreboard";
 import TitlePage from "./TitlePage";
 
@@ -42,6 +43,13 @@ const AdminPageWrapper: React.FC<AdminPageWrapperProps> = ({
     // instead of here, so it comes from the watch tab, not this admin tab.
     updatedGameState.isDoubleJeopardy = !updatedGameState.isDoubleJeopardy;
     sendGameStateToServer(updatedGameState);
+  };
+
+  // Switching pages also switches the TV, so the room sees the same board.
+  const currentPage: BoardPage = gameState.boardPage ?? "classic";
+  const handleSelectBoardPage = (page: BoardPage) => {
+    if (page === currentPage) return;
+    sendGameStateToServer({ ...gameState, boardPage: page });
   };
 
   const getAdminPageWrapperContent = () => {
@@ -100,8 +108,18 @@ const AdminPageWrapper: React.FC<AdminPageWrapperProps> = ({
             sendGameStateToServer={sendGameStateToServer}
           />
         );
-      default:
-        return <div>Admin child content</div>;
+      default: {
+        const PartyGame = PARTY_GAME_COMPONENTS[gameState.currentGame.gameName];
+        return PartyGame ? (
+          <PartyGame
+            isAdmin={true}
+            gameState={gameState}
+            sendGameStateToServer={sendGameStateToServer}
+          />
+        ) : (
+          <div>Admin child content</div>
+        );
+      }
     }
   };
 
@@ -133,11 +151,33 @@ const AdminPageWrapper: React.FC<AdminPageWrapperProps> = ({
             one row alongside this title at sm: and up. */}
         <div className="text-center mb-4 pt-16 sm:pt-0">
           <h1 className="text-2xl font-bold mb-2">Admin Page - Board</h1>
+          <div
+            role="group"
+            aria-label="Board page"
+            className="inline-flex flex-wrap justify-center gap-1 rounded-lg bg-gray-200 p-1"
+          >
+            {BOARD_PAGES.map((page) => (
+              <button
+                key={page.id}
+                type="button"
+                aria-pressed={currentPage === page.id}
+                onClick={() => handleSelectBoardPage(page.id)}
+                className={`rounded px-3 py-1.5 text-sm font-semibold sm:px-4 sm:text-base ${
+                  currentPage === page.id
+                    ? "bg-blue-600 text-white"
+                    : "text-gray-700 hover:bg-gray-300"
+                }`}
+              >
+                {page.label}
+              </button>
+            ))}
+          </div>
+          <p className="mt-1 text-xs text-gray-500">The TV shows the same page.</p>
         </div>
         <GameBoard
           isAdmin={true}
           gameState={gameState}
-          gameBoardData={gameBoardData}
+          gameBoardData={boardData(currentPage)}
           handleUpdateCurrentGame={handleUpdateCurrentGame}
           sendGameStateToServer={sendGameStateToServer}
         />

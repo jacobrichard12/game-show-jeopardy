@@ -22,6 +22,20 @@ import {
 
 export const DEFAULT_CLOCK_SECONDS = 60;
 
+// The games on the party board (see src/data/partyBoard.json).
+export const PARTY_GAME_NAMES: GameName[] = [
+  GameName.WHEEL,
+  GameName.ACT,
+  GameName.CHARADES,
+  GameName.SCAVENGER,
+  GameName.CLOSEST,
+  GameName.ORDER,
+];
+
+export function isPartyGame(gameName: GameName): boolean {
+  return PARTY_GAME_NAMES.includes(gameName);
+}
+
 export function createClock(seconds: number): ClockState {
   const durationMs = Math.max(1, Math.round(seconds)) * 1000;
   return { durationMs, remainingMs: durationMs, running: false, runId: 0 };

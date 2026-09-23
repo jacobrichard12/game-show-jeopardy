@@ -1,6 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
-import gameBoardData from "../data/gameBoard.json";
 import { hasUserActivation, setMuted, unlockAudio, useMuted } from "../shared/sound";
 import { GameState } from "../shared/types";
 import { useWakeLock } from "../shared/wakeLock";
@@ -124,7 +123,7 @@ const Display: React.FC = () => {
         />
       ) : (
         <>
-          <PageWrapper gameState={gameState} gameBoardData={gameBoardData} />
+          <PageWrapper gameState={gameState} />
           {/* Room code stays on screen after the game starts, for latecomers. */}
           <div className="fixed top-2 left-2 z-40 rounded bg-black/60 px-3 py-1 font-mono text-sm text-white sm:text-lg xl:text-3xl">
             Join: <span className="font-bold tracking-widest">{code?.toUpperCase()}</span>

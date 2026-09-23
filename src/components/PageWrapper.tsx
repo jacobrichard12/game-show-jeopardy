@@ -1,23 +1,22 @@
 import React from "react";
 import { GameName, GameState } from "../shared/types";
 import FamilyFeud from "./FamilyFeud";
-import GameBoard, { GameBoardData } from "./GameBoard";
+import FitToScreen from "./FitToScreen";
+import { boardData } from "./boards";
+import GameBoard from "./GameBoard";
 import HeadToHead from "./HeadToHead";
 import Millionaire from "./Millionaire";
 import Minute from "./Minute";
+import { PARTY_GAME_COMPONENTS } from "./partyGameComponents";
 import QuestionWrapper from "./QuestionWrapper";
 import ScoreBoard from "./Scoreboard";
 import Timer from "./Timer";
 
 interface PageWrapperProps {
   gameState: GameState;
-  gameBoardData: { [key: string]: GameBoardData };
 }
 
-const PageWrapper: React.FC<PageWrapperProps> = ({
-  gameState,
-  gameBoardData,
-}) => {
+const PageWrapper: React.FC<PageWrapperProps> = ({ gameState }) => {
   const getComponent = (): React.ReactNode => {
     if (gameState.showTimer) {
       return (
@@ -33,7 +32,7 @@ const PageWrapper: React.FC<PageWrapperProps> = ({
           <GameBoard
             isAdmin={false}
             gameState={gameState}
-            gameBoardData={gameBoardData}
+            gameBoardData={boardData(gameState.boardPage)}
             handleUpdateCurrentGame={() => {}}
             sendGameStateToServer={() => {}}
           />
@@ -90,10 +89,31 @@ const PageWrapper: React.FC<PageWrapperProps> = ({
             }
           />
         );
-      default:
-        return <div>Content not available for this category.</div>;
+      default: {
+        const PartyGame = PARTY_GAME_COMPONENTS[gameState.currentGame.gameName];
+        if (!PartyGame) return <div>Content not available for this category.</div>;
+        return (
+          <QuestionWrapper
+            gameState={gameState}
+            question={
+              <PartyGame
+                isAdmin={false}
+                gameState={gameState}
+                sendGameStateToServer={() => {}}
+              />
+            }
+          />
+        );
+      }
     }
   };
+
+  // Questions are scaled to fill the space above the scoreboard exactly, so
+  // a reveal never pushes anything below the fold. The board and the timer
+  // video size themselves to the screen already.
+  const component = getComponent();
+  const fitsToScreen =
+    !gameState.showTimer && gameState.currentGame.gameName !== GameName.BOARD;
 
   return (
     // At lg: and up the display is exactly one screen tall: the scoreboard is
@@ -102,7 +122,7 @@ const PageWrapper: React.FC<PageWrapperProps> = ({
     // the fold on a wide-but-short window.
     <div className="p-2 sm:p-4 lg:h-screen lg:flex lg:flex-col lg:gap-2 lg:overflow-hidden">
       <div className="p-2 lg:flex lg:flex-col lg:flex-1 lg:min-h-0 lg:overflow-y-auto">
-        {getComponent()}
+        {fitsToScreen ? <FitToScreen>{component}</FitToScreen> : component}
       </div>
       <div className="lg:shrink-0">
         <ScoreBoard gameState={gameState} isAdmin={false} />

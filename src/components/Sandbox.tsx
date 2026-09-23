@@ -32,6 +32,7 @@ import ActDrawDescribe from "./ActDrawDescribe";
 import AdminPointsButtons, { NoPointsButton } from "./AddPointsButtons";
 import ClosestWins from "./ClosestWins";
 import FamilyFeud from "./FamilyFeud";
+import FitToScreen from "./FitToScreen";
 import HeadToHead from "./HeadToHead";
 import Millionaire from "./Millionaire";
 import Minute from "./Minute";
@@ -366,10 +367,17 @@ const Sandbox: React.FC = () => {
       <h2 className="mb-2 text-left text-sm font-semibold uppercase tracking-widest text-white/60">
         TV display
       </h2>
-      <QuestionWrapper
-        gameState={gameState}
-        question={<Game key={`tv-${round}`} isAdmin={false} {...gameProps} />}
-      />
+      {/* Shaped like the real TV's question area (a 16:9 screen minus the
+          scoreboard, about 16:7) and fitted the same way, so it previews
+          whether a game fits without scrolling. */}
+      <div className="flex flex-col lg:aspect-[16/7]">
+        <FitToScreen>
+          <QuestionWrapper
+            gameState={gameState}
+            question={<Game key={`tv-${round}`} isAdmin={false} {...gameProps} />}
+          />
+        </FitToScreen>
+      </div>
       <div className="mt-2">
         <ScoreBoard isAdmin={false} gameState={gameState} />
       </div>

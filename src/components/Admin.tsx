@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
+import { createInitialQuestionState, isPartyGame } from "../shared/partyGames";
 import {
   FamilyFeudQuestionState,
   GameName,
   GameState,
+  getCurrentQuestion,
   getGameTitle,
   HeadToHeadQuestionState,
   MillionaireQuestionState,
@@ -187,14 +189,29 @@ const Admin: React.FC = () => {
         };
         break;
       }
-      default:
+      default: {
+        // Party games build their state in shared/partyGames.ts (the sandbox
+        // uses the same factory). The tile's question is looked up only for
+        // its optional clock length.
+        const question = isPartyGame(newGame)
+          ? getCurrentQuestion(
+              (gameState.gameData[newGame as keyof typeof gameState.gameData] ?? {}) as Record<
+                string,
+                { seconds?: number }
+              >,
+              { ...gameState, currentGame: { ...gameState.currentGame, value: points } }
+            )
+          : undefined;
         updatedGameState.currentGame = {
           gameName: newGame,
           gameTitle: getGameTitle(newGame),
           value: points,
-          questionState: { promptVisible: false },
+          questionState: isPartyGame(newGame)
+            ? createInitialQuestionState(newGame, gameState.teams, question)
+            : { promptVisible: false },
         };
         break;
+      }
     }
 
     sendGameStateToServer(updatedGameState);

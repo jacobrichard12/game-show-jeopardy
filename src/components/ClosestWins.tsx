@@ -99,11 +99,16 @@ const ClosestWins: React.FC<QuestionProps> = ({
           : "Closest guess wins. Write your number down!"}
       </p>
 
-      {revealed && (
-        <p className="my-6 font-display text-4xl font-semibold text-accent sm:text-7xl xl:text-9xl">
-          {formatNumber(question.answer, question)}
-        </p>
-      )}
+      {/* Always takes its space (invisible until revealed) so the reveal
+          doesn't push the team list down on the TV. */}
+      <p
+        className={`my-6 font-display text-4xl font-semibold text-accent sm:text-7xl xl:text-9xl ${
+          revealed ? "" : "invisible"
+        }`}
+        aria-hidden={!revealed}
+      >
+        {revealed ? formatNumber(question.answer, question) : "0"}
+      </p>
 
       <ul className="mx-auto mt-5 max-w-3xl space-y-2 sm:space-y-3">
         {teams.map((team, index) => {

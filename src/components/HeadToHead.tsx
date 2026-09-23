@@ -52,13 +52,19 @@ const HeadToHead: React.FC<HeadToHeadProps> = ({
         </h1>
       )}
 
-      {questionState.showTitle && (
-        <h1 className="text-3xl sm:text-5xl md:text-7xl xl:text-9xl font-bold mb-4 text-center">
-          {questionData.title}
-        </h1>
-      )}
+      {/* The title always takes its space (invisible on the TV, faint for the
+          host until shown), so showing it doesn't move anything; the host
+          sees the rules from the start. */}
+      <h1
+        className={`text-3xl sm:text-5xl md:text-7xl xl:text-9xl font-bold mb-4 text-center ${
+          questionState.showTitle ? "" : isAdmin ? "opacity-40" : "invisible"
+        }`}
+        aria-hidden={!questionState.showTitle && !isAdmin}
+      >
+        {questionData.title}
+      </h1>
 
-      {isAdmin && questionState.showTitle && (
+      {isAdmin && (
         <h2 className="text-2xl font-bold mb-4 text-center">
           {/* Render adminInfo with newlines */}
           {formatAdminInfo(questionData.adminInfo)}

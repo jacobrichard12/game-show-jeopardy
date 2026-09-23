@@ -21,6 +21,9 @@ export interface GameState {
     timerPlaying?: boolean;
     timerRestart?: number;
     isDoubleJeopardy: boolean;
+    // Which board the host is showing: the four classic games, or the party
+    // games. Undefined means classic (states from before this existed).
+    boardPage?: BoardPage;
     answered: { [key: string]: number[] };
     doubleJeopardyAnswered: { [key: string]: number[] };
 }
@@ -247,6 +250,8 @@ export interface CharadesQuestionState extends QuestionState {
     // teamId -> words guessed (null until that team has had a turn).
     scores: Record<string, number | null>;
 }
+
+export type BoardPage = "classic" | "party";
 
 export enum GameName {
     BOARD = "board",

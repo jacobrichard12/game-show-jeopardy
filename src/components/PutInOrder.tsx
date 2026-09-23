@@ -122,7 +122,14 @@ const PutInOrder: React.FC<QuestionProps> = ({
                       {item} ({labelFor(item)})
                     </span>
                   ) : (
-                    <span className="text-white/30">?</span>
+                    // "?" over the invisible answer, so revealing it doesn't
+                    // resize the row on the TV.
+                    <span className="inline-grid">
+                      <span className="invisible col-start-1 row-start-1" aria-hidden="true">
+                        {item} ({labelFor(item)})
+                      </span>
+                      <span className="col-start-1 row-start-1 text-white/30">?</span>
+                    </span>
                   )}
                 </li>
               );

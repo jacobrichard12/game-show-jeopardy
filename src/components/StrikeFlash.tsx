@@ -1,6 +1,7 @@
 import { faTimesCircle } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React, { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { buzzerAudio } from "../shared/audio";
 import { playSound } from "../shared/sound";
 
@@ -11,7 +12,9 @@ interface StrikeFlashProps {
 }
 
 // The full-screen red X + buzzer from Family Feud, for other games' wrong
-// guesses. TV side only, triggered by the count going up in state.
+// guesses. TV side only, triggered by the count going up in state. Portaled to
+// <body> because the TV scales game content (FitToScreen), and a transformed
+// ancestor would otherwise trap this `fixed` overlay inside the game area.
 const StrikeFlash: React.FC<StrikeFlashProps> = ({ count, isAdmin }) => {
   const [showing, setShowing] = useState(false);
   const prevCount = useRef(count);
@@ -27,7 +30,7 @@ const StrikeFlash: React.FC<StrikeFlashProps> = ({ count, isAdmin }) => {
   }, [isAdmin, count]);
 
   if (!showing) return null;
-  return (
+  return createPortal(
     <div
       role="img"
       aria-label="Wrong"
@@ -38,7 +41,8 @@ const StrikeFlash: React.FC<StrikeFlashProps> = ({ count, isAdmin }) => {
         className="text-red-600 drop-shadow-2xl"
         style={{ fontSize: "min(70vh, 70vw)" }}
       />
-    </div>
+    </div>,
+    document.body
   );
 };
 

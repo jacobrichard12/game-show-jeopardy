@@ -1,16 +1,25 @@
 import minuteBankJson from "../data/minuteBank.json";
 import headToHeadBankJson from "../data/headToHeadBank.json";
+import partyGamesJson from "../data/partyGames.json";
 import {
+  CharadesPrompt,
+  ClosestQuestion,
   Difficulty,
   FamilyFeudQuestions,
   GameData,
   HeadToHeadQuestions,
-  MinuteQuestions
+  MinuteQuestions,
+  OrderPuzzle,
+  PerformPrompt,
+  ScavengerItem,
+  WheelPuzzle,
 } from "../shared/types";
 import { initFeudLibrary } from "./feud";
 import {
   buildMillionaireQuestions,
+  buildSlotBank,
   DIFFICULTY_SLOTS,
+  DifficultyBank,
   MillionairePool,
   shuffleArray,
 } from "../shared/slots";
@@ -53,6 +62,24 @@ export async function createRoomGameData(millionairePool: MillionairePool): Prom
     minute: minuteData,
     millionaire: millionaireData,
     head: headToHeadData,
+    ...createPartyGameData(),
+  };
+}
+
+// The party board's games (src/data/partyBoard.json), reshuffled per room
+// from the bundled banks, the same slot scheme as the others.
+export function createPartyGameData(): Pick<
+  GameData,
+  "wheel" | "act" | "charades" | "scavenger" | "closest" | "order"
+> {
+  const bank = <T,>(source: unknown) => buildSlotBank(source as DifficultyBank<T>);
+  return {
+    wheel: bank<WheelPuzzle>(partyGamesJson.wheel),
+    act: bank<PerformPrompt>(partyGamesJson.act),
+    charades: bank<CharadesPrompt>(partyGamesJson.charades),
+    scavenger: bank<ScavengerItem>(partyGamesJson.scavenger),
+    closest: bank<ClosestQuestion>(partyGamesJson.closest),
+    order: bank<OrderPuzzle>(partyGamesJson.order),
   };
 }
 

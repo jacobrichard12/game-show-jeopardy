@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import {
   FamilyFeudQuestionState,
   getCurrentQuestion,
@@ -94,6 +95,8 @@ const FamilyFeud: React.FC<FamilyFeudProps> = ({
     return <NoQuestionAvailable />;
   }
 
+  const twoColumns = questionData.answers.length > 4;
+
   const handleReveal = (index: number) => {
     if (!isAdmin) return;
 
@@ -134,32 +137,51 @@ const FamilyFeud: React.FC<FamilyFeudProps> = ({
   return (
     <div className="p-4">
       {/* Container for the prompt */}
-      {showStrike && (
-        <div className="pointer-events-none fixed inset-0 z-50 flex items-center justify-center bg-black/40 animate-strike">
-          <FontAwesomeIcon
-            icon={faTimesCircle}
-            className="text-red-600 drop-shadow-2xl"
-            style={{ fontSize: "min(70vh, 70vw)" }}
-          />
-        </div>
-      )}
-      <div className="bg-ink border-2 border-accent/50 shadow-md rounded-lg p-3 sm:p-6 mx-auto max-w-4xl xl:max-w-6xl">
-        {/* The host always sees the prompt (faint until shown on the TV), so
-            showing it doesn't push the host's buttons down. */}
-        {(questionState.showFeudPrompt || isAdmin) && (
-          <p
-            className={`text-lg sm:text-2xl md:text-3xl xl:text-5xl font-display font-semibold mb-4 text-center ${
-              questionState.showFeudPrompt ? "text-white" : "text-white/40"
-            }`}
-          >
-            {questionData.prompt}
-          </p>
+      {/* Portaled to <body>: the TV scales game content (FitToScreen), and a
+          transformed ancestor would trap this fixed overlay inside it. */}
+      {showStrike &&
+        createPortal(
+          <div className="pointer-events-none fixed inset-0 z-50 flex items-center justify-center bg-black/40 animate-strike">
+            <FontAwesomeIcon
+              icon={faTimesCircle}
+              className="text-red-600 drop-shadow-2xl"
+              style={{ fontSize: "min(70vh, 70vw)" }}
+            />
+          </div>,
+          document.body
         )}
+      <div className="bg-ink border-2 border-accent/50 shadow-md rounded-lg p-3 sm:p-6 mx-auto max-w-4xl xl:max-w-6xl">
+        {/* The prompt always takes its space (faint for the host, invisible
+            on the TV until shown), so showing it doesn't move anything. */}
+        <p
+          className={`text-lg sm:text-2xl md:text-3xl xl:text-5xl font-display font-semibold mb-4 text-center ${
+            questionState.showFeudPrompt
+              ? "text-white"
+              : isAdmin
+              ? "text-white/40"
+              : "invisible"
+          }`}
+        >
+          {questionData.prompt}
+        </p>
       </div>
 
-      {/* Container for the answer board */}
-      <div className="bg-ink border-2 border-accent/50 shadow-md rounded-lg p-3 sm:p-6 mx-auto max-w-lg xl:max-w-4xl mt-6">
-        <ul className="space-y-2 sm:space-y-4">
+      {/* Container for the answer board. More than four answers go in two
+          columns filled top to bottom (1-4 left, 5-8 right), like the show,
+          so a big board fits on the TV without scrolling. */}
+      <div
+        className={`bg-ink border-2 border-accent/50 shadow-md rounded-lg p-3 sm:p-6 mx-auto mt-6 ${
+          twoColumns ? "max-w-5xl xl:max-w-7xl" : "max-w-lg xl:max-w-4xl"
+        }`}
+      >
+        <ul
+          className={`grid gap-2 sm:gap-4 ${twoColumns ? "grid-cols-2 grid-flow-col" : "grid-cols-1"}`}
+          style={
+            twoColumns
+              ? { gridTemplateRows: `repeat(${Math.ceil(questionData.answers.length / 2)}, auto)` }
+              : undefined
+          }
+        >
           {questionData.answers.map((answer, index) => (
             <li
               key={index}
@@ -206,12 +228,16 @@ const FamilyFeud: React.FC<FamilyFeudProps> = ({
           )}
         </div>
 
-        {/* Display red X's for wrong guesses */}
+        {/* Display red X's for wrong guesses. With none yet, an invisible one
+            holds the row's height so the first X doesn't move the board. */}
         <div className="mt-4 flex flex-wrap">
-          {Array.from({ length: wrongGuesses }, (_, index) => (
+          {Array.from({ length: Math.max(wrongGuesses, 1) }, (_, index) => (
             <div
               key={index}
-              className="text-red-500 flex items-center space-x-2 mb-2 text-3xl sm:text-5xl xl:text-7xl"
+              aria-hidden={wrongGuesses === 0}
+              className={`text-red-500 flex items-center space-x-2 mb-2 text-3xl sm:text-5xl xl:text-7xl ${
+                wrongGuesses === 0 ? "invisible" : ""
+              }`}
             >
               <FontAwesomeIcon icon={faTimesCircle} />
             </div>

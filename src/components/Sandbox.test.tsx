@@ -140,13 +140,13 @@ describe("Sandbox", () => {
       render(<Sandbox />);
       revealToTv();
       click(screen.getByRole("button", { name: /Show game state/ }));
-      expect(within(tv()).queryByRole("img", { name: "Wrong" })).not.toBeInTheDocument();
+      expect(screen.queryByRole("img", { name: "Wrong" })).not.toBeInTheDocument();
 
       const before = played.length;
       click(screen.getByRole("button", { name: /Wrong guess/ }));
-      expect(within(tv()).getByRole("img", { name: "Wrong" })).toBeInTheDocument();
-      // Only the TV flashes; the host panel doesn't get a full-screen X.
-      expect(within(host()).queryByRole("img", { name: "Wrong" })).not.toBeInTheDocument();
+      // The X is portaled to <body> (so the TV's scaling can't trap it). Only
+      // the TV flashes one; the host panel doesn't.
+      expect(screen.getAllByRole("img", { name: "Wrong" })).toHaveLength(1);
       expect(playedSince(before)).toEqual([expect.stringMatching(/buzzer/)]);
       expect(screen.getByText(/"whoseTurn": "team-2"/)).toBeInTheDocument();
     });
@@ -356,9 +356,13 @@ describe("Sandbox", () => {
       chooseGame("Family Feud");
       revealToTv();
       const hostText = host().textContent;
-      expect(within(tv()).queryByText(/\?$/)).not.toBeInTheDocument();
+      // On the TV the prompt holds its space but stays invisible until shown.
+      const tvPrompt = tv().querySelector("p.invisible") as HTMLElement;
+      expect(tvPrompt).not.toBeNull();
+      const promptText = tvPrompt.textContent!;
       click(screen.getByRole("button", { name: "Show Feud Prompt" }));
       expect(host().textContent).toBe(hostText);
+      expect(within(tv()).getByText(promptText)).not.toHaveClass("invisible");
     });
 
     it("Show Feud Prompt is recorded", () => {

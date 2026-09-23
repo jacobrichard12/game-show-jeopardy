@@ -213,7 +213,14 @@ const Millionaire: React.FC<MillionaireProps> = ({
                 // they'll become, so revealing doesn't reflow the panel.
                 <span className="opacity-60">{answer}</span>
               ) : (
-                "???"
+                // The TV shows "???" over the invisible answer, stacked in one
+                // grid cell, so the button is already its final size.
+                <span className="inline-grid">
+                  <span className="invisible col-start-1 row-start-1" aria-hidden="true">
+                    {answer}
+                  </span>
+                  <span className="col-start-1 row-start-1">???</span>
+                </span>
               )}
             </button>
           );
