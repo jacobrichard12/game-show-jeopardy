@@ -1,46 +1,86 @@
-# Getting Started with Create React App
+# Game Show Jeopardy
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+A party game-show app for a room full of people. The host runs the game from a laptop; a TV shows a Jeopardy-style board where every column is a different mini-game. Teams pick tiles, play the game behind them, and the host awards the points.
 
-## Available Scripts
+Built for one host and one TV, 10–30 players in 2–4 teams. There are no player devices or buzzers: everyone watches the TV and the host clicks.
 
-In the project directory, you can run:
+## The games
 
-### `npm start`
+The board has two pages, each tile worth 100–500 points, plus a Double Jeopardy round at double value.
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+| Classic Games | Party Games |
+|---|---|
+| **Family Feud:** guess the top survey answers | **Guess That Word:** hangman-style phrase puzzle |
+| **Who Wants to Be a Millionaire:** three multiple-choice questions per tile | **Act, Draw, Describe:** charades, pictionary or clue-giving against the clock |
+| **Minute to Win It:** a physical challenge, demo video on the TV | **Scavenger Sprint:** first team to bring the item wins |
+| **Head to Head:** players from each team face off | **Closest Wins:** every team guesses a number; closest wins |
+| | **Put It In Order:** sort 4–5 items (by year, size, …) |
+| | **Reverse Charades:** the whole team acts, one person guesses |
 
-The page will reload if you make edits.\
-You will also see any lint errors in the console.
+Also: a YouTube countdown timer overlay, sound effects on the TV, team scores always on screen, and a `/sandbox` page for trying every game without starting a real one.
 
-### `npm test`
+## Quick start
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+Requires Node.js and npm.
 
-### `npm run build`
+```bash
+npm install
+npm run server-start      # client on http://localhost:3000, server on :4000
+```
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+1. Open **http://localhost:3000/admin**, pick the number of teams and create a game. You get a 4-letter room code. (Leave the token blank unless you've set `ADMIN_TOKEN`.)
+2. Open **http://localhost:3000/watch/CODE** in another window or on the TV, and click once so the browser allows sound.
+3. Start the game from the host window. The TV follows everything the host does.
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+To try the games without a room, open **http://localhost:3000/sandbox**: it shows the host controls and the TV side by side.
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+## Pages
 
-### `npm run eject`
+| Page | For |
+|---|---|
+| `/` | Join screen: host a game or enter a room code |
+| `/admin` | Create a game (needs `ADMIN_TOKEN` if one is set) |
+| `/admin/CODE` | Host control panel |
+| `/watch/CODE` | TV display (read-only) |
+| `/sandbox` | Test bench for every game (always on in dev; in production only if `REACT_APP_SANDBOX=true` at build) |
 
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
+## Configuration
 
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+| Variable | Default | Purpose |
+|---|---|---|
+| `ADMIN_TOKEN` | unset | Password required to create a game. **Set it on any public deployment**; unset, anyone can create games. |
+| `PORT` | `4000` | Server port. |
+| `CLIENT_ORIGIN` | `http://localhost:3000` | Allowed origin for the dev client (CORS). |
+| `REACT_APP_SOCKET_URL` | same origin (prod), `http://localhost:4000` (dev) | Where the browser connects. Set at build time. |
+| `REACT_APP_SANDBOX` | unset | `true` includes `/sandbox` in a production build. |
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
+## Development
 
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
+```bash
+npx tsc --noEmit -p tsconfig.json          # type-check the client
+npx tsc --noEmit -p tsconfig.server.json   # type-check the server
+CI=true npx react-scripts test --watchAll=false
+npm run build && npm run server-build      # production build, served at http://localhost:4000
+```
 
-## Learn More
+The app is React (Create React App, TypeScript, Tailwind) with an Express + Socket.IO server. Game state lives in server memory, one room per game; nothing is saved, so restarting the server ends all games.
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+## Content
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+Questions live in `src/data/`:
+- `feud4.csv`–`feud7.csv`: Family Feud surveys (the number is how many answers).
+- `minuteBank.json`, `headToHeadBank.json`: Minute to Win It challenges (with YouTube demo links) and Head to Head matchups.
+- `partyGames.json`: all six party games.
+- Millionaire questions are fetched from [Open Trivia DB](https://opentdb.com) when the server starts.
+
+Each game needs at least 4 easy, 4 medium and 2 hard entries. `content-prompts/` has ready-made AI prompts for writing party-game content, and `scripts/` has the import tools for Feud and the word games. Third-party data licenses are in `src/data/THIRD_PARTY_NOTICES.md`.
+
+## Deployment
+
+Hosted on [Railway](https://railway.app). Deploys are manual (`railway up` from the repo root); pushing to GitHub does not deploy. A deploy restarts the server and ends any game in progress.
+
+## More docs
+
+- `PROJECT_CONTEXT.md`: architecture, socket protocol, game state, content formats, deploy details.
+- `ROADMAP.md`: decisions, planned work, session log.
+- `CLAUDE.md`: rules for AI coding agents working in this repo.

@@ -400,16 +400,6 @@ const Admin: React.FC = () => {
           >
             Settings
           </button>
-          <button
-            onClick={() => {
-              setTokenInput("");
-              setHasAttempted(false);
-              setStatus("denied");
-            }}
-            className="p-1.5 sm:p-2 text-xs sm:text-base bg-gray-500 text-white rounded"
-          >
-            Reclaim Admin Access
-          </button>
         </span>
       </div>
 
