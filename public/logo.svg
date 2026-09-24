@@ -1,0 +1,82 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <!-- App Icon Background Container with Rounded Corners -->
+  <rect x="0" y="0" width="512" height="512" rx="105" ry="105" fill="#0B132B"/>
+
+  <!-- Outer Stage Frame / Gold Border Accent -->
+  <rect x="44" y="84" width="424" height="344" rx="28" ry="28" fill="#FFC72C"/>
+  
+  <!-- Inner Game Show Board Display -->
+  <rect x="56" y="96" width="400" height="320" rx="20" ry="20" fill="#041235"/>
+
+  <!-- Category Headers (Top Row) -->
+
+  <!-- Category 1: Game Controller (Cyan/Blue) -->
+  <rect x="72" y="112" width="68" height="48" rx="8" fill="#00B4D8"/>
+  <!-- Icon: Gamepad -->
+  <path d="M93 130 h26 a7 7 0 0 1 7 7 v4 a7 7 0 0 1 -7 7 h-26 a7 7 0 0 1 -7 -7 v-4 a7 7 0 0 1 7 -7 Z" fill="#FFFFFF"/>
+  <rect x="91" y="134" width="2" height="6" fill="#00B4D8"/>
+  <rect x="89" y="136" width="6" height="2" fill="#00B4D8"/>
+  <circle cx="117" cy="135" r="1.5" fill="#00B4D8"/>
+  <circle cx="121" cy="139" r="1.5" fill="#00B4D8"/>
+
+  <!-- Category 2: Dice (Pink/Red) -->
+  <rect x="148" y="112" width="68" height="48" rx="8" fill="#FF4B4B"/>
+  <!-- Icon: Die -->
+  <rect x="171" y="125" width="22" height="22" rx="4" fill="#FFFFFF"/>
+  <circle cx="176" cy="130" r="2" fill="#FF4B4B"/>
+  <circle cx="188" cy="130" r="2" fill="#FF4B4B"/>
+  <circle cx="182" cy="136" r="2" fill="#FF4B4B"/>
+  <circle cx="176" cy="142" r="2" fill="#FF4B4B"/>
+  <circle cx="188" cy="142" r="2" fill="#FF4B4B"/>
+
+  <!-- Category 3: Chess Knight (Gold/Yellow) -->
+  <rect x="222" y="112" width="68" height="48" rx="8" fill="#FFB703"/>
+  <!-- Icon: Chess Knight -->
+  <path d="M248 147 h16 v-4 h-3 c0 0 2-7-1-10 c-2-2-4-3-4-5 c0-2 2-3 2-5 c-3 0-5 2-6 3 c-1-2-4-2-6-1 c-2 2-1 5 1 6 c-3 2-4 5-4 8 v4 z" fill="#FFFFFF"/>
+
+  <!-- Category 4: Arcade / Pixel Ghost (Green) -->
+  <rect x="296" y="112" width="68" height="48" rx="8" fill="#06D6A0"/>
+  <!-- Icon: Pixel Ghost / Space Invader -->
+  <path d="M320 126 h20 v16 h-4 v4 h-4 v-4 h-4 v4 h-4 v-4 h-4 z" fill="#FFFFFF"/>
+  <rect x="324" y="130" width="3" height="4" fill="#06D6A0"/>
+  <rect x="333" y="130" width="3" height="4" fill="#06D6A0"/>
+
+  <!-- Category 5: Playing Card Suit / Diamond (Purple) -->
+  <rect x="372" y="112" width="68" height="48" rx="8" fill="#9D4EDD"/>
+  <!-- Icon: Diamond Suit -->
+  <polygon points="406,123 416,136 406,149 396,136" fill="#FFFFFF"/>
+
+  <!-- Grid Row 1 (Bright Royal Blue Game Tiles) -->
+  <rect x="72" y="172" width="68" height="48" rx="6" fill="#1D4ED8"/>
+  <rect x="148" y="172" width="68" height="48" rx="6" fill="#1D4ED8"/>
+  <rect x="222" y="172" width="68" height="48" rx="6" fill="#1D4ED8"/>
+  <rect x="296" y="172" width="68" height="48" rx="6" fill="#1D4ED8"/>
+  <rect x="372" y="172" width="68" height="48" rx="6" fill="#1D4ED8"/>
+
+  <!-- Grid Row 2 -->
+  <rect x="72" y="232" width="68" height="48" rx="6" fill="#1D4ED8"/>
+  <rect x="148" y="232" width="68" height="48" rx="6" fill="#1D4ED8"/>
+  <rect x="222" y="232" width="68" height="48" rx="6" fill="#1D4ED8"/>
+  <rect x="296" y="232" width="68" height="48" rx="6" fill="#1D4ED8"/>
+  <rect x="372" y="232" width="68" height="48" rx="6" fill="#1D4ED8"/>
+
+  <!-- Grid Row 3 -->
+  <rect x="72" y="292" width="68" height="48" rx="6" fill="#1D4ED8"/>
+  <rect x="148" y="292" width="68" height="48" rx="6" fill="#1D4ED8"/>
+  <rect x="222" y="292" width="68" height="48" rx="6" fill="#1D4ED8"/>
+  <rect x="296" y="292" width="68" height="48" rx="6" fill="#1D4ED8"/>
+  <rect x="372" y="292" width="68" height="48" rx="6" fill="#1D4ED8"/>
+
+  <!-- Grid Row 4 -->
+  <rect x="72" y="352" width="68" height="48" rx="6" fill="#1D4ED8"/>
+  <rect x="148" y="352" width="68" height="48" rx="6" fill="#1D4ED8"/>
+  <rect x="222" y="352" width="68" height="48" rx="6" fill="#1D4ED8"/>
+  <rect x="296" y="352" width="68" height="48" rx="6" fill="#1D4ED8"/>
+  <rect x="372" y="352" width="68" height="48" rx="6" fill="#1D4ED8"/>
+
+  <!-- Stage Lights Accents (Corners) -->
+  <circle cx="68" cy="108" r="4" fill="#FFC72C"/>
+  <circle cx="444" cy="108" r="4" fill="#FFC72C"/>
+  <circle cx="68" cy="404" r="4" fill="#FFC72C"/>
+  <circle cx="444" cy="404" r="4" fill="#FFC72C"/>
+</svg>

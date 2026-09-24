@@ -4,12 +4,12 @@ import Admin from "./components/Admin";
 import CreateGame from "./components/CreateGame";
 import Display from "./components/Display";
 import JoinGame from "./components/JoinGame";
-import Sandbox from "./components/Sandbox";
+import SandboxGate from "./components/SandboxGate";
 import { SocketProvider } from "./components/SocketContext";
 
-// /sandbox is a local test bench for the party games (no server needed). It's
+// /sandbox is the host's test bench for every game (filler content only). It's
 // on in development, and off in production builds unless REACT_APP_SANDBOX is
-// "true" at build time, so the live site doesn't expose unfinished games.
+// "true" at build time; SandboxGate also asks the server for the admin token.
 const SANDBOX_ENABLED =
   process.env.NODE_ENV !== "production" || process.env.REACT_APP_SANDBOX === "true";
 
@@ -28,7 +28,7 @@ const App: React.FC = () => {
         <Route path="/watch/:code" element={<Display />} />
         <Route path="/admin" element={<CreateGame />} />
         <Route path="/admin/:code" element={<Admin />} />
-        {SANDBOX_ENABLED && <Route path="/sandbox" element={<Sandbox />} />}
+        {SANDBOX_ENABLED && <Route path="/sandbox" element={<SandboxGate />} />}
       </Routes>
     </div>
   );

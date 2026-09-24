@@ -1,0 +1,58 @@
+{
+  "easy": [
+    {
+      "title": "Sample challenge 1 (easy)",
+      "players": 2,
+      "adminInfo": "Sample rules for challenge 1."
+    },
+    {
+      "title": "Sample challenge 2 (easy)",
+      "players": 3,
+      "adminInfo": "Sample rules for challenge 2."
+    },
+    {
+      "title": "Sample challenge 3 (easy)",
+      "players": 1,
+      "adminInfo": "Sample rules for challenge 3."
+    },
+    {
+      "title": "Sample challenge 4 (easy)",
+      "players": 2,
+      "adminInfo": "Sample rules for challenge 4."
+    }
+  ],
+  "medium": [
+    {
+      "title": "Sample challenge 5 (medium)",
+      "players": 3,
+      "adminInfo": "Sample rules for challenge 5."
+    },
+    {
+      "title": "Sample challenge 6 (medium)",
+      "players": 1,
+      "adminInfo": "Sample rules for challenge 6."
+    },
+    {
+      "title": "Sample challenge 7 (medium)",
+      "players": 2,
+      "adminInfo": "Sample rules for challenge 7."
+    },
+    {
+      "title": "Sample challenge 8 (medium)",
+      "players": 3,
+      "adminInfo": "Sample rules for challenge 8."
+    }
+  ],
+  "hard": [
+    {
+      "title": "Sample challenge 9 (hard)",
+      "players": 1,
+      "adminInfo": "Sample rules for challenge 9."
+    },
+    {
+      "title": "Sample challenge 10 (hard)",
+      "players": 2,
+      "adminInfo": "Sample rules for challenge 10."
+    }
+  ]
+}

@@ -1,0 +1,336 @@
+{
+  "easy": [
+    {
+      "question": "Sample easy question 1: the right answer is A",
+      "category": "Sample",
+      "answers": [
+        "Option A",
+        "Option B",
+        "Option C",
+        "Option D"
+      ],
+      "correctAnswerIdx": 0
+    },
+    {
+      "question": "Sample easy question 2: the right answer is B",
+      "category": "Sample",
+      "answers": [
+        "Option A",
+        "Option B",
+        "Option C",
+        "Option D"
+      ],
+      "correctAnswerIdx": 1
+    },
+    {
+      "question": "Sample easy question 3: the right answer is C",
+      "category": "Sample",
+      "answers": [
+        "Option A",
+        "Option B",
+        "Option C",
+        "Option D"
+      ],
+      "correctAnswerIdx": 2
+    },
+    {
+      "question": "Sample easy question 4: the right answer is D",
+      "category": "Sample",
+      "answers": [
+        "Option A",
+        "Option B",
+        "Option C",
+        "Option D"
+      ],
+      "correctAnswerIdx": 3
+    },
+    {
+      "question": "Sample easy question 5: the right answer is A",
+      "category": "Sample",
+      "answers": [
+        "Option A",
+        "Option B",
+        "Option C",
+        "Option D"
+      ],
+      "correctAnswerIdx": 0
+    },
+    {
+      "question": "Sample easy question 6: the right answer is B",
+      "category": "Sample",
+      "answers": [
+        "Option A",
+        "Option B",
+        "Option C",
+        "Option D"
+      ],
+      "correctAnswerIdx": 1
+    },
+    {
+      "question": "Sample easy question 7: the right answer is C",
+      "category": "Sample",
+      "answers": [
+        "Option A",
+        "Option B",
+        "Option C",
+        "Option D"
+      ],
+      "correctAnswerIdx": 2
+    },
+    {
+      "question": "Sample easy question 8: the right answer is D",
+      "category": "Sample",
+      "answers": [
+        "Option A",
+        "Option B",
+        "Option C",
+        "Option D"
+      ],
+      "correctAnswerIdx": 3
+    },
+    {
+      "question": "Sample easy question 9: the right answer is A",
+      "category": "Sample",
+      "answers": [
+        "Option A",
+        "Option B",
+        "Option C",
+        "Option D"
+      ],
+      "correctAnswerIdx": 0
+    },
+    {
+      "question": "Sample easy question 10: the right answer is B",
+      "category": "Sample",
+      "answers": [
+        "Option A",
+        "Option B",
+        "Option C",
+        "Option D"
+      ],
+      "correctAnswerIdx": 1
+    },
+    {
+      "question": "Sample easy question 11: the right answer is C",
+      "category": "Sample",
+      "answers": [
+        "Option A",
+        "Option B",
+        "Option C",
+        "Option D"
+      ],
+      "correctAnswerIdx": 2
+    },
+    {
+      "question": "Sample easy question 12: the right answer is D",
+      "category": "Sample",
+      "answers": [
+        "Option A",
+        "Option B",
+        "Option C",
+        "Option D"
+      ],
+      "correctAnswerIdx": 3
+    }
+  ],
+  "mediumHard": [
+    {
+      "question": "Sample medium/hard question 1: the right answer is A",
+      "category": "Sample",
+      "answers": [
+        "Option A",
+        "Option B",
+        "Option C",
+        "Option D"
+      ],
+      "correctAnswerIdx": 0
+    },
+    {
+      "question": "Sample medium/hard question 2: the right answer is B",
+      "category": "Sample",
+      "answers": [
+        "Option A",
+        "Option B",
+        "Option C",
+        "Option D"
+      ],
+      "correctAnswerIdx": 1
+    },
+    {
+      "question": "Sample medium/hard question 3: the right answer is C",
+      "category": "Sample",
+      "answers": [
+        "Option A",
+        "Option B",
+        "Option C",
+        "Option D"
+      ],
+      "correctAnswerIdx": 2
+    },
+    {
+      "question": "Sample medium/hard question 4: the right answer is D",
+      "category": "Sample",
+      "answers": [
+        "Option A",
+        "Option B",
+        "Option C",
+        "Option D"
+      ],
+      "correctAnswerIdx": 3
+    },
+    {
+      "question": "Sample medium/hard question 5: the right answer is A",
+      "category": "Sample",
+      "answers": [
+        "Option A",
+        "Option B",
+        "Option C",
+        "Option D"
+      ],
+      "correctAnswerIdx": 0
+    },
+    {
+      "question": "Sample medium/hard question 6: the right answer is B",
+      "category": "Sample",
+      "answers": [
+        "Option A",
+        "Option B",
+        "Option C",
+        "Option D"
+      ],
+      "correctAnswerIdx": 1
+    },
+    {
+      "question": "Sample medium/hard question 7: the right answer is C",
+      "category": "Sample",
+      "answers": [
+        "Option A",
+        "Option B",
+        "Option C",
+        "Option D"
+      ],
+      "correctAnswerIdx": 2
+    },
+    {
+      "question": "Sample medium/hard question 8: the right answer is D",
+      "category": "Sample",
+      "answers": [
+        "Option A",
+        "Option B",
+        "Option C",
+        "Option D"
+      ],
+      "correctAnswerIdx": 3
+    },
+    {
+      "question": "Sample medium/hard question 9: the right answer is A",
+      "category": "Sample",
+      "answers": [
+        "Option A",
+        "Option B",
+        "Option C",
+        "Option D"
+      ],
+      "correctAnswerIdx": 0
+    },
+    {
+      "question": "Sample medium/hard question 10: the right answer is B",
+      "category": "Sample",
+      "answers": [
+        "Option A",
+        "Option B",
+        "Option C",
+        "Option D"
+      ],
+      "correctAnswerIdx": 1
+    },
+    {
+      "question": "Sample medium/hard question 11: the right answer is C",
+      "category": "Sample",
+      "answers": [
+        "Option A",
+        "Option B",
+        "Option C",
+        "Option D"
+      ],
+      "correctAnswerIdx": 2
+    },
+    {
+      "question": "Sample medium/hard question 12: the right answer is D",
+      "category": "Sample",
+      "answers": [
+        "Option A",
+        "Option B",
+        "Option C",
+        "Option D"
+      ],
+      "correctAnswerIdx": 3
+    },
+    {
+      "question": "Sample medium/hard question 13: the right answer is A",
+      "category": "Sample",
+      "answers": [
+        "Option A",
+        "Option B",
+        "Option C",
+        "Option D"
+      ],
+      "correctAnswerIdx": 0
+    },
+    {
+      "question": "Sample medium/hard question 14: the right answer is B",
+      "category": "Sample",
+      "answers": [
+        "Option A",
+        "Option B",
+        "Option C",
+        "Option D"
+      ],
+      "correctAnswerIdx": 1
+    },
+    {
+      "question": "Sample medium/hard question 15: the right answer is C",
+      "category": "Sample",
+      "answers": [
+        "Option A",
+        "Option B",
+        "Option C",
+        "Option D"
+      ],
+      "correctAnswerIdx": 2
+    },
+    {
+      "question": "Sample medium/hard question 16: the right answer is D",
+      "category": "Sample",
+      "answers": [
+        "Option A",
+        "Option B",
+        "Option C",
+        "Option D"
+      ],
+      "correctAnswerIdx": 3
+    },
+    {
+      "question": "Sample medium/hard question 17: the right answer is A",
+      "category": "Sample",
+      "answers": [
+        "Option A",
+        "Option B",
+        "Option C",
+        "Option D"
+      ],
+      "correctAnswerIdx": 0
+    },
+    {
+      "question": "Sample medium/hard question 18: the right answer is B",
+      "category": "Sample",
+      "answers": [
+        "Option A",
+        "Option B",
+        "Option C",
+        "Option D"
+      ],
+      "correctAnswerIdx": 1
+    }
+  ]
+}

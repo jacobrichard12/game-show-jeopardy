@@ -1,0 +1,505 @@
+{
+  "wheel": {
+    "easy": [
+      {
+        "category": "Sample",
+        "phrase": "SAMPLE PUZZLE ONE"
+      },
+      {
+        "category": "Sample",
+        "phrase": "SAMPLE PUZZLE TWO"
+      },
+      {
+        "category": "Sample",
+        "phrase": "SAMPLE PUZZLE THREE"
+      },
+      {
+        "category": "Sample",
+        "phrase": "SAMPLE PUZZLE FOUR"
+      }
+    ],
+    "medium": [
+      {
+        "category": "Sample",
+        "phrase": "SAMPLE PUZZLE FIVE"
+      },
+      {
+        "category": "Sample",
+        "phrase": "SAMPLE PUZZLE SIX"
+      },
+      {
+        "category": "Sample",
+        "phrase": "SAMPLE PUZZLE SEVEN"
+      },
+      {
+        "category": "Sample",
+        "phrase": "SAMPLE PUZZLE EIGHT"
+      }
+    ],
+    "hard": [
+      {
+        "category": "Sample",
+        "phrase": "SAMPLE PUZZLE NINE"
+      },
+      {
+        "category": "Sample",
+        "phrase": "SAMPLE PUZZLE TEN"
+      }
+    ]
+  },
+  "act": {
+    "easy": [
+      {
+        "mode": "draw",
+        "word": "Sample draw word 1"
+      },
+      {
+        "mode": "describe",
+        "word": "Sample describe word 2",
+        "taboo": [
+          "Sample",
+          "Word"
+        ]
+      },
+      {
+        "mode": "act",
+        "word": "Sample act word 3"
+      },
+      {
+        "mode": "draw",
+        "word": "Sample draw word 4"
+      }
+    ],
+    "medium": [
+      {
+        "mode": "describe",
+        "word": "Sample describe word 5",
+        "taboo": [
+          "Sample",
+          "Word"
+        ]
+      },
+      {
+        "mode": "act",
+        "word": "Sample act word 6"
+      },
+      {
+        "mode": "draw",
+        "word": "Sample draw word 7"
+      },
+      {
+        "mode": "describe",
+        "word": "Sample describe word 8",
+        "taboo": [
+          "Sample",
+          "Word"
+        ]
+      }
+    ],
+    "hard": [
+      {
+        "mode": "act",
+        "word": "Sample act word 9"
+      },
+      {
+        "mode": "draw",
+        "word": "Sample draw word 10"
+      }
+    ]
+  },
+  "scavenger": {
+    "easy": [
+      {
+        "item": "Sample item 1"
+      },
+      {
+        "item": "Sample item 2",
+        "seconds": 30
+      },
+      {
+        "item": "Sample item 3"
+      },
+      {
+        "item": "Sample item 4",
+        "seconds": 30
+      }
+    ],
+    "medium": [
+      {
+        "item": "Sample item 5"
+      },
+      {
+        "item": "Sample item 6",
+        "seconds": 30
+      },
+      {
+        "item": "Sample item 7"
+      },
+      {
+        "item": "Sample item 8",
+        "seconds": 30
+      }
+    ],
+    "hard": [
+      {
+        "item": "Sample item 9"
+      },
+      {
+        "item": "Sample item 10",
+        "seconds": 30
+      }
+    ]
+  },
+  "closest": {
+    "easy": [
+      {
+        "prompt": "Sample number question 1",
+        "answer": 17,
+        "rule": "noOver"
+      },
+      {
+        "prompt": "Sample number question 2",
+        "answer": 27,
+        "unit": "samples"
+      },
+      {
+        "prompt": "Sample number question 3",
+        "answer": 37
+      },
+      {
+        "prompt": "Sample number question 4",
+        "answer": 47,
+        "rule": "noOver"
+      }
+    ],
+    "medium": [
+      {
+        "prompt": "Sample number question 5",
+        "answer": 57,
+        "unit": "samples"
+      },
+      {
+        "prompt": "Sample number question 6",
+        "answer": 67
+      },
+      {
+        "prompt": "Sample number question 7",
+        "answer": 77,
+        "rule": "noOver"
+      },
+      {
+        "prompt": "Sample number question 8",
+        "answer": 87,
+        "unit": "samples"
+      }
+    ],
+    "hard": [
+      {
+        "prompt": "Sample number question 9",
+        "answer": 97
+      },
+      {
+        "prompt": "Sample year question",
+        "answer": 1999,
+        "rule": "noOver",
+        "plain": true
+      }
+    ]
+  },
+  "order": {
+    "easy": [
+      {
+        "prompt": "Sample order puzzle 1",
+        "direction": "\"First\" first",
+        "items": [
+          "First sample",
+          "Second sample",
+          "Third sample",
+          "Fourth sample",
+          "Fifth sample"
+        ]
+      },
+      {
+        "prompt": "Sample order puzzle 2",
+        "direction": "\"First\" first",
+        "items": [
+          "First sample",
+          "Second sample",
+          "Third sample",
+          "Fourth sample",
+          "Fifth sample",
+          "Sixth sample"
+        ]
+      },
+      {
+        "prompt": "Sample order puzzle 3",
+        "direction": "\"First\" first",
+        "items": [
+          "First sample",
+          "Second sample",
+          "Third sample",
+          "Fourth sample"
+        ]
+      },
+      {
+        "prompt": "Sample order puzzle 4",
+        "direction": "\"First\" first",
+        "items": [
+          "First sample",
+          "Second sample",
+          "Third sample",
+          "Fourth sample",
+          "Fifth sample"
+        ]
+      }
+    ],
+    "medium": [
+      {
+        "prompt": "Sample order puzzle 5",
+        "direction": "\"First\" first",
+        "items": [
+          "First sample",
+          "Second sample",
+          "Third sample",
+          "Fourth sample",
+          "Fifth sample",
+          "Sixth sample"
+        ]
+      },
+      {
+        "prompt": "Sample order puzzle 6",
+        "direction": "\"First\" first",
+        "items": [
+          "First sample",
+          "Second sample",
+          "Third sample",
+          "Fourth sample"
+        ]
+      },
+      {
+        "prompt": "Sample order puzzle 7",
+        "direction": "\"First\" first",
+        "items": [
+          "First sample",
+          "Second sample",
+          "Third sample",
+          "Fourth sample",
+          "Fifth sample"
+        ]
+      },
+      {
+        "prompt": "Sample order puzzle 8",
+        "direction": "\"First\" first",
+        "items": [
+          "First sample",
+          "Second sample",
+          "Third sample",
+          "Fourth sample",
+          "Fifth sample",
+          "Sixth sample"
+        ]
+      }
+    ],
+    "hard": [
+      {
+        "prompt": "Sample order puzzle 9",
+        "direction": "\"First\" first",
+        "items": [
+          "First sample",
+          "Second sample",
+          "Third sample",
+          "Fourth sample"
+        ]
+      },
+      {
+        "prompt": "Sample order puzzle 10",
+        "direction": "\"First\" first",
+        "items": [
+          "First sample",
+          "Second sample",
+          "Third sample",
+          "Fourth sample",
+          "Fifth sample"
+        ]
+      }
+    ]
+  },
+  "charades": {
+    "easy": [
+      {
+        "category": "Sample category 1",
+        "words": [
+          "Sample word 1",
+          "Sample word 2",
+          "Sample word 3",
+          "Sample word 4",
+          "Sample word 5",
+          "Sample word 6",
+          "Sample word 7",
+          "Sample word 8",
+          "Sample word 9",
+          "Sample word 10",
+          "Sample word 11",
+          "Sample word 12"
+        ]
+      },
+      {
+        "category": "Sample category 2",
+        "words": [
+          "Sample word 1",
+          "Sample word 2",
+          "Sample word 3",
+          "Sample word 4",
+          "Sample word 5",
+          "Sample word 6",
+          "Sample word 7",
+          "Sample word 8",
+          "Sample word 9",
+          "Sample word 10",
+          "Sample word 11",
+          "Sample word 12"
+        ]
+      },
+      {
+        "category": "Sample category 3",
+        "words": [
+          "Sample word 1",
+          "Sample word 2",
+          "Sample word 3",
+          "Sample word 4",
+          "Sample word 5",
+          "Sample word 6",
+          "Sample word 7",
+          "Sample word 8",
+          "Sample word 9",
+          "Sample word 10",
+          "Sample word 11",
+          "Sample word 12"
+        ]
+      },
+      {
+        "category": "Sample category 4",
+        "words": [
+          "Sample word 1",
+          "Sample word 2",
+          "Sample word 3",
+          "Sample word 4",
+          "Sample word 5",
+          "Sample word 6",
+          "Sample word 7",
+          "Sample word 8",
+          "Sample word 9",
+          "Sample word 10",
+          "Sample word 11",
+          "Sample word 12"
+        ]
+      }
+    ],
+    "medium": [
+      {
+        "category": "Sample category 5",
+        "words": [
+          "Sample word 1",
+          "Sample word 2",
+          "Sample word 3",
+          "Sample word 4",
+          "Sample word 5",
+          "Sample word 6",
+          "Sample word 7",
+          "Sample word 8",
+          "Sample word 9",
+          "Sample word 10",
+          "Sample word 11",
+          "Sample word 12"
+        ]
+      },
+      {
+        "category": "Sample category 6",
+        "words": [
+          "Sample word 1",
+          "Sample word 2",
+          "Sample word 3",
+          "Sample word 4",
+          "Sample word 5",
+          "Sample word 6",
+          "Sample word 7",
+          "Sample word 8",
+          "Sample word 9",
+          "Sample word 10",
+          "Sample word 11",
+          "Sample word 12"
+        ]
+      },
+      {
+        "category": "Sample category 7",
+        "words": [
+          "Sample word 1",
+          "Sample word 2",
+          "Sample word 3",
+          "Sample word 4",
+          "Sample word 5",
+          "Sample word 6",
+          "Sample word 7",
+          "Sample word 8",
+          "Sample word 9",
+          "Sample word 10",
+          "Sample word 11",
+          "Sample word 12"
+        ]
+      },
+      {
+        "category": "Sample category 8",
+        "words": [
+          "Sample word 1",
+          "Sample word 2",
+          "Sample word 3",
+          "Sample word 4",
+          "Sample word 5",
+          "Sample word 6",
+          "Sample word 7",
+          "Sample word 8",
+          "Sample word 9",
+          "Sample word 10",
+          "Sample word 11",
+          "Sample word 12"
+        ]
+      }
+    ],
+    "hard": [
+      {
+        "category": "Sample category 9",
+        "words": [
+          "Sample word 1",
+          "Sample word 2",
+          "Sample word 3",
+          "Sample word 4",
+          "Sample word 5",
+          "Sample word 6",
+          "Sample word 7",
+          "Sample word 8",
+          "Sample word 9",
+          "Sample word 10",
+          "Sample word 11",
+          "Sample word 12"
+        ]
+      },
+      {
+        "category": "Sample category 10",
+        "words": [
+          "Sample word 1",
+          "Sample word 2",
+          "Sample word 3",
+          "Sample word 4",
+          "Sample word 5",
+          "Sample word 6",
+          "Sample word 7",
+          "Sample word 8",
+          "Sample word 9",
+          "Sample word 10",
+          "Sample word 11",
+          "Sample word 12"
+        ]
+      }
+    ]
+  }
+}

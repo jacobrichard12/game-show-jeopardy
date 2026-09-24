@@ -25,10 +25,10 @@ const TitlePage: React.FC<TitlePageProps> = ({
   };
 
   return (
-    <div className="relative min-h-screen w-full bg-gradient-to-br from-indigo-900 via-ink to-ink flex items-center justify-center overflow-hidden px-4 py-16">
+    <div className="relative min-h-screen w-full bg-gradient-to-br from-glow via-ink to-ink flex items-center justify-center overflow-hidden px-4 py-16">
       {/* Background animation */}
       <div className="absolute top-0 left-0 w-full h-full animate-pulse opacity-20">
-        <div className="absolute inset-0 bg-gradient-radial from-blue-500 via-purple-500 to-transparent blur-3xl mix-blend-overlay"></div>
+        <div className="absolute inset-0 bg-gradient-radial from-flare via-flare2 to-transparent blur-3xl mix-blend-overlay"></div>
       </div>
 
       {/* Animated Title */}

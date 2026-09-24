@@ -42,7 +42,7 @@ To try the games without a room, open **http://localhost:3000/sandbox**: it show
 | `/admin` | Create a game (needs `ADMIN_TOKEN` if one is set) |
 | `/admin/CODE` | Host control panel |
 | `/watch/CODE` | TV display (read-only) |
-| `/sandbox` | Test bench for every game (always on in dev; in production only if `REACT_APP_SANDBOX=true` at build) |
+| `/sandbox` | Test bench for every game, with placeholder questions (always on in dev; in production only if `REACT_APP_SANDBOX=true` at build). Asks for the admin token when `ADMIN_TOKEN` is set |
 
 ## Configuration
 

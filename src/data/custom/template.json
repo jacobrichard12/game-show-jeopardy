@@ -1,0 +1,153 @@
+{
+  "name": "Template (copy me)",
+  "feud": [
+    {
+      "round": 1,
+      "value": 100,
+      "prompt": "Your survey question here",
+      "answers": [
+        {
+          "answer": "Top answer",
+          "points": 40
+        },
+        {
+          "answer": "Second answer",
+          "points": 25
+        },
+        {
+          "answer": "Third answer",
+          "points": 15
+        },
+        {
+          "answer": "Fourth answer",
+          "points": 10
+        }
+      ]
+    }
+  ],
+  "millionaire": [
+    {
+      "round": 1,
+      "value": 200,
+      "questions": [
+        {
+          "question": "Your first (easiest) question here",
+          "category": "Your category",
+          "answers": [
+            "Right answer",
+            "Wrong answer",
+            "Wrong answer 2",
+            "Wrong answer 3"
+          ],
+          "correctAnswerIdx": 0
+        },
+        {
+          "question": "Your second question here",
+          "category": "Your category",
+          "answers": [
+            "Wrong answer",
+            "Right answer",
+            "Wrong answer 2",
+            "Wrong answer 3"
+          ],
+          "correctAnswerIdx": 1
+        },
+        {
+          "question": "Your third (hardest) question here",
+          "category": "Your category",
+          "answers": [
+            "Wrong answer",
+            "Wrong answer 2",
+            "Right answer",
+            "Wrong answer 3"
+          ],
+          "correctAnswerIdx": 2
+        }
+      ]
+    }
+  ],
+  "minute": [
+    {
+      "round": 1,
+      "value": 300,
+      "title": "Your challenge name here",
+      "link": "https://www.youtube.com/watch?v=alc9IDzwpAI",
+      "materials": [
+        "What you need"
+      ],
+      "description": "How to play (host only)"
+    }
+  ],
+  "head": [
+    {
+      "round": 1,
+      "value": 400,
+      "title": "Your head-to-head challenge here",
+      "players": 1,
+      "adminInfo": "Rules for the host"
+    }
+  ],
+  "wheel": [
+    {
+      "round": 1,
+      "value": 500,
+      "category": "Your category",
+      "phrase": "YOUR PHRASE HERE"
+    }
+  ],
+  "act": [
+    {
+      "round": 2,
+      "value": 200,
+      "mode": "describe",
+      "word": "Your word here",
+      "taboo": [
+        "Off-limits word",
+        "Another one"
+      ]
+    }
+  ],
+  "charades": [
+    {
+      "round": 2,
+      "value": 400,
+      "category": "Your category",
+      "words": [
+        "First word",
+        "Second word",
+        "Third word"
+      ]
+    }
+  ],
+  "scavenger": [
+    {
+      "round": 2,
+      "value": 600,
+      "item": "Something to find",
+      "seconds": 60
+    }
+  ],
+  "closest": [
+    {
+      "round": 2,
+      "value": 800,
+      "prompt": "Your number question here",
+      "answer": 100,
+      "unit": "things",
+      "rule": "closest"
+    }
+  ],
+  "order": [
+    {
+      "round": 2,
+      "value": 1000,
+      "prompt": "Your ordering puzzle here",
+      "direction": "smallest first",
+      "items": [
+        "Smallest",
+        "Middle",
+        "Largest"
+      ]
+    }
+  ]
+}

@@ -14,9 +14,11 @@ import Timer from "./Timer";
 
 interface PageWrapperProps {
   gameState: GameState;
+  // Bumped by Display to play the board's category intro (0 = never).
+  boardIntro?: number;
 }
 
-const PageWrapper: React.FC<PageWrapperProps> = ({ gameState }) => {
+const PageWrapper: React.FC<PageWrapperProps> = ({ gameState, boardIntro = 0 }) => {
   const getComponent = (): React.ReactNode => {
     if (gameState.showTimer) {
       return (
@@ -31,6 +33,7 @@ const PageWrapper: React.FC<PageWrapperProps> = ({ gameState }) => {
         return (
           <GameBoard
             isAdmin={false}
+            introKey={boardIntro}
             gameState={gameState}
             gameBoardData={boardData(gameState.boardPage)}
             handleUpdateCurrentGame={() => {}}

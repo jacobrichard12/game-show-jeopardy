@@ -1,0 +1,298 @@
+{
+  "easy": [
+    {
+      "prompt": "Sample survey 1 (easy)",
+      "answers": [
+        {
+          "answer": "Answer A",
+          "points": 40
+        },
+        {
+          "answer": "Answer B",
+          "points": 25
+        },
+        {
+          "answer": "Answer C",
+          "points": 15
+        },
+        {
+          "answer": "Answer D",
+          "points": 10
+        },
+        {
+          "answer": "Answer E",
+          "points": 5
+        }
+      ]
+    },
+    {
+      "prompt": "Sample survey 2 (easy)",
+      "answers": [
+        {
+          "answer": "Answer A",
+          "points": 40
+        },
+        {
+          "answer": "Answer B",
+          "points": 25
+        },
+        {
+          "answer": "Answer C",
+          "points": 15
+        },
+        {
+          "answer": "Answer D",
+          "points": 10
+        },
+        {
+          "answer": "Answer E",
+          "points": 5
+        },
+        {
+          "answer": "Answer F",
+          "points": 3
+        }
+      ]
+    },
+    {
+      "prompt": "Sample survey 3 (easy)",
+      "answers": [
+        {
+          "answer": "Answer A",
+          "points": 40
+        },
+        {
+          "answer": "Answer B",
+          "points": 25
+        },
+        {
+          "answer": "Answer C",
+          "points": 15
+        },
+        {
+          "answer": "Answer D",
+          "points": 10
+        },
+        {
+          "answer": "Answer E",
+          "points": 5
+        },
+        {
+          "answer": "Answer F",
+          "points": 3
+        },
+        {
+          "answer": "Answer G",
+          "points": 1
+        }
+      ]
+    },
+    {
+      "prompt": "Sample survey 4 (easy)",
+      "answers": [
+        {
+          "answer": "Answer A",
+          "points": 40
+        },
+        {
+          "answer": "Answer B",
+          "points": 25
+        },
+        {
+          "answer": "Answer C",
+          "points": 15
+        },
+        {
+          "answer": "Answer D",
+          "points": 10
+        },
+        {
+          "answer": "Answer E",
+          "points": 5
+        },
+        {
+          "answer": "Answer F",
+          "points": 3
+        },
+        {
+          "answer": "Answer G",
+          "points": 1
+        },
+        {
+          "answer": "Answer H",
+          "points": 1
+        }
+      ]
+    }
+  ],
+  "medium": [
+    {
+      "prompt": "Sample survey 5 (medium)",
+      "answers": [
+        {
+          "answer": "Answer A",
+          "points": 40
+        },
+        {
+          "answer": "Answer B",
+          "points": 25
+        },
+        {
+          "answer": "Answer C",
+          "points": 15
+        },
+        {
+          "answer": "Answer D",
+          "points": 10
+        }
+      ]
+    },
+    {
+      "prompt": "Sample survey 6 (medium)",
+      "answers": [
+        {
+          "answer": "Answer A",
+          "points": 40
+        },
+        {
+          "answer": "Answer B",
+          "points": 25
+        },
+        {
+          "answer": "Answer C",
+          "points": 15
+        },
+        {
+          "answer": "Answer D",
+          "points": 10
+        },
+        {
+          "answer": "Answer E",
+          "points": 5
+        }
+      ]
+    },
+    {
+      "prompt": "Sample survey 7 (medium)",
+      "answers": [
+        {
+          "answer": "Answer A",
+          "points": 40
+        },
+        {
+          "answer": "Answer B",
+          "points": 25
+        },
+        {
+          "answer": "Answer C",
+          "points": 15
+        },
+        {
+          "answer": "Answer D",
+          "points": 10
+        },
+        {
+          "answer": "Answer E",
+          "points": 5
+        },
+        {
+          "answer": "Answer F",
+          "points": 3
+        }
+      ]
+    },
+    {
+      "prompt": "Sample survey 8 (medium)",
+      "answers": [
+        {
+          "answer": "Answer A",
+          "points": 40
+        },
+        {
+          "answer": "Answer B",
+          "points": 25
+        },
+        {
+          "answer": "Answer C",
+          "points": 15
+        },
+        {
+          "answer": "Answer D",
+          "points": 10
+        },
+        {
+          "answer": "Answer E",
+          "points": 5
+        },
+        {
+          "answer": "Answer F",
+          "points": 3
+        },
+        {
+          "answer": "Answer G",
+          "points": 1
+        }
+      ]
+    }
+  ],
+  "hard": [
+    {
+      "prompt": "Sample survey 9 (hard)",
+      "answers": [
+        {
+          "answer": "Answer A",
+          "points": 40
+        },
+        {
+          "answer": "Answer B",
+          "points": 25
+        },
+        {
+          "answer": "Answer C",
+          "points": 15
+        },
+        {
+          "answer": "Answer D",
+          "points": 10
+        },
+        {
+          "answer": "Answer E",
+          "points": 5
+        },
+        {
+          "answer": "Answer F",
+          "points": 3
+        },
+        {
+          "answer": "Answer G",
+          "points": 1
+        },
+        {
+          "answer": "Answer H",
+          "points": 1
+        }
+      ]
+    },
+    {
+      "prompt": "Sample survey 10 (hard)",
+      "answers": [
+        {
+          "answer": "Answer A",
+          "points": 40
+        },
+        {
+          "answer": "Answer B",
+          "points": 25
+        },
+        {
+          "answer": "Answer C",
+          "points": 15
+        },
+        {
+          "answer": "Answer D",
+          "points": 10
+        }
+      ]
+    }
+  ]
+}

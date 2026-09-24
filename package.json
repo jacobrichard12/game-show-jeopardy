@@ -32,6 +32,7 @@
     "server-start": "concurrently \"npm run server\" \"npm start\"",
     "server": "ts-node src/server/server.ts",
     "server-build": "tsc --project tsconfig.server.json && node dist/server/server.js",
+    "check-pack": "ts-node scripts/check-pack.ts",
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject"

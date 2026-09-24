@@ -1,13 +1,16 @@
 import React, { useState } from "react";
-import headToHeadBank from "../data/headToHeadBank.json";
-import minuteBank from "../data/minuteBank.json";
-import partyGames from "../data/partyGames.json";
-import sandboxFeud from "../data/sandboxFeud.json";
-import sandboxMillionaire from "../data/sandboxMillionaire.json";
+// Filler content only (ROADMAP S2): whatever this page imports ships in the
+// public JS bundle, so real questions must never be imported here.
+import sandboxFeud from "../data/sandbox/feud.json";
+import headToHeadBank from "../data/sandbox/head.json";
+import sandboxMillionaire from "../data/sandbox/millionaire.json";
+import minuteBank from "../data/sandbox/minute.json";
+import partyGames from "../data/sandbox/party.json";
 import { createInitialQuestionState, updateQuestionState } from "../shared/partyGames";
 import { awardPoints } from "../shared/scoring";
 import { buildMillionaireQuestions, buildSlotBank, DifficultyBank, MillionairePool } from "../shared/slots";
 import { teamColor } from "../shared/teamColors";
+import { ThemeId, THEMES } from "../shared/themes";
 import {
   CharadesPrompt,
   ClosestQuestion,
@@ -42,6 +45,7 @@ import ReverseCharades from "./ReverseCharades";
 import ScavengerSprint from "./ScavengerSprint";
 import ScoreBoard from "./Scoreboard";
 import WheelPuzzle from "./WheelPuzzle";
+import { useTheme } from "./useTheme";
 
 // A test bench for every tile game (the four original games and the party
 // games from ROADMAP Tier 5) at /sandbox. It runs a game locally with no
@@ -229,6 +233,9 @@ function buildRound(base: GameState, mode: ModeDef, tile: number, doubleJeopardy
 type View = "both" | "host" | "tv";
 
 const Sandbox: React.FC = () => {
+  // Previews a board theme on the TV panel (real games pick one at creation).
+  const [theme, setTheme] = useState<ThemeId>("original");
+  useTheme(theme);
   const [modeIdx, setModeIdx] = useState(0);
   const [tile, setTile] = useState(100);
   const [doubleJeopardy, setDoubleJeopardy] = useState(false);
@@ -362,7 +369,7 @@ const Sandbox: React.FC = () => {
   const tvPane = (
     <section
       aria-label="TV display"
-      className="rounded-xl bg-gradient-to-b from-ink to-indigo-950 p-2 text-white shadow sm:p-4"
+      className="rounded-xl bg-gradient-to-b from-ink to-deep p-2 text-white shadow sm:p-4"
     >
       <h2 className="mb-2 text-left text-sm font-semibold uppercase tracking-widest text-white/60">
         TV display
@@ -449,6 +456,22 @@ const Sandbox: React.FC = () => {
               {Array.from({ length: MAX_TEAMS - MIN_TEAMS + 1 }, (_, i) => MIN_TEAMS + i).map((n) => (
                 <option key={n} value={n}>
                   {n}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="text-sm">
+            <span className="block text-gray-600">Theme</span>
+            <select
+              aria-label="Theme"
+              value={theme}
+              onChange={(e) => setTheme(e.target.value as ThemeId)}
+              className="rounded border p-2"
+            >
+              {THEMES.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.label}
                 </option>
               ))}
             </select>

@@ -1,3 +1,5 @@
+import { ThemeId } from "./themes";
+
 export interface TeamState {
     id: string;
     name: string;
@@ -24,6 +26,16 @@ export interface GameState {
     // Which board the host is showing: the four classic games, or the party
     // games. Undefined means classic (states from before this existed).
     boardPage?: BoardPage;
+    // Set by the host from Settings to show the end-of-game standings on the
+    // TV; cleared by "Back to board" or a reset. Missing means false.
+    gameOver?: boolean;
+    // Board colors, chosen at creation (shared/themes.ts). Missing = Original.
+    theme?: ThemeId;
+    // Host's lobby-music toggle (off unless pressed); the TV plays it only on
+    // the title screen, before the game starts.
+    lobbyMusic?: boolean;
+    // Bumped by the host's Shuffle button: the TV skips to a new random track.
+    lobbyMusicShuffle?: number;
     answered: { [key: string]: number[] };
     doubleJeopardyAnswered: { [key: string]: number[] };
 }
@@ -33,14 +45,26 @@ export function clampTeamCount(count: number): number {
 }
 
 const TEAM_NAME_LETTERS = ["A", "B", "C", "D"];
+export const TEAM_NAME_MAX_LENGTH = 30;
 
-export function createDefaultTeams(count: number): TeamState[] {
+export function defaultTeamName(index: number): string {
+    return `Team ${TEAM_NAME_LETTERS[index]}`;
+}
+
+// Names come from the create-game form over the socket, so anything that
+// isn't a non-blank string falls back to "Team A/B/…".
+export function createDefaultTeams(count: number, names?: unknown): TeamState[] {
     const n = clampTeamCount(count);
-    return Array.from({ length: n }, (_, i) => ({
-        id: `team-${i + 1}`,
-        name: `Team ${TEAM_NAME_LETTERS[i]}`,
-        score: 0,
-    }));
+    const given = Array.isArray(names) ? names : [];
+    return Array.from({ length: n }, (_, i) => {
+        const raw = given[i];
+        const name = typeof raw === "string" ? raw.trim().slice(0, TEAM_NAME_MAX_LENGTH) : "";
+        return {
+            id: `team-${i + 1}`,
+            name: name || defaultTeamName(i),
+            score: 0,
+        };
+    });
 }
 
 export interface CurrentGame {

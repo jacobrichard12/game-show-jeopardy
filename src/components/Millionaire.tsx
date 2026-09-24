@@ -10,7 +10,7 @@ import {
   MillionaireQuestionState,
   QuestionProps,
 } from "../shared/types";
-import { createAudio } from "../shared/sound";
+import { createAudio, playAudio } from "../shared/sound";
 import NoQuestionAvailable from "./NoQuestionAvailable";
 
 interface MillionaireProps extends QuestionProps {}
@@ -72,9 +72,9 @@ const Millionaire: React.FC<MillionaireProps> = ({
         audio.currentTime = 0;
       }
       if (current === currentSubquestion.correctAnswerIdx) {
-        correctAudio.play();
+        playAudio(correctAudio);
       } else {
-        incorrectAudio.play();
+        playAudio(incorrectAudio);
       }
     }
   }, [isAdmin, questionState.answeredQuestionIdx, currentSubquestion, correctAudio, incorrectAudio]);

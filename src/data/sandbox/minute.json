@@ -1,0 +1,88 @@
+{
+  "easy": [
+    {
+      "link": "https://www.youtube.com/watch?v=7SujijNO-hk",
+      "title": "Sample Minute 1 (easy)",
+      "materials": [
+        "Sample material"
+      ],
+      "description": "Sandbox filler."
+    },
+    {
+      "link": "https://www.youtube.com/watch?v=xivZUv23fz8",
+      "title": "Sample Minute 2 (easy)",
+      "materials": [
+        "Sample material"
+      ],
+      "description": "Sandbox filler."
+    },
+    {
+      "link": "https://www.youtube.com/watch?v=alc9IDzwpAI",
+      "title": "Sample Minute 3 (easy)",
+      "materials": [
+        "Sample material"
+      ],
+      "description": "Sandbox filler."
+    },
+    {
+      "link": "https://www.youtube.com/watch?v=7SujijNO-hk",
+      "title": "Sample Minute 4 (easy)",
+      "materials": [
+        "Sample material"
+      ],
+      "description": "Sandbox filler."
+    }
+  ],
+  "medium": [
+    {
+      "link": "https://www.youtube.com/watch?v=xivZUv23fz8",
+      "title": "Sample Minute 5 (medium)",
+      "materials": [
+        "Sample material"
+      ],
+      "description": "Sandbox filler."
+    },
+    {
+      "link": "https://www.youtube.com/watch?v=alc9IDzwpAI",
+      "title": "Sample Minute 6 (medium)",
+      "materials": [
+        "Sample material"
+      ],
+      "description": "Sandbox filler."
+    },
+    {
+      "link": "https://www.youtube.com/watch?v=7SujijNO-hk",
+      "title": "Sample Minute 7 (medium)",
+      "materials": [
+        "Sample material"
+      ],
+      "description": "Sandbox filler."
+    },
+    {
+      "link": "https://www.youtube.com/watch?v=xivZUv23fz8",
+      "title": "Sample Minute 8 (medium)",
+      "materials": [
+        "Sample material"
+      ],
+      "description": "Sandbox filler."
+    }
+  ],
+  "hard": [
+    {
+      "link": "https://www.youtube.com/watch?v=alc9IDzwpAI",
+      "title": "Sample Minute 9 (hard)",
+      "materials": [
+        "Sample material"
+      ],
+      "description": "Sandbox filler."
+    },
+    {
+      "link": "https://www.youtube.com/watch?v=7SujijNO-hk",
+      "title": "Sample Minute 10 (hard)",
+      "materials": [
+        "Sample material"
+      ],
+      "description": "Sandbox filler."
+    }
+  ]
+}

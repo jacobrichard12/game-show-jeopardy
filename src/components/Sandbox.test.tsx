@@ -1,6 +1,6 @@
 import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import partyGames from "../data/partyGames.json";
+import partyGames from "../data/sandbox/party.json";
 import { ALPHABET } from "../shared/partyGames";
 import { buildSlotBank, DifficultyBank } from "../shared/slots";
 import { GameName, getGameTitle } from "../shared/types";

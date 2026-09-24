@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { getRandomAudio, happyFiles } from "../shared/audio";
-import { createAudio } from "../shared/sound";
+import { playSound } from "../shared/sound";
 import { teamColor } from "../shared/teamColors";
 import { GameName, GameState } from "../shared/types";
 
@@ -48,8 +48,7 @@ const ScoreBoard: React.FC<ScoreBoardProps> = ({
     // so gating on isAdmin here (rather than only ever playing it from
     // Admin's own click handler) is what makes that possible.
     if (!isAdmin) {
-      const audio = createAudio(getRandomAudio(happyFiles));
-      audio.play();
+      playSound(getRandomAudio(happyFiles));
     }
 
     prevScores.current = Object.fromEntries(

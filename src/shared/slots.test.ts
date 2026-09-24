@@ -1,8 +1,11 @@
 import headToHeadBank from "../data/headToHeadBank.json";
 import minuteBank from "../data/minuteBank.json";
 import partyGames from "../data/partyGames.json";
-import sandboxFeud from "../data/sandboxFeud.json";
-import sandboxMillionaire from "../data/sandboxMillionaire.json";
+import sandboxFeud from "../data/sandbox/feud.json";
+import sandboxHead from "../data/sandbox/head.json";
+import sandboxMillionaire from "../data/sandbox/millionaire.json";
+import sandboxMinute from "../data/sandbox/minute.json";
+import sandboxParty from "../data/sandbox/party.json";
 import { ALPHABET } from "./partyGames";
 import { buildMillionaireQuestions, buildSlotBank, DIFFICULTY_SLOTS, DifficultyBank, shuffleArray } from "./slots";
 import { Difficulty } from "./types";
@@ -175,7 +178,13 @@ describe("bank coverage", () => {
 
   it("minuteBank.json covers every slot", () => enough(minuteBank));
   it("headToHeadBank.json covers every slot", () => enough(headToHeadBank));
-  it("the sandbox Feud sample covers every slot", () => enough(sandboxFeud));
+  it("the sandbox Feud filler covers every slot", () => enough(sandboxFeud));
+  it("the sandbox Minute and Head to Head filler cover every slot", () => {
+    enough(sandboxMinute);
+    enough(sandboxHead);
+  });
+  it("the sandbox party filler covers every slot", () =>
+    Object.values(sandboxParty).forEach((bank) => enough(bank)));
 
   it("sandbox Feud questions are valid", () => {
     Object.values(Difficulty).forEach((d) =>

@@ -1,4 +1,11 @@
-import { getCurrentQuestion, getGameTitle, GameName, GameState } from "./types";
+import {
+  createDefaultTeams,
+  getCurrentQuestion,
+  getGameTitle,
+  GameName,
+  GameState,
+  TEAM_NAME_MAX_LENGTH,
+} from "./types";
 
 describe("getGameTitle", () => {
   it("maps known games to display names", () => {
@@ -36,5 +43,37 @@ describe("getCurrentQuestion", () => {
 
   it("returns undefined for a tile with no matching entry", () => {
     expect(getCurrentQuestion(bank, makeState(999, false))).toBeUndefined();
+  });
+});
+
+describe("createDefaultTeams", () => {
+  it("uses Team A/B/… when no names are given", () => {
+    expect(createDefaultTeams(3).map((t) => t.name)).toEqual([
+      "Team A",
+      "Team B",
+      "Team C",
+    ]);
+  });
+
+  it("uses given names, trimmed, with defaults for blanks", () => {
+    const teams = createDefaultTeams(3, ["  Smiths ", "", "Joneses"]);
+    expect(teams.map((t) => t.name)).toEqual(["Smiths", "Team B", "Joneses"]);
+    expect(teams.map((t) => t.score)).toEqual([0, 0, 0]);
+    expect(teams.map((t) => t.id)).toEqual(["team-1", "team-2", "team-3"]);
+  });
+
+  it("ignores bad input and extra names, and caps the length", () => {
+    expect(createDefaultTeams(2, "nope").map((t) => t.name)).toEqual([
+      "Team A",
+      "Team B",
+    ]);
+    expect(createDefaultTeams(2, [42, null, "C"]).map((t) => t.name)).toEqual([
+      "Team A",
+      "Team B",
+    ]);
+    const long = "x".repeat(TEAM_NAME_MAX_LENGTH + 10);
+    expect(createDefaultTeams(2, [long])[0].name).toHaveLength(
+      TEAM_NAME_MAX_LENGTH
+    );
   });
 });

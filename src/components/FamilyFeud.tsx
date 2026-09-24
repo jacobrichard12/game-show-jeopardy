@@ -8,7 +8,7 @@ import {
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faTimesCircle } from "@fortawesome/free-solid-svg-icons";
 import { buzzerAudio, dingAudio, familyFeudTheme } from "../shared/audio";
-import { createAudio } from "../shared/sound";
+import { createAudio, playSound } from "../shared/sound";
 import NoQuestionAvailable from "./NoQuestionAvailable";
 
 interface FamilyFeudProps extends QuestionProps {}
@@ -69,7 +69,7 @@ const FamilyFeud: React.FC<FamilyFeudProps> = ({
   useEffect(() => {
     if (isAdmin) return;
     if (revealedCount > prevRevealedCount.current) {
-      createAudio(dingAudio).play();
+      playSound(dingAudio);
     }
     prevRevealedCount.current = revealedCount;
   }, [isAdmin, revealedCount]);
@@ -81,7 +81,7 @@ const FamilyFeud: React.FC<FamilyFeudProps> = ({
     if (isAdmin) return;
     let timer: ReturnType<typeof setTimeout> | undefined;
     if (wrongGuesses > prevWrongGuesses.current) {
-      createAudio(buzzerAudio).play();
+      playSound(buzzerAudio);
       setShowStrike(true);
       timer = setTimeout(() => setShowStrike(false), 1300);
     }

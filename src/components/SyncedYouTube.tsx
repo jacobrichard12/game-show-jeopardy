@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from "react";
 import YouTube, { YouTubeEvent, YouTubePlayer } from "react-youtube";
+import { useMuted, useVolume } from "../shared/sound";
 
 interface SyncedYouTubeProps {
   videoId: string;
@@ -11,9 +12,10 @@ interface SyncedYouTubeProps {
 }
 
 // A YouTube embed the host controls remotely: it never decides anything
-// itself, it just mirrors `playing` / `restartToken`. Note browsers refuse to
-// start unmuted playback from a background event until the page has had a
-// click, which the display's "enable sound" overlay covers.
+// itself, it just mirrors `playing` / `restartToken`, plus the display's own
+// mute toggle and volume slider. Note browsers refuse to start unmuted
+// playback from a background event until the page has had a click, which the
+// display's "enable sound" overlay covers.
 const SyncedYouTube: React.FC<SyncedYouTubeProps> = ({
   videoId,
   playing,
@@ -22,6 +24,8 @@ const SyncedYouTube: React.FC<SyncedYouTubeProps> = ({
 }) => {
   const playerRef = useRef<YouTubePlayer | null>(null);
   const appliedRestart = useRef(restartToken);
+  const muted = useMuted();
+  const volume = useVolume();
 
   const apply = () => {
     const player = playerRef.current;
@@ -37,8 +41,22 @@ const SyncedYouTube: React.FC<SyncedYouTubeProps> = ({
     }
   };
 
+  const applySound = () => {
+    const player = playerRef.current;
+    if (!player) return;
+    // The IFrame API takes volume as 0–100.
+    player.setVolume(Math.round(volume * 100));
+    if (muted) {
+      player.mute();
+    } else {
+      player.unMute();
+    }
+  };
+
   // Re-apply whenever the host changes either value.
   useEffect(apply);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(applySound, [muted, volume]);
 
   return (
     <YouTube
@@ -52,6 +70,7 @@ const SyncedYouTube: React.FC<SyncedYouTubeProps> = ({
       }}
       onReady={(event: YouTubeEvent) => {
         playerRef.current = event.target;
+        applySound();
         apply();
       }}
     />

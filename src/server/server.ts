@@ -5,10 +5,15 @@ import path from "path";
 import { Server, Socket } from "socket.io";
 import { clampTeamCount, createDefaultTeams, GameName, GameState } from "../shared/types";
 import { createRoomGameData, fetchMillionairePool, MillionairePool } from "./datagen";
+import { applyPack, listPacks, LoadedPack, loadPack, PackSummary } from "./packs";
+import { toThemeId } from "../shared/themes";
 
 interface ServerToClientEvents {
   gameCreated: (data: { code: string; adminKey: string; gameState: GameState }) => void;
   gameCreateError: (data: { reason: string }) => void;
+  // Names only, for the create-game dropdown; pack questions never leave the server.
+  packList: (data: { packs: PackSummary[] }) => void;
+  adminTokenResult: (data: { ok: boolean }) => void;
   gameJoined: (data: { code: string; gameState: GameState }) => void;
   gameNotFound: (data: { code: string }) => void;
   // `code` lets a client double-check a broadcast is actually for the room
@@ -20,7 +25,16 @@ interface ServerToClientEvents {
 }
 
 interface ClientToServerEvents {
-  createGame: (data: { adminToken?: string; teamCount?: number }) => void;
+  createGame: (data: {
+    adminToken?: string;
+    teamCount?: number;
+    teamNames?: string[];
+    packId?: string;
+    theme?: string;
+  }) => void;
+  listPacks: () => void;
+  // Gate for /sandbox: is this the venue's ADMIN_TOKEN (or is none set)?
+  verifyAdminToken: (data: { adminToken?: string }) => void;
   joinGame: (data: { code: string; adminKey?: string; adminToken?: string }) => void;
   gameStateUpdate: (data: { code: string; gameState: GameState }) => void;
   resetGameState: (data: { code: string }) => void;
@@ -86,6 +100,20 @@ interface Room {
   // anyone but the creator.
   adminKey: string;
   lastActivity: number;
+  // Custom content pack chosen at creation (file name in src/data/custom);
+  // re-read on reset so the pack survives "Play again".
+  packId?: string;
+}
+
+// Loads a room's pack, logging entries it had to skip.
+function loadRoomPack(packId: string | undefined, code: string): LoadedPack | null {
+  if (!packId) return null;
+  const pack = loadPack(packId);
+  if (pack?.errors.length) {
+    console.warn(`Room ${code}: pack "${packId}" skipped ${pack.errors.length} bad entr${pack.errors.length === 1 ? "y" : "ies"}:`);
+    pack.errors.forEach((e) => console.warn(`  - ${e}`));
+  }
+  return pack;
 }
 
 const rooms = new Map<string, Room>();
@@ -115,10 +143,18 @@ const millionairePoolPromise: Promise<MillionairePool> = fetchMillionairePool().
   return { easy: [], mediumHard: [] };
 });
 
-async function buildInitialGameState(pool: MillionairePool, teamCount: number): Promise<GameState> {
+async function buildInitialGameState(
+  pool: MillionairePool,
+  teamCount: number,
+  teamNames?: unknown,
+  pack?: LoadedPack | null,
+  theme?: unknown
+): Promise<GameState> {
+  const gameData = await createRoomGameData(pool);
   return {
     started: false,
-    teams: createDefaultTeams(teamCount),
+    theme: toThemeId(theme),
+    teams: createDefaultTeams(teamCount, teamNames),
     currentGame: {
       gameName: GameName.BOARD,
       gameTitle: "GameBoard",
@@ -128,7 +164,7 @@ async function buildInitialGameState(pool: MillionairePool, teamCount: number): 
     isDoubleJeopardy: false,
     answered: {},
     doubleJeopardyAnswered: {},
-    gameData: await createRoomGameData(pool),
+    gameData: pack ? applyPack(gameData, pack) : gameData,
   };
 }
 
@@ -170,6 +206,20 @@ io.on("connection", (socket) => {
   // Create a new room. Gated by ADMIN_TOKEN (when set) so creating a game —
   // and burning through the shared Millionaire trivia pool — isn't open to
   // anyone who finds the URL. The creator is automatically that room's admin.
+  // Pack names for the create-game dropdown. Unauthenticated like the page
+  // itself: it exposes names only, never questions.
+  socket.on("listPacks", () => {
+    socket.emit("packList", { packs: listPacks() });
+  });
+
+  // Lets /sandbox check the token before showing itself. Same rule as
+  // createGame: with no ADMIN_TOKEN set, everyone is allowed.
+  socket.on("verifyAdminToken", (data) => {
+    const ok = !ADMIN_TOKEN || data?.adminToken === ADMIN_TOKEN;
+    if (!ok) console.warn(`Rejected sandbox token from ${socket.id}`);
+    socket.emit("adminTokenResult", { ok });
+  });
+
   socket.on("createGame", async (data) => {
     const providedToken = data?.adminToken;
     const isAuthorized = !ADMIN_TOKEN || providedToken === ADMIN_TOKEN;
@@ -179,11 +229,23 @@ io.on("connection", (socket) => {
       return;
     }
 
+    const packId = typeof data?.packId === "string" && data.packId ? data.packId : undefined;
     const code = generateRoomCode();
+    const pack = loadRoomPack(packId, code);
+    if (packId && !pack) {
+      socket.emit("gameCreateError", { reason: `Content pack "${packId}" wasn't found.` });
+      return;
+    }
     const adminKey = generateAdminKey();
     const pool = await millionairePoolPromise;
-    const gameState = await buildInitialGameState(pool, clampTeamCount(data?.teamCount ?? 2));
-    const room: Room = { code, gameState, adminKey, lastActivity: Date.now() };
+    const gameState = await buildInitialGameState(
+      pool,
+      clampTeamCount(data?.teamCount ?? 2),
+      data?.teamNames,
+      pack,
+      data?.theme
+    );
+    const room: Room = { code, gameState, adminKey, lastActivity: Date.now(), packId };
     rooms.set(code, room);
 
     leaveCurrentRoom(socket);
@@ -191,7 +253,7 @@ io.on("connection", (socket) => {
     socket.data.isAdmin = true;
     socket.join(code);
 
-    console.log(`Room ${code} created by ${socket.id}`);
+    console.log(`Room ${code} created by ${socket.id}${pack ? ` with pack "${pack.id}"` : ""}`);
     socket.emit("gameCreated", { code, adminKey, gameState });
     socket.emit("adminAuthResult", { isAdmin: true });
   });
@@ -251,9 +313,16 @@ io.on("connection", (socket) => {
     }
 
     const pool = await millionairePoolPromise;
-    // Team count is fixed at creation, so a reset keeps whatever this room
-    // already had rather than dropping back to a 2-team default.
-    room.gameState = await buildInitialGameState(pool, room.gameState.teams.length);
+    // Teams, pack and theme are fixed at creation, so a reset keeps them
+    // (scores go back to 0).
+    const teams = room.gameState.teams;
+    room.gameState = await buildInitialGameState(
+      pool,
+      teams.length,
+      teams.map((team) => team.name),
+      loadRoomPack(room.packId, code),
+      room.gameState.theme
+    );
     room.lastActivity = Date.now();
     io.to(code).emit("gameStateUpdate", { code, gameState: room.gameState });
     console.log(`Room ${code} has been reset.`);

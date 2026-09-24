@@ -1,7 +1,15 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { MAX_TEAMS, MIN_TEAMS } from "../shared/types";
+import { teamColor } from "../shared/teamColors";
+import { ThemeId } from "../shared/themes";
+import {
+  defaultTeamName,
+  MAX_TEAMS,
+  MIN_TEAMS,
+  TEAM_NAME_MAX_LENGTH,
+} from "../shared/types";
 import { storeAdminKey, useSocket } from "./SocketContext";
+import ThemePicker from "./ThemePicker";
 
 const TEAM_COUNT_OPTIONS = Array.from(
   { length: MAX_TEAMS - MIN_TEAMS + 1 },
@@ -15,6 +23,15 @@ const CreateGame: React.FC = () => {
   const navigate = useNavigate();
   const [adminToken, setAdminToken] = useState("");
   const [teamCount, setTeamCount] = useState(MIN_TEAMS);
+  // Kept for all MAX_TEAMS slots so a name survives lowering then raising the
+  // team count; blanks fall back to "Team A/B/…" on the server.
+  const [teamNames, setTeamNames] = useState<string[]>(() =>
+    Array(MAX_TEAMS).fill("")
+  );
+  // Custom content packs available on the server (names only); "" = None.
+  const [packs, setPacks] = useState<{ id: string; name: string }[]>([]);
+  const [packId, setPackId] = useState("");
+  const [theme, setTheme] = useState<ThemeId>("original");
   const [error, setError] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
 
@@ -38,11 +55,29 @@ const CreateGame: React.FC = () => {
     };
   }, [socket, navigate]);
 
+  // Ask once per socket for the server's content packs (names only).
+  useEffect(() => {
+    if (!socket) return;
+    const handlePackList = (data: { packs: { id: string; name: string }[] }) =>
+      setPacks(data.packs);
+    socket.on("packList", handlePackList);
+    socket.emit("listPacks");
+    return () => {
+      socket.off("packList", handlePackList);
+    };
+  }, [socket]);
+
   const handleCreate = () => {
     if (!socket) return;
     setError(null);
     setCreating(true);
-    socket.emit("createGame", { adminToken, teamCount });
+    socket.emit("createGame", {
+      adminToken,
+      teamCount,
+      teamNames: teamNames.slice(0, teamCount),
+      theme,
+      ...(packId ? { packId } : {}),
+    });
   };
 
   return (
@@ -87,6 +122,63 @@ const CreateGame: React.FC = () => {
             </button>
           ))}
         </div>
+        <label className="block text-sm text-gray-600 mb-2 text-center">
+          Team names (optional)
+        </label>
+        <div className="flex flex-col gap-2 mb-4">
+          {teamNames.slice(0, teamCount).map((name, i) => (
+            <div key={i} className="flex items-center gap-2">
+              <span
+                aria-hidden="true"
+                className={`h-4 w-4 shrink-0 rounded-full ${teamColor(i).chip}`}
+              />
+              <input
+                type="text"
+                value={name}
+                maxLength={TEAM_NAME_MAX_LENGTH}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setTeamNames((prev) =>
+                    prev.map((n, j) => (j === i ? value : n))
+                  );
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleCreate();
+                }}
+                aria-label={`${defaultTeamName(i)} name`}
+                placeholder={defaultTeamName(i)}
+                className="w-full border rounded p-2"
+              />
+            </div>
+          ))}
+        </div>
+        <label className="block text-sm text-gray-600 mb-2 text-center">
+          Board theme
+        </label>
+        <ThemePicker value={theme} onChange={setTheme} />
+        {packs.length > 0 && (
+          <>
+            <label
+              htmlFor="content-pack"
+              className="block text-sm text-gray-600 mb-2 text-center"
+            >
+              Content pack
+            </label>
+            <select
+              id="content-pack"
+              value={packId}
+              onChange={(e) => setPackId(e.target.value)}
+              className="w-full border rounded p-2 mb-4 bg-white"
+            >
+              <option value="">None (standard questions)</option>
+              {packs.map((pack) => (
+                <option key={pack.id} value={pack.id}>
+                  {pack.name}
+                </option>
+              ))}
+            </select>
+          </>
+        )}
         <button
           type="button"
           onClick={handleCreate}

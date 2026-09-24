@@ -2,6 +2,86 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Game themes (shared/themes.ts; chosen at game creation). useTheme() sets
+   data-theme on <html>; no attribute = Original. Values are "R G B" so
+   Tailwind's opacity modifiers (bg-surface/80) keep working. */
+:root {
+  --color-ink: 18 14 38;       /* #120e26 */
+  --color-surface: 31 26 64;   /* #1f1a40 */
+  --color-tile: 44 38 96;      /* #2c2660 */
+  --color-accent: 103 232 249; /* #67e8f9 */
+  --color-deep: 30 27 75;      /* indigo-950 */
+  --color-glow: 49 46 129;     /* indigo-900 */
+  --color-flare: 59 130 246;   /* blue-500 */
+  --color-flare2: 168 85 247;  /* purple-500 */
+  /* Double Jeopardy: dark red backdrop, rose tiles, amber numbers. */
+  --color-dj-ink: 42 15 30;       /* #2a0f1e */
+  --color-dj-surface: 136 19 55;  /* rose-900 */
+  --color-dj-tile: 159 18 57;     /* rose-800 */
+  --color-dj-accent: 253 230 138; /* amber-200 */
+  --color-dj-from: 26 11 20;      /* #1a0b14 */
+  --color-dj-via: 59 13 42;       /* #3b0d2a */
+  --color-dj-to: 124 45 18;       /* #7c2d12 */
+}
+
+/* Classic: the TV show's blue board and gold numbers. */
+[data-theme="classic"] {
+  --color-ink: 0 10 77;
+  --color-surface: 10 26 158;
+  --color-tile: 6 12 233;      /* #060ce9 */
+  --color-accent: 255 204 0;   /* #ffcc00 */
+  --color-deep: 0 5 51;
+  --color-glow: 31 63 255;
+  --color-flare: 31 63 255;
+  --color-flare2: 255 204 0;
+  /* Double Jeopardy: deeper royal indigo, gold kept. */
+  --color-dj-ink: 8 4 51;
+  --color-dj-surface: 38 16 122;
+  --color-dj-tile: 58 24 176;
+  --color-dj-accent: 255 204 0;
+  --color-dj-from: 3 1 26;
+  --color-dj-via: 28 12 102;
+  --color-dj-to: 76 29 149;
+}
+
+[data-theme="neon"] {
+  --color-ink: 7 2 15;
+  --color-surface: 26 6 51;
+  --color-tile: 43 10 87;
+  --color-accent: 57 255 20;   /* lime */
+  --color-deep: 0 0 0;
+  --color-glow: 255 43 214;    /* hot pink */
+  --color-flare: 255 43 214;
+  --color-flare2: 124 58 237;
+  /* Double Jeopardy: hot pink tiles, cyan numbers. */
+  --color-dj-ink: 18 0 12;
+  --color-dj-surface: 74 6 51;
+  --color-dj-tile: 138 10 92;
+  --color-dj-accent: 34 211 238;
+  --color-dj-from: 10 0 8;
+  --color-dj-via: 58 0 48;
+  --color-dj-to: 122 0 90;
+}
+
+[data-theme="holiday"] {
+  --color-ink: 11 31 20;
+  --color-surface: 20 83 45;
+  --color-tile: 153 27 27;     /* red */
+  --color-accent: 252 211 77;  /* gold */
+  --color-deep: 5 46 22;
+  --color-glow: 185 28 28;
+  --color-flare: 220 38 38;
+  --color-flare2: 22 163 74;
+  /* Double Jeopardy: colors swap: green tiles, red headers, gold kept. */
+  --color-dj-ink: 31 10 10;
+  --color-dj-surface: 127 29 29;
+  --color-dj-tile: 22 101 52;
+  --color-dj-accent: 252 211 77;
+  --color-dj-from: 26 5 5;
+  --color-dj-via: 69 10 10;
+  --color-dj-to: 20 83 45;
+}
+
 /* Allow normal vertical scrolling (content taller than one screen is common
    on mobile) while still guarding against an accidental horizontal
    scrollbar from any component's overflow. */

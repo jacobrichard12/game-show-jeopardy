@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
+import { toThemeId } from "../shared/themes";
 import { GameState } from "../shared/types";
+import ThemePicker from "./ThemePicker";
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -7,6 +9,7 @@ interface SettingsModalProps {
   onSave: (newGameState: GameState) => void;
   gameState: GameState;
   onReset: () => void;
+  onEndGame: () => void;
 }
 
 const SettingsModal: React.FC<SettingsModalProps> = ({
@@ -15,6 +18,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
   onSave,
   gameState,
   onReset,
+  onEndGame,
 }) => {
   const [newGameState, setNewGameState] = useState<GameState>(gameState);
   const [showResetModal, setIsResetting] = useState(false);
@@ -76,6 +80,14 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
     onClose();
   };
 
+  // Unsaved team edits are discarded, like Cancel; ending is undoable from
+  // the end screen's "Back to board", so it needs no confirmation.
+  const handleEndGame = () => {
+    setNewGameState(gameState);
+    onEndGame();
+    onClose();
+  };
+
   const handleCancelReset = () => {
     setIsResetting(false);
   };
@@ -129,6 +141,22 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
             </div>
           </div>
         ))}
+
+        {/* Applied with Save, like the team fields. */}
+        <p className="block mb-2">Board theme</p>
+        <ThemePicker
+          value={toThemeId(newGameState.theme)}
+          onChange={(theme) => setNewGameState((prev) => ({ ...prev, theme }))}
+        />
+
+        {!gameState.gameOver && (
+          <button
+            onClick={handleEndGame}
+            className="mb-4 w-full rounded bg-amber-500 px-4 py-2 font-semibold text-white hover:bg-amber-600"
+          >
+            🏆 End game &amp; show winner
+          </button>
+        )}
 
         {/* Reset is deliberately set apart from the everyday Cancel/Save pair */}
         <div className="flex items-center justify-between gap-2">

@@ -12,8 +12,10 @@ import {
   MinuteQuestionState,
 } from "../shared/types";
 import AdminPageWrapper from "./AdminPageWrapper";
+import GameOverScreen from "./GameOverScreen";
 import SettingsModal from "./SettingsModal";
 import { getStoredAdminKey, useSocket } from "./SocketContext";
+import { useTheme } from "./useTheme";
 
 type AdminStatus = "joining" | "authorized" | "denied" | "not_found";
 
@@ -96,6 +98,30 @@ const Admin: React.FC = () => {
 
   const handleSaveSettings = (updatedGameState: GameState) => {
     sendGameStateToServer(updatedGameState);
+  };
+
+  // Lobby music plays on the TV only before the game starts (useLobbyMusic).
+  const handleToggleLobbyMusic = () => {
+    if (!gameState) return;
+    sendGameStateToServer({ ...gameState, lobbyMusic: !gameState.lobbyMusic });
+  };
+
+  const handleShuffleLobbyMusic = () => {
+    if (!gameState) return;
+    sendGameStateToServer({
+      ...gameState,
+      lobbyMusicShuffle: (gameState.lobbyMusicShuffle ?? 0) + 1,
+    });
+  };
+
+  const handleEndGame = () => {
+    if (!gameState) return;
+    sendGameStateToServer({ ...gameState, gameOver: true });
+  };
+
+  const handleBackToBoard = () => {
+    if (!gameState) return;
+    sendGameStateToServer({ ...gameState, gameOver: false });
   };
 
   const handleReset = async () => {
@@ -291,6 +317,10 @@ const Admin: React.FC = () => {
     sendGameStateToServer(updatedGameState);
   };
 
+  // The host sees the game in its theme too. Before the early returns below
+  // (hooks can't be conditional).
+  useTheme(gameState?.theme);
+
   if (status === "not_found") {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen text-center p-4">
@@ -372,13 +402,36 @@ const Admin: React.FC = () => {
             corner instead of stretching across the screen and colliding with
             page titles, which is fine at desktop/TV widths without the cap. */}
         <span className="flex flex-wrap justify-end gap-1 sm:gap-2">
-          <button
-            onClick={handleToggleTimer}
-            className="p-1.5 sm:p-2 text-xs sm:text-base bg-green-500 text-white rounded"
-          >
-            Toggle Timer
-          </button>
-          {gameState.showTimer && (
+          {!gameState.started && !gameState.gameOver && (
+            <button
+              onClick={handleToggleLobbyMusic}
+              aria-pressed={!!gameState.lobbyMusic}
+              className={`p-1.5 sm:p-2 text-xs sm:text-base text-white rounded ${
+                gameState.lobbyMusic ? "bg-purple-600" : "bg-gray-500"
+              }`}
+            >
+              {gameState.lobbyMusic ? "🎵 Music on" : "🎵 Music off"}
+            </button>
+          )}
+          {!gameState.started && !gameState.gameOver && gameState.lobbyMusic && (
+            <button
+              onClick={handleShuffleLobbyMusic}
+              className="p-1.5 sm:p-2 text-xs sm:text-base bg-purple-600 text-white rounded"
+            >
+              🔀 Shuffle
+            </button>
+          )}
+          {/* The timer is for gameplay only: hidden in the lobby and on the
+              game-over screen. */}
+          {gameState.started && !gameState.gameOver && (
+            <button
+              onClick={handleToggleTimer}
+              className="p-1.5 sm:p-2 text-xs sm:text-base bg-green-500 text-white rounded"
+            >
+              Toggle Timer
+            </button>
+          )}
+          {gameState.started && !gameState.gameOver && gameState.showTimer && (
             <>
               <button
                 onClick={handleTimerPlayPause}
@@ -408,9 +461,21 @@ const Admin: React.FC = () => {
         onClose={() => setIsSettingsOpen(false)}
         onSave={handleSaveSettings}
         onReset={handleReset}
+        onEndGame={handleEndGame}
         gameState={gameState}
       />
 
+      {gameState.gameOver ? (
+        // The host sees the same standings as the TV, plus the way out.
+        <div className="min-h-screen bg-gradient-to-b from-ink to-deep">
+          <GameOverScreen
+            teams={gameState.teams}
+            isAdmin
+            onBackToBoard={handleBackToBoard}
+            onPlayAgain={handleReset}
+          />
+        </div>
+      ) : (
       <AdminPageWrapper
         gameState={gameState}
         code={code}
@@ -421,6 +486,7 @@ const Admin: React.FC = () => {
         sendGameStateToServer={sendGameStateToServer}
         handleUpdateTurn={handleUpdateTurn}
       />
+      )}
     </div>
   );
 };
