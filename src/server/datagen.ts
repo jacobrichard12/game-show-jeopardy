@@ -66,7 +66,7 @@ export async function createRoomGameData(millionairePool: MillionairePool): Prom
   };
 }
 
-// The party board's games (src/data/partyBoard.json), reshuffled per room
+// The party board's games (the Party page of src/data/boards/standard.json), reshuffled per room
 // from the bundled banks, the same slot scheme as the others.
 export function createPartyGameData(): Pick<
   GameData,

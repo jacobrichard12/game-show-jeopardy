@@ -5,7 +5,7 @@ import path from "path";
 import { Server, Socket } from "socket.io";
 import { clampTeamCount, createDefaultTeams, GameName, GameState } from "../shared/types";
 import { createRoomGameData, fetchMillionairePool, MillionairePool } from "./datagen";
-import { applyPack, listPacks, LoadedPack, loadPack, PackSummary } from "./packs";
+import { applyPack, listPacks, LoadedPack, loadPack, packBoard, PackSummary } from "./packs";
 import { toThemeId } from "../shared/themes";
 
 interface ServerToClientEvents {
@@ -14,6 +14,7 @@ interface ServerToClientEvents {
   // Names only, for the create-game dropdown; pack questions never leave the server.
   packList: (data: { packs: PackSummary[] }) => void;
   adminTokenResult: (data: { ok: boolean }) => void;
+  reconfigureError: (data: { reason: string }) => void;
   gameJoined: (data: { code: string; gameState: GameState }) => void;
   gameNotFound: (data: { code: string }) => void;
   // `code` lets a client double-check a broadcast is actually for the room
@@ -33,6 +34,14 @@ interface ClientToServerEvents {
     theme?: string;
   }) => void;
   listPacks: () => void;
+  // Lobby only: rebuild the game with a new setup, keeping the room code.
+  reconfigureGame: (data: {
+    code: string;
+    teamCount?: number;
+    teamNames?: string[];
+    packId?: string;
+    theme?: string;
+  }) => void;
   // Gate for /sandbox: is this the venue's ADMIN_TOKEN (or is none set)?
   verifyAdminToken: (data: { adminToken?: string }) => void;
   joinGame: (data: { code: string; adminKey?: string; adminToken?: string }) => void;
@@ -105,6 +114,18 @@ interface Room {
   packId?: string;
 }
 
+const requestedPackId = (value: unknown): string | undefined =>
+  typeof value === "string" && value ? value : undefined;
+
+// A pack that can be used for a game, or why not (shown to the host).
+function usablePack(packId: string | undefined, code: string): { pack: LoadedPack | null; problem?: string } {
+  const pack = loadRoomPack(packId, code);
+  if (packId && !pack) return { pack, problem: `Content pack "${packId}" wasn't found.` };
+  if (pack && pack.columns.length === 0)
+    return { pack, problem: `Content pack "${packId}" has no valid columns (run npm run check-pack).` };
+  return { pack };
+}
+
 // Loads a room's pack, logging entries it had to skip.
 function loadRoomPack(packId: string | undefined, code: string): LoadedPack | null {
   if (!packId) return null;
@@ -165,6 +186,16 @@ async function buildInitialGameState(
     answered: {},
     doubleJeopardyAnswered: {},
     gameData: pack ? applyPack(gameData, pack) : gameData,
+    // A pack brings its own one-page board; without one, the Standard board
+    // (no `board` in the state) applies.
+    ...(pack
+      ? {
+          board: packBoard(pack),
+          boardPage: packBoard(pack)[0].id,
+          packId: pack.id,
+          titleScreen: pack.titleScreen,
+        }
+      : {}),
   };
 }
 
@@ -220,6 +251,46 @@ io.on("connection", (socket) => {
     socket.emit("adminTokenResult", { ok });
   });
 
+  // Change the setup (teams, theme, content pack) before the game starts. The
+  // room and its code stay, so a TV already watching just updates; lobby
+  // music keeps playing. Rejected once the game has started.
+  socket.on("reconfigureGame", async (data) => {
+    const code = data?.code;
+    const room = code ? rooms.get(code) : undefined;
+    if (!room || socket.data.code !== code || !socket.data.isAdmin) {
+      console.warn(`Rejected reconfigureGame from unauthorized client: ${socket.id}`);
+      socket.emit("unauthorized", { reason: "Invalid or missing admin access for this game." });
+      return;
+    }
+    if (room.gameState.started) {
+      socket.emit("reconfigureError", { reason: "The game has already started." });
+      return;
+    }
+    const packId = requestedPackId(data?.packId);
+    const { pack, problem } = usablePack(packId, code);
+    if (problem) {
+      socket.emit("reconfigureError", { reason: problem });
+      return;
+    }
+    const pool = await millionairePoolPromise;
+    const { lobbyMusic, lobbyMusicShuffle } = room.gameState;
+    room.gameState = {
+      ...(await buildInitialGameState(
+        pool,
+        clampTeamCount(data?.teamCount ?? room.gameState.teams.length),
+        data?.teamNames,
+        pack,
+        data?.theme
+      )),
+      lobbyMusic,
+      lobbyMusicShuffle,
+    };
+    room.packId = packId;
+    room.lastActivity = Date.now();
+    io.to(code).emit("gameStateUpdate", { code, gameState: room.gameState });
+    console.log(`Room ${code} reconfigured${pack ? ` with pack "${pack.id}"` : ""}.`);
+  });
+
   socket.on("createGame", async (data) => {
     const providedToken = data?.adminToken;
     const isAuthorized = !ADMIN_TOKEN || providedToken === ADMIN_TOKEN;
@@ -229,11 +300,11 @@ io.on("connection", (socket) => {
       return;
     }
 
-    const packId = typeof data?.packId === "string" && data.packId ? data.packId : undefined;
+    const packId = requestedPackId(data?.packId);
     const code = generateRoomCode();
-    const pack = loadRoomPack(packId, code);
-    if (packId && !pack) {
-      socket.emit("gameCreateError", { reason: `Content pack "${packId}" wasn't found.` });
+    const { pack, problem } = usablePack(packId, code);
+    if (problem) {
+      socket.emit("gameCreateError", { reason: problem });
       return;
     }
     const adminKey = generateAdminKey();

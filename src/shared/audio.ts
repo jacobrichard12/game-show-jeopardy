@@ -22,6 +22,8 @@ import tick from "../assets/tick.wav";
 import puzzleDisplay from "../assets/puzzle-display.mp3";
 // "Hyper-Ultra-Fanfare", CC0: https://opengameart.org/content/hyper-ultra-fanfare
 import winnerFanfare from "../assets/winner-fanfare.mp3";
+// Owner-supplied orchestra hit (2 s) for Scavenger Sprint's reveal.
+import scavengerReveal from "../assets/scavenger-reveal.mp3";
 // Lobby music, all CC0 from OpenGameArt (the .ogg originals converted to
 // AAC .m4a so every browser plays them):
 //   opengameart.org/content/bouncy-hamster-dancing-menu-music
@@ -55,6 +57,8 @@ export const tickAudio = tick;
 export const puzzleDisplayAudio = puzzleDisplay;
 // End-of-game screen, when the host ends the game.
 export const winnerFanfareAudio = winnerFanfare;
+// Scavenger Sprint: when the host shows the item on the TV.
+export const scavengerRevealAudio = scavengerReveal;
 // Played shuffled on the TV's title screen while the host has music on.
 export const lobbyMusicFiles = [
     lobbyBouncyHamster,

@@ -21,7 +21,10 @@ jest.mock("./SocketContext", () => ({
   getStoredAdminKey: () => "key",
 }));
 jest.mock("react-router-dom", () => ({ useParams: () => ({ code: "ABCD" }) }), { virtual: true });
-jest.mock("./AdminPageWrapper", () => () => <div>host page</div>);
+// Stands in for the board: one button that picks the Feud $100 tile.
+jest.mock("./AdminPageWrapper", () => (props: { handleUpdateCurrentGame: (g: string, v: number) => void }) => (
+  <button onClick={() => props.handleUpdateCurrentGame("feud", 100)}>pick feud 100</button>
+));
 
 const state = (overrides: Partial<GameState> = {}): GameState =>
   ({
@@ -85,5 +88,89 @@ describe("host toolbar", () => {
     expect(button(/Toggle Timer/)).toBeInTheDocument();
     expect(button(/Music/)).toBeNull();
     expect(button(/Shuffle/)).toBeNull();
+  });
+});
+
+describe("picking a tile", () => {
+  beforeEach(() => {
+    mockEmitted.length = 0;
+  });
+  const pickedTitle = () => {
+    fireEvent.click(screen.getByRole("button", { name: "pick feud 100" }));
+    return mockEmitted[mockEmitted.length - 1][1].gameState.currentGame.gameTitle;
+  };
+
+  it("uses the custom column's title on a custom board", () => {
+    render(<Admin />);
+    joinAs(
+      state({
+        started: true,
+        board: [{ id: "custom", label: "Smith night", columns: [{ title: "Smith Family Feud", game: "feud" }] }],
+        boardPage: "custom",
+      })
+    );
+    expect(pickedTitle()).toBe("Smith Family Feud");
+  });
+
+  it("keeps the usual title on the Standard board", () => {
+    render(<Admin />);
+    joinAs(state({ started: true }));
+    expect(pickedTitle()).toBe("Family Feud");
+  });
+});
+
+describe("lobby Game setup", () => {
+  beforeEach(() => {
+    mockEmitted.length = 0;
+  });
+  const lastEmit = (event: string) => [...mockEmitted].reverse().find(([e]) => e === event)?.[1];
+
+  it("is offered only in the lobby", () => {
+    render(<Admin />);
+    joinAs(state());
+    expect(button(/Game setup/)).toBeInTheDocument();
+    push(state({ started: true }));
+    expect(button(/Game setup/)).toBeNull();
+  });
+
+  it("opens with the current setup, applies it, and closes when the new game arrives", () => {
+    render(<Admin />);
+    joinAs(
+      state({
+        teams: [
+          { id: "team-1", name: "Smiths", score: 0 },
+          { id: "team-2", name: "Joneses", score: 0 },
+        ],
+        theme: "classic",
+      })
+    );
+    fireEvent.click(button(/Game setup/)!);
+    const dialog = screen.getByRole("dialog", { name: "Game setup" });
+    expect((screen.getByLabelText("Team A name") as HTMLInputElement).value).toBe("Smiths");
+    expect(screen.getByRole("button", { name: /Classic/ })).toHaveAttribute("aria-pressed", "true");
+
+    fireEvent.click(screen.getByRole("button", { name: "3" }));
+    fireEvent.change(screen.getByLabelText("Team C name"), { target: { value: "Lees" } });
+    fireEvent.click(screen.getByRole("button", { name: "Apply" }));
+    expect(lastEmit("reconfigureGame")).toEqual({
+      code: "ABCD",
+      teamCount: 3,
+      teamNames: ["Smiths", "Joneses", "Lees"],
+      theme: "classic",
+    });
+    expect(dialog).toBeInTheDocument(); // waits for the server
+
+    push(state({ teams: [{ id: "team-1", name: "Smiths", score: 0 }] }));
+    expect(screen.queryByRole("dialog", { name: "Game setup" })).toBeNull();
+  });
+
+  it("shows the server's reason when it refuses", () => {
+    render(<Admin />);
+    joinAs(state());
+    fireEvent.click(button(/Game setup/)!);
+    fireEvent.click(screen.getByRole("button", { name: "Apply" }));
+    act(() => listeners.reconfigureError({ reason: 'Content pack "x" wasn\'t found.' }));
+    expect(screen.getByText('Content pack "x" wasn\'t found.')).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Apply" })).not.toBeDisabled();
   });
 });

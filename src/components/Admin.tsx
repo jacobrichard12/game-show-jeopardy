@@ -12,7 +12,9 @@ import {
   MinuteQuestionState,
 } from "../shared/types";
 import AdminPageWrapper from "./AdminPageWrapper";
+import { customColumnTitle } from "../shared/boardLayout";
 import GameOverScreen from "./GameOverScreen";
+import GameSetupModal from "./GameSetupModal";
 import SettingsModal from "./SettingsModal";
 import { getStoredAdminKey, useSocket } from "./SocketContext";
 import { useTheme } from "./useTheme";
@@ -28,6 +30,7 @@ const Admin: React.FC = () => {
   const socket = useSocket();
 
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isSetupOpen, setIsSetupOpen] = useState(false);
   const [gameState, setGameState] = useState<GameState | null>(null);
   const [status, setStatus] = useState<AdminStatus>("joining");
   const [tokenInput, setTokenInput] = useState("");
@@ -157,6 +160,11 @@ const Admin: React.FC = () => {
     });
   };
 
+  // A custom board's column title (e.g. "Smith Family Feud") on the tile card
+  // and question page; the Standard game keeps its usual titles.
+  const tileTitle = (game: GameName) =>
+    (gameState && customColumnTitle(gameState, game)) || getGameTitle(game);
+
   const handleUpdateCurrentGame = (newGame: GameName, points: number) => {
     if (!gameState) return;
     const updatedGameState = { ...gameState };
@@ -170,7 +178,7 @@ const Admin: React.FC = () => {
         };
         updatedGameState.currentGame = {
           gameName: newGame,
-          gameTitle: getGameTitle(newGame),
+          gameTitle: tileTitle(newGame),
           value: points,
           questionState: questionState,
         };
@@ -182,7 +190,7 @@ const Admin: React.FC = () => {
         };
         updatedGameState.currentGame = {
           gameName: newGame,
-          gameTitle: getGameTitle(newGame),
+          gameTitle: tileTitle(newGame),
           value: points,
           questionState: questionState,
         };
@@ -195,7 +203,7 @@ const Admin: React.FC = () => {
         };
         updatedGameState.currentGame = {
           gameName: newGame,
-          gameTitle: getGameTitle(newGame),
+          gameTitle: tileTitle(newGame),
           value: points,
           questionState: questionState,
         };
@@ -209,7 +217,7 @@ const Admin: React.FC = () => {
         };
         updatedGameState.currentGame = {
           gameName: newGame,
-          gameTitle: getGameTitle(newGame),
+          gameTitle: tileTitle(newGame),
           value: points,
           questionState: questionState,
         };
@@ -230,7 +238,7 @@ const Admin: React.FC = () => {
           : undefined;
         updatedGameState.currentGame = {
           gameName: newGame,
-          gameTitle: getGameTitle(newGame),
+          gameTitle: tileTitle(newGame),
           value: points,
           questionState: isPartyGame(newGame)
             ? createInitialQuestionState(newGame, gameState.teams, question)
@@ -404,6 +412,14 @@ const Admin: React.FC = () => {
         <span className="flex flex-wrap justify-end gap-1 sm:gap-2">
           {!gameState.started && !gameState.gameOver && (
             <button
+              onClick={() => setIsSetupOpen(true)}
+              className="p-1.5 sm:p-2 text-xs sm:text-base bg-blue-500 text-white rounded"
+            >
+              ⚙️ Game setup
+            </button>
+          )}
+          {!gameState.started && !gameState.gameOver && (
+            <button
               onClick={handleToggleLobbyMusic}
               aria-pressed={!!gameState.lobbyMusic}
               className={`p-1.5 sm:p-2 text-xs sm:text-base text-white rounded ${
@@ -455,6 +471,11 @@ const Admin: React.FC = () => {
           </button>
         </span>
       </div>
+
+      {/* Lobby only; closes itself if the game starts meanwhile. */}
+      {isSetupOpen && code && !gameState.started && (
+        <GameSetupModal code={code} gameState={gameState} onClose={() => setIsSetupOpen(false)} />
+      )}
 
       <SettingsModal
         isOpen={isSettingsOpen}

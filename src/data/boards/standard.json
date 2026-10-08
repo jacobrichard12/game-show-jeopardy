@@ -1,0 +1,57 @@
+{
+  "name": "Standard",
+  "pages": [
+    {
+      "id": "classic",
+      "label": "Classic Games",
+      "columns": [
+        {
+          "title": "Family Feud",
+          "game": "feud"
+        },
+        {
+          "title": "Who Wants to be a Millionaire",
+          "game": "millionaire"
+        },
+        {
+          "title": "Minute To Win It",
+          "game": "minute"
+        },
+        {
+          "title": "Head to Head",
+          "game": "head"
+        }
+      ]
+    },
+    {
+      "id": "party",
+      "label": "Party Games",
+      "columns": [
+        {
+          "title": "Guess That Word",
+          "game": "wheel"
+        },
+        {
+          "title": "Act, Draw, Describe",
+          "game": "act"
+        },
+        {
+          "title": "Reverse Charades",
+          "game": "charades"
+        },
+        {
+          "title": "Scavenger Sprint",
+          "game": "scavenger"
+        },
+        {
+          "title": "Closest Wins",
+          "game": "closest"
+        },
+        {
+          "title": "Put It In Order",
+          "game": "order"
+        }
+      ]
+    }
+  ]
+}

@@ -1,11 +1,14 @@
 import fs from "fs";
 import path from "path";
-import { GameData, MillionaireQuestion, PerformMode } from "../shared/types";
+import { BoardColumn, CUSTOM_PAGE_ID, standardColumnTitle } from "../shared/boardLayout";
+import { GameData, GameName, getGameTitle, MillionaireQuestion, PerformMode } from "../shared/types";
 
-// Custom content packs (ROADMAP C5): JSON files in src/data/custom/ that put
-// hand-written questions on chosen tiles; every other tile keeps the normal
-// banks. Read by the server only, so pack questions reach a browser only
-// through a real game. The format is documented in PROJECT_CONTEXT.md §10.
+// Custom content packs (ROADMAP C5, C6): JSON files in src/data/custom/, each
+// defining a one-page board: up to 6 columns, each a title + a game type +
+// optional hand-written questions. Tiles a column doesn't fill come from the
+// normal sources (Feud CSVs, OpenTDB, the banks). Read by the server only, so
+// pack questions reach a browser only through a real game. The format is
+// documented in PROJECT_CONTEXT.md §10.
 //
 // Read from the working directory at runtime, like the Feud CSVs (the server
 // starts from the repo root), so adding a pack needs no rebuild of the client.
@@ -31,10 +34,18 @@ export interface PackSummary {
 }
 
 export interface LoadedPack extends PackSummary {
+  // The lobby title screen: "title" (default: the pack's name) + "subtitle".
+  titleScreen: { title: string; subtitle?: string };
+  // The board, left to right (titles defaulted; invalid columns dropped).
+  columns: BoardColumn[];
   // game -> slot key (as used by the banks) -> question
   tiles: Partial<Record<PackGame, Record<string, unknown>>>;
   errors: string[];
 }
+
+export const MAX_COLUMNS = 6; // about the most a TV shows legibly
+export const MAX_TITLE_LENGTH = 60;
+export const MAX_SUBTITLE_LENGTH = 120;
 
 // A tile's bank key: round 1 uses the displayed value (100–500); round 2
 // (Double Jeopardy) shows 200–1000 and is stored at value / 2 + 1 (101–501),
@@ -143,10 +154,10 @@ function pick(e: any, keys: string[]) {
   return out;
 }
 
-// Validates a parsed pack. Bad entries are dropped and reported; the rest
-// still load, so one typo doesn't sink a whole night's pack.
+// Validates a parsed pack. Bad columns and questions are dropped and
+// reported; the rest still load, so one typo doesn't sink a night's pack.
 export function parsePack(id: string, json: unknown): LoadedPack {
-  const pack: LoadedPack = { id, name: id, tiles: {}, errors: [] };
+  const pack: LoadedPack = { id, name: id, titleScreen: { title: id }, columns: [], tiles: {}, errors: [] };
   if (!json || typeof json !== "object" || Array.isArray(json)) {
     pack.errors.push("the file must be a JSON object");
     return pack;
@@ -154,39 +165,85 @@ export function parsePack(id: string, json: unknown): LoadedPack {
   const data = json as Record<string, unknown>;
   if (isText(data.name)) pack.name = data.name.trim();
 
+  // Lobby title screen: optional, capped so it fits on a TV.
+  const screenText = (key: "title" | "subtitle", max: number): string | undefined => {
+    const value = data[key];
+    if (value === undefined) return undefined;
+    if (!isText(value)) {
+      pack.errors.push(`"${key}" must be text`);
+      return undefined;
+    }
+    if (value.trim().length > max) pack.errors.push(`"${key}" is over ${max} characters (shortened)`);
+    return value.trim().slice(0, max);
+  };
+  const title = screenText("title", MAX_TITLE_LENGTH);
+  const subtitle = screenText("subtitle", MAX_SUBTITLE_LENGTH);
+  pack.titleScreen = { title: title ?? pack.name, ...(subtitle ? { subtitle } : {}) };
+
   Object.keys(data).forEach((key) => {
-    if (key !== "name" && !PACK_GAMES.includes(key as PackGame))
-      pack.errors.push(`"${key}" isn't a game (use ${PACK_GAMES.join(", ")})`);
+    if (["name", "title", "subtitle", "columns"].includes(key)) return;
+    if (key === "pages") pack.errors.push('"pages": a custom pack is one page; list its "columns" directly');
+    else if (PACK_GAMES.includes(key as PackGame))
+      pack.errors.push(`"${key}": questions now go inside a column (see template.json)`);
+    else pack.errors.push(`"${key}" isn't part of the format (use "name", "title", "subtitle" and "columns")`);
   });
 
-  PACK_GAMES.forEach((game) => {
-    const entries = data[game];
-    if (entries === undefined) return;
-    if (!Array.isArray(entries)) {
-      pack.errors.push(`${game}: must be a list`);
+  if (!Array.isArray(data.columns) || data.columns.length === 0) {
+    pack.errors.push(`needs "columns": a list of 1–${MAX_COLUMNS} columns`);
+    return pack;
+  }
+  if (data.columns.length > MAX_COLUMNS)
+    pack.errors.push(`${data.columns.length} columns: only the first ${MAX_COLUMNS} are used (TV width)`);
+
+  data.columns.slice(0, MAX_COLUMNS).forEach((column: any, c) => {
+    const where = `columns[${c}]`;
+    const game = column?.game as PackGame;
+    if (!PACK_GAMES.includes(game)) {
+      pack.errors.push(`${where}: "game" must be one of ${PACK_GAMES.join(", ")}`);
       return;
     }
-    entries.forEach((entry, i) => {
-      const where = `${game}[${i}]`;
+    if (pack.columns.some((existing) => existing.game === game)) {
+      pack.errors.push(`${where}: ${game} is already a column (one column per game type)`);
+      return;
+    }
+    if (column.title !== undefined && !isText(column.title))
+      pack.errors.push(`${where}: "title" must be text (using the default)`);
+    const title = isText(column.title)
+      ? column.title.trim()
+      : standardColumnTitle(game) ?? getGameTitle(game as GameName);
+    pack.columns.push({ title, game });
+
+    if (column.questions === undefined) return; // all normal questions
+    if (!Array.isArray(column.questions)) {
+      pack.errors.push(`${where}: "questions" must be a list`);
+      return;
+    }
+    column.questions.forEach((entry: any, i: number) => {
+      const qWhere = `${where} (${game}) questions[${i}]`;
       const key = slotKeyFor(entry?.round, entry?.value);
       if (key === null) {
-        pack.errors.push(`${where}: needs round 1 with value 100–500, or round 2 with value 200–1000 (steps of 100 / 200)`);
+        pack.errors.push(`${qWhere}: needs round 1 with value 100–500, or round 2 with value 200–1000 (steps of 100 / 200)`);
         return;
       }
       const { question, error } = toQuestion(game, entry);
       if (error) {
-        pack.errors.push(`${where}: ${error}`);
+        pack.errors.push(`${qWhere}: ${error}`);
         return;
       }
       const tiles = (pack.tiles[game] ??= {});
       if (tiles[key] !== undefined) {
-        pack.errors.push(`${where}: round ${entry.round} ${entry.value} is already used by an earlier ${game} entry`);
+        pack.errors.push(`${qWhere}: round ${entry.round} ${entry.value} is already used by an earlier question`);
         return;
       }
       tiles[key] = question;
     });
   });
   return pack;
+}
+
+// The pack's board as GameState.board: one page.
+export function packBoard(pack: LoadedPack) {
+  return [{ id: CUSTOM_PAGE_ID, label: pack.name, columns: pack.columns }];
 }
 
 const packFiles = (): string[] => {
@@ -207,7 +264,14 @@ export function loadPack(id: string): LoadedPack | null {
   try {
     return parsePack(id, JSON.parse(fs.readFileSync(file, "utf8")));
   } catch (error) {
-    return { id, name: id, tiles: {}, errors: [`not valid JSON: ${(error as Error).message}`] };
+    return {
+      id,
+      name: id,
+      titleScreen: { title: id },
+      columns: [],
+      tiles: {},
+      errors: [`not valid JSON: ${(error as Error).message}`],
+    };
   }
 }
 

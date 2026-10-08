@@ -147,7 +147,56 @@ describe("party board on the host panel", () => {
       <AdminPageWrapper gameState={onTile(roomState(), GameName.SCAVENGER, 300)} {...hostProps()} />
     );
     expect(screen.getByText("Item (host only)")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Show item & start clock/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Show item" })).toBeInTheDocument();
     expect(screen.queryByText("Admin child content")).not.toBeInTheDocument();
+  });
+});
+
+describe("a custom pack's one-page board", () => {
+  const custom = (overrides: Partial<GameState> = {}) =>
+    roomState({
+      board: [
+        {
+          id: "custom",
+          label: "Smith night",
+          columns: [
+            { title: "Smith Family Feud", game: "feud" },
+            { title: "Closest Wins", game: "closest" },
+          ],
+        },
+      ],
+      boardPage: "custom",
+      ...overrides,
+    });
+
+  it("host: shows the pack's columns and no page tabs", () => {
+    const props = hostProps();
+    render(<AdminPageWrapper gameState={custom()} {...props} />);
+    expect(screen.queryByRole("group", { name: "Board page" })).toBeNull();
+    expect(screen.getByText("Smith Family Feud")).toBeInTheDocument();
+    expect(screen.getByText("Closest Wins")).toBeInTheDocument();
+    expect(screen.queryByText("Guess That Word")).toBeNull();
+
+    // Row order: the first $100 is the first column.
+    click(screen.getAllByRole("button", { name: "$100" })[0]);
+    expect(props.handleUpdateCurrentGame).toHaveBeenCalledWith(GameName.FAMILY_FEUD, 100);
+  });
+
+  it("TV: shows the same custom columns", () => {
+    render(<PageWrapper gameState={custom()} />);
+    expect(screen.getByText("Smith Family Feud")).toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: "$100" })).toHaveLength(2);
+  });
+});
+
+describe("board layout per screen", () => {
+  // The TV's board stretches to fill the screen at lg: (tiles drop their
+  // vertical padding); the host's board must not, or its tiles get squashed.
+  it("stretches tiles on the TV only", () => {
+    const { unmount } = render(<PageWrapper gameState={roomState()} />);
+    expect(screen.getAllByRole("button", { name: "$100" })[0].className).toContain("lg:py-0");
+    unmount();
+    render(<AdminPageWrapper gameState={roomState()} {...hostProps()} />);
+    expect(screen.getAllByRole("button", { name: "$100" })[0].className).not.toContain("lg:py-0");
   });
 });

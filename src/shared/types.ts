@@ -1,3 +1,4 @@
+import { BoardLayoutPage } from "./boardLayout";
 import { ThemeId } from "./themes";
 
 export interface TeamState {
@@ -23,9 +24,17 @@ export interface GameState {
     timerPlaying?: boolean;
     timerRestart?: number;
     isDoubleJeopardy: boolean;
-    // Which board the host is showing: the four classic games, or the party
-    // games. Undefined means classic (states from before this existed).
+    // Which board page the host (and so the TV) is showing: a page id from
+    // `board` (Standard: "classic" or "party"). Undefined means the first page.
     boardPage?: BoardPage;
+    // A custom content pack's one-page board (shared/boardLayout.ts); missing
+    // means the Standard board. Layout only: questions stay in gameData.
+    board?: BoardLayoutPage[];
+    // The content pack's id (file name), so the lobby's Game setup can show
+    // the current choice. Missing = Standard.
+    packId?: string;
+    // A content pack's lobby title screen; missing = the usual one.
+    titleScreen?: { title: string; subtitle?: string };
     // Set by the host from Settings to show the end-of-game standings on the
     // TV; cleared by "Back to board" or a reset. Missing means false.
     gameOver?: boolean;
@@ -284,7 +293,8 @@ export interface CharadesQuestionState extends QuestionState {
     scores: Record<string, number | null>;
 }
 
-export type BoardPage = "classic" | "party";
+// A board page id (see shared/boardLayout.ts).
+export type BoardPage = string;
 
 export enum GameName {
     BOARD = "board",

@@ -48,6 +48,7 @@ const ReverseCharades: React.FC<QuestionProps> = ({
   const activeIndex = teams.findIndex((team) => team.id === activeId);
   const activeTeam = activeIndex >= 0 ? teams[activeIndex] : undefined;
   const word = charadesWord(prompt.words, questionState.wordIndex);
+  const longestWord = prompt.words.reduce((a, b) => (b.length > a.length ? b : a), "");
   const turnLive = !!activeTeam && remaining > 0;
   const allPlayed = teams.every((team) => typeof scores[team.id] === "number");
   const showWinner = allPlayed && (remaining === 0 || !clock.running);
@@ -107,12 +108,20 @@ const ReverseCharades: React.FC<QuestionProps> = ({
               {turnLive ? "On the TV now" : "Next word (host only)"}
             </p>
           )}
-          <p
-            aria-label="Current word"
-            className="font-display text-4xl font-semibold sm:text-6xl xl:text-9xl"
-          >
-            {word}
-          </p>
+          {/* Sized by an invisible copy of the tile's longest word, so a
+              longer word wrapping onto more lines never moves the buttons
+              and clock below (same trick as Put It In Order's slots). */}
+          <div className="grid font-display text-4xl font-semibold sm:text-6xl xl:text-9xl">
+            <span className="invisible col-start-1 row-start-1" aria-hidden="true">
+              {longestWord}
+            </span>
+            <p
+              aria-label="Current word"
+              className="col-start-1 row-start-1 flex items-center justify-center"
+            >
+              {word}
+            </p>
+          </div>
         </div>
       )}
       {!activeTeam && !isAdmin && (

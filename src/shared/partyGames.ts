@@ -22,7 +22,7 @@ import {
 
 export const DEFAULT_CLOCK_SECONDS = 60;
 
-// The games on the party board (see src/data/partyBoard.json).
+// The games on the party board (see the Party page of src/data/boards/standard.json).
 export const PARTY_GAME_NAMES: GameName[] = [
   GameName.WHEEL,
   GameName.ACT,

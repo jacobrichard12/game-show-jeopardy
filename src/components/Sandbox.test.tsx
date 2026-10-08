@@ -177,22 +177,25 @@ describe("Sandbox", () => {
   });
 
   describe("Scavenger Sprint", () => {
-    it("hides the item until the host shows it, which starts the clock", () => {
+    it("hides the item until the host shows it; no clock", () => {
       render(<Sandbox />);
       chooseGame("Scavenger Sprint");
       revealToTv();
       expect(within(tv()).getByText(/Find it and bring it to the host/)).toBeInTheDocument();
       expect(within(tv()).getByText("Get ready…")).toBeInTheDocument();
-      expect(within(tv()).getByLabelText("Time remaining")).toBeInTheDocument();
       expect(screen.getByText("Item (host only)")).toBeInTheDocument();
-      // No separate start: the clock starts with the reveal.
-      expect(screen.queryByRole("button", { name: /Start clock/ })).not.toBeInTheDocument();
+      // No countdown anywhere (owner, 2026-10-01): first team to bring it wins.
+      expect(screen.queryByLabelText("Time remaining")).toBeNull();
+      expect(screen.queryByRole("button", { name: /clock/i })).toBeNull();
 
-      click(screen.getByRole("button", { name: /Show item & start clock/ }));
+      const before = played.length;
+      click(screen.getByRole("button", { name: "Show item" }));
+      // The orchestra hit plays once, on the TV.
+      expect(playedSince(before)).toEqual([expect.stringMatching(/scavenger-reveal/)]);
       expect(within(tv()).queryByText("Get ready…")).not.toBeInTheDocument();
       expect(screen.getByText("On the TV now")).toBeInTheDocument();
-      expect(screen.getByRole("button", { name: /Show item & start clock/ })).toBeDisabled();
-      expect(screen.getByRole("button", { name: /Pause clock/ })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "Show item" })).toBeDisabled();
+      expect(screen.queryByLabelText("Time remaining")).toBeNull();
     });
   });
 
@@ -462,6 +465,26 @@ describe("Sandbox", () => {
       expect(within(tv()).getByText(/Up now:/)).toHaveTextContent("Team B");
       expect(within(tv()).getByText("0 words")).toBeInTheDocument();
       expect(screen.getByRole("button", { name: "Redo Team A's turn" })).toBeInTheDocument();
+    });
+  });
+
+  describe("Reverse Charades word box", () => {
+    it("keeps one size for the whole tile, so the host's buttons never move", () => {
+      render(<Sandbox />);
+      chooseGame("Reverse Charades");
+      revealToTv();
+      click(screen.getByRole("button", { name: "Start Team A's turn" }));
+
+      // The box is sized by a hidden copy of the tile's longest word.
+      const hostBox = () => within(host()).getByLabelText("Current word").parentElement!;
+      const sizer = () => hostBox().querySelector('[aria-hidden="true"]')!.textContent!;
+      const first = sizer();
+      for (let i = 0; i < 5; i++) {
+        const shown = within(host()).getByLabelText("Current word").textContent!;
+        expect(sizer()).toBe(first);
+        expect(first.length).toBeGreaterThanOrEqual(shown.length);
+        click(screen.getByRole("button", { name: "Skip" }));
+      }
     });
   });
 

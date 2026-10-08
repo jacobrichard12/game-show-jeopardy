@@ -35,7 +35,7 @@ const PageWrapper: React.FC<PageWrapperProps> = ({ gameState, boardIntro = 0 }) 
             isAdmin={false}
             introKey={boardIntro}
             gameState={gameState}
-            gameBoardData={boardData(gameState.boardPage)}
+            gameBoardData={boardData(gameState)}
             handleUpdateCurrentGame={() => {}}
             sendGameStateToServer={() => {}}
           />

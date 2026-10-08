@@ -1,6 +1,7 @@
 import React from "react";
 import { teamColor } from "../shared/teamColors";
 import { GameState } from "../shared/types";
+import WatchLink from "./WatchLink";
 
 interface TitlePageProps {
   isAdmin: boolean;
@@ -33,11 +34,12 @@ const TitlePage: React.FC<TitlePageProps> = ({
 
       {/* Animated Title */}
       <div className="relative text-center">
-        <h1 className="text-4xl sm:text-6xl md:text-8xl xl:text-9xl font-display font-semibold text-accent drop-shadow-md animate-gentle-bounce">
-          Game Show Jeopardy
+        {/* A content pack can bring its own title screen (titleScreen). */}
+        <h1 className="text-4xl sm:text-6xl md:text-8xl xl:text-9xl font-display font-semibold text-accent drop-shadow-md animate-gentle-bounce break-words">
+          {gameState.titleScreen?.title ?? "Game Show Jeopardy"}
         </h1>
         <p className="text-lg sm:text-xl md:text-2xl xl:text-4xl text-white mt-4 animate-fade-in">
-          Welcome to the Ultimate Game Experience!
+          {gameState.titleScreen?.subtitle ?? "Welcome to the Ultimate Game Experience!"}
         </p>
 
         {/* Lobby: everything a latecomer needs to join, readable from across
@@ -50,6 +52,8 @@ const TitlePage: React.FC<TitlePageProps> = ({
             <p className="font-mono font-extrabold text-white text-5xl sm:text-7xl md:text-8xl xl:text-9xl tracking-[0.25em] pl-[0.25em]">
               {code}
             </p>
+            {/* Host only: the full link to copy or send to whoever runs the TV. */}
+            {isAdmin && <WatchLink code={code} />}
           </div>
         )}
         <div className="mt-6 flex flex-wrap justify-center gap-2 xl:gap-4">

@@ -114,17 +114,24 @@ const GameBoard: React.FC<GameBoardProps> = ({
   const categoryKeys = Object.keys(gameBoardData);
   const rowCount = gameBoardData[categoryKeys[0]]?.points.length ?? 0;
 
-  // A CSS grid rather than a table: at lg: the tile rows each take an equal
-  // share of whatever height the screen gives the board (1fr), so tiles
-  // stretch to fill the page instead of hugging their text. Below lg the rows
-  // are content-sized like before.
+  // A CSS grid rather than a table. On the TV at lg: the tile rows each take
+  // an equal share of whatever height the screen gives the board (1fr), so
+  // tiles stretch to fill the page instead of hugging their text. The host's
+  // board isn't height-bound (the page scrolls, and each tile has an
+  // Enable/Disable button), so its rows stay content-sized with normal
+  // padding; stretching there squashed the tiles to one line.
+  const fillScreen = !isAdmin;
   return (
-    <div className="p-2 sm:p-4 lg:flex lg:flex-col lg:flex-1 lg:min-h-0">
+    <div className={`p-2 sm:p-4 ${fillScreen ? "lg:flex lg:flex-col lg:flex-1 lg:min-h-0" : ""}`}>
       <div
         style={
           { "--cols": categoryKeys.length, "--rows": rowCount } as React.CSSProperties
         }
-        className={`grid grid-cols-[repeat(var(--cols),minmax(0,1fr))] gap-1 sm:gap-2 rounded-2xl p-1 sm:p-2 lg:flex-1 lg:min-h-0 lg:[grid-template-rows:auto_repeat(var(--rows),minmax(0,1fr))] ${
+        className={`grid grid-cols-[repeat(var(--cols),minmax(0,1fr))] gap-1 sm:gap-2 rounded-2xl p-1 sm:p-2 ${
+          fillScreen
+            ? "lg:flex-1 lg:min-h-0 lg:[grid-template-rows:auto_repeat(var(--rows),minmax(0,1fr))]"
+            : ""
+        } ${
           isDoubleJeopardy ? "bg-dj-ink" : "bg-ink"
         }`}
       >
@@ -165,7 +172,9 @@ const GameBoard: React.FC<GameBoardProps> = ({
                 className="flex flex-col items-stretch gap-1 min-h-0"
               >
                 <button
-                  className={`flex-1 w-full min-w-0 flex items-center justify-center text-base sm:text-2xl md:text-4xl lg:text-[clamp(1.5rem,5vh,5rem)] font-display font-semibold p-2 sm:p-4 md:p-6 lg:px-2 lg:py-0 rounded-xl transition focus:outline-none focus:ring-2 focus:ring-accent ${
+                  className={`flex-1 w-full min-w-0 flex items-center justify-center text-base sm:text-2xl md:text-4xl lg:text-[clamp(1.5rem,5vh,5rem)] font-display font-semibold p-2 sm:p-4 md:p-6 ${
+                    fillScreen ? "lg:px-2 lg:py-0" : ""
+                  } rounded-xl transition focus:outline-none focus:ring-2 focus:ring-accent ${
                     answered
                       ? // Answered tiles go blank, like a used square on the real board.
                         "bg-white/5 text-transparent cursor-not-allowed"

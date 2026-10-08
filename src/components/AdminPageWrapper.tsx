@@ -1,7 +1,7 @@
 import React from "react";
 import { BoardPage, GameName, GameState } from "../shared/types";
 import AdminPointsButtons, { NoPointsButton } from "./AddPointsButtons";
-import { BOARD_PAGES, boardData } from "./boards";
+import { boardData, boardPageTabs } from "./boards";
 import FamilyFeud from "./FamilyFeud";
 import GameBoard from "./GameBoard";
 import HeadToHead from "./HeadToHead";
@@ -46,7 +46,8 @@ const AdminPageWrapper: React.FC<AdminPageWrapperProps> = ({
   };
 
   // Switching pages also switches the TV, so the room sees the same board.
-  const currentPage: BoardPage = gameState.boardPage ?? "classic";
+  const pageTabs = boardPageTabs(gameState);
+  const currentPage: BoardPage = gameState.boardPage ?? pageTabs[0].id;
   const handleSelectBoardPage = (page: BoardPage) => {
     if (page === currentPage) return;
     sendGameStateToServer({ ...gameState, boardPage: page });
@@ -151,12 +152,16 @@ const AdminPageWrapper: React.FC<AdminPageWrapperProps> = ({
             one row alongside this title at sm: and up. */}
         <div className="text-center mb-4 pt-16 sm:pt-0">
           <h1 className="text-2xl font-bold mb-2">Admin Page - Board</h1>
+          {/* Tabs only when the board has more than one page (Standard);
+              a custom pack's board is a single page. */}
+          {pageTabs.length > 1 && (
+          <>
           <div
             role="group"
             aria-label="Board page"
             className="inline-flex flex-wrap justify-center gap-1 rounded-lg bg-gray-200 p-1"
           >
-            {BOARD_PAGES.map((page) => (
+            {pageTabs.map((page) => (
               <button
                 key={page.id}
                 type="button"
@@ -173,11 +178,13 @@ const AdminPageWrapper: React.FC<AdminPageWrapperProps> = ({
             ))}
           </div>
           <p className="mt-1 text-xs text-gray-500">The TV shows the same page.</p>
+          </>
+          )}
         </div>
         <GameBoard
           isAdmin={true}
           gameState={gameState}
-          gameBoardData={boardData(currentPage)}
+          gameBoardData={boardData(gameState)}
           handleUpdateCurrentGame={handleUpdateCurrentGame}
           sendGameStateToServer={sendGameStateToServer}
         />
@@ -205,7 +212,7 @@ const AdminPageWrapper: React.FC<AdminPageWrapperProps> = ({
           {!gameState.currentGame.questionState.promptVisible && (
             <button
               onClick={handleRevealQuestion}
-              className="p-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+              className="px-6 py-3 text-lg font-semibold bg-blue-500 text-white rounded-lg shadow hover:bg-blue-600"
             >
               Next
             </button>
