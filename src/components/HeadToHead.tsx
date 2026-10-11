@@ -1,4 +1,6 @@
-import React from "react";
+import React, { useEffect, useRef } from "react";
+import { revealHitAudio } from "../shared/audio";
+import { playSound } from "../shared/sound";
 import {
   getCurrentQuestion,
   HeadToHeadQuestionState,
@@ -17,6 +19,16 @@ const HeadToHead: React.FC<HeadToHeadProps> = ({
 
   const questionState = gameState.currentGame
     .questionState as HeadToHeadQuestionState;
+
+  // Orchestra hit on the TV when the host shows the challenge (same as
+  // Scavenger Sprint's reveal). The ref starts at the current value, so a TV
+  // joining after the reveal stays quiet.
+  const titleShown = !!questionState.showTitle;
+  const wasShown = useRef(titleShown);
+  useEffect(() => {
+    if (!isAdmin && titleShown && !wasShown.current) playSound(revealHitAudio);
+    wasShown.current = titleShown;
+  }, [isAdmin, titleShown]);
 
   if (!questionData) {
     return <NoQuestionAvailable />;

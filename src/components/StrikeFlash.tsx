@@ -2,7 +2,7 @@ import { faTimesCircle } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React, { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { buzzerAudio } from "../shared/audio";
+import { BUZZER_LEVEL, buzzerAudio } from "../shared/audio";
 import { playSound } from "../shared/sound";
 
 interface StrikeFlashProps {
@@ -23,7 +23,7 @@ const StrikeFlash: React.FC<StrikeFlashProps> = ({ count, isAdmin }) => {
     const prev = prevCount.current;
     prevCount.current = count;
     if (isAdmin || count <= prev) return;
-    playSound(buzzerAudio);
+    playSound(buzzerAudio, BUZZER_LEVEL);
     setShowing(true);
     const timer = setTimeout(() => setShowing(false), 1300);
     return () => clearTimeout(timer);

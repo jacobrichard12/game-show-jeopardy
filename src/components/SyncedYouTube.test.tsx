@@ -58,3 +58,16 @@ describe("SyncedYouTube sound", () => {
     expect(mockPlayer.setVolume).toHaveBeenLastCalledWith(55);
   });
 });
+
+describe("SyncedYouTube after the player is gone", () => {
+  it("swallows a rejected player call instead of an unhandled error", async () => {
+    // The real player rejects queued calls once its iframe is destroyed.
+    const rejected = Promise.reject(new TypeError("Cannot read properties of null (reading 'playVideo')"));
+    mockPlayer.playVideo.mockImplementation(() => rejected);
+    const caught = jest.spyOn(rejected, "catch");
+    render(<SyncedYouTube videoId="abc" playing restartToken={0} />);
+    expect(mockPlayer.playVideo).toHaveBeenCalled();
+    expect(caught).toHaveBeenCalled();
+    await rejected.catch(() => {});
+  });
+});

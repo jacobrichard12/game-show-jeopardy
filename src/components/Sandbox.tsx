@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 // Filler content only (ROADMAP S2): whatever this page imports ships in the
 // public JS bundle, so real questions must never be imported here.
 import sandboxFeud from "../data/sandbox/feud.json";
@@ -36,6 +36,8 @@ import AdminPointsButtons, { NoPointsButton } from "./AddPointsButtons";
 import ClosestWins from "./ClosestWins";
 import FamilyFeud from "./FamilyFeud";
 import FitToScreen from "./FitToScreen";
+import Timer from "./Timer";
+import TimerControls from "./TimerControls";
 import HeadToHead from "./HeadToHead";
 import Millionaire from "./Millionaire";
 import Minute from "./Minute";
@@ -181,7 +183,7 @@ function buildSandboxGameData(): GameData {
   };
 }
 
-function newSandboxState(teamCount: number): GameState {
+export function newSandboxState(teamCount: number): GameState {
   return {
     started: true,
     teams: createDefaultTeams(teamCount),
@@ -241,6 +243,16 @@ const Sandbox: React.FC = () => {
   const [doubleJeopardy, setDoubleJeopardy] = useState(false);
   const [teamCount, setTeamCount] = useState(MIN_TEAMS);
   const [view, setView] = useState<View>("both");
+  // Both view, side by side (xl+): the host panel's share of the width, %,
+  // set by dragging the divider between the panels (like macOS split view).
+  const [hostShare, setHostShare] = useState(50);
+  const [dragging, setDragging] = useState(false);
+  const mainRef = useRef<HTMLElement>(null);
+  const clampShare = (share: number) => Math.min(80, Math.max(20, share));
+  const dragTo = (clientX: number) => {
+    const box = mainRef.current?.getBoundingClientRect();
+    if (box && box.width > 0 && Number.isFinite(clientX)) setHostShare(clampShare(((clientX - box.left) / box.width) * 100));
+  };
   const [showState, setShowState] = useState(false);
   // Bumped whenever a round (re)starts so game components remount and drop
   // any local input state (e.g. half-typed guesses).
@@ -340,6 +352,11 @@ const Sandbox: React.FC = () => {
         </>
       )}
 
+      {/* The host toolbar's timer buttons. */}
+      <div className="mt-4 flex flex-wrap items-center gap-2">
+        <TimerControls gameState={gameState} sendGameStateToServer={setGameState} />
+      </div>
+
       {/* The real board's "Set Turn" buttons only show on the board itself. */}
       <div className="mt-4 flex flex-wrap items-center gap-2">
         <span className="text-sm text-gray-600">Whose turn:</span>
@@ -377,13 +394,25 @@ const Sandbox: React.FC = () => {
       {/* Shaped like the real TV's question area (a 16:9 screen minus the
           scoreboard, about 16:7) and fitted the same way, so it previews
           whether a game fits without scrolling. */}
-      <div className="flex flex-col lg:aspect-[16/7]">
-        <FitToScreen>
-          <QuestionWrapper
-            gameState={gameState}
-            question={<Game key={`tv-${round}`} isAdmin={false} {...gameProps} />}
+      <div className="relative flex flex-col lg:aspect-[16/7]">
+        {/* Toggle Timer, as on the real TV (PageWrapper): a corner box in
+            this panel, or the whole area with the question hidden. */}
+        {gameState.showTimer && (
+          <Timer
+            contained
+            playing={gameState.timerPlaying ?? false}
+            restartToken={gameState.timerRestart ?? 0}
+            fullScreen={!!gameState.timerFullScreen}
           />
-        </FitToScreen>
+        )}
+        <div className={gameState.showTimer && gameState.timerFullScreen ? "hidden" : "contents"}>
+          <FitToScreen>
+            <QuestionWrapper
+              gameState={gameState}
+              question={<Game key={`tv-${round}`} isAdmin={false} {...gameProps} />}
+            />
+          </FitToScreen>
+        </div>
       </div>
       <div className="mt-2">
         <ScoreBoard isAdmin={false} gameState={gameState} />
@@ -393,10 +422,13 @@ const Sandbox: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-100 p-3 text-left text-gray-900 sm:p-6">
-      <header className="mx-auto max-w-[1800px]">
+      <header className="mx-auto">
         <h1 className="text-2xl font-bold">Game sandbox</h1>
         <p className="mb-3 text-sm text-gray-600">
-          Runs locally, no server or room code. The host panel and TV share one game state.
+          Runs locally, no server or room code. The host panel and TV share one game state.{" "}
+          <a href="/sandbox?title" className="text-blue-600 underline">
+            Preview title screens and the Start Game tunnel
+          </a>
         </p>
 
         <div className="flex flex-wrap items-end gap-3 rounded-xl bg-white p-3 shadow">
@@ -514,16 +546,60 @@ const Sandbox: React.FC = () => {
         )}
       </header>
 
+      {/* Side by side at xl+, split by a draggable divider (stacked below). */}
       <main
-        className={`mx-auto mt-4 grid max-w-[1800px] gap-4 ${
-          view === "both" ? "xl:grid-cols-2" : "grid-cols-1"
+        ref={mainRef}
+        className={`mx-auto mt-4 grid gap-4 ${
+          view === "both"
+            ? "xl:grid-cols-[minmax(0,var(--host))_auto_minmax(0,var(--tv))] xl:gap-x-1"
+            : "grid-cols-1"
         }`}
+        style={{ "--host": `${hostShare}fr`, "--tv": `${100 - hostShare}fr` } as React.CSSProperties}
       >
         {view !== "tv" && hostPane}
+        {view === "both" && (
+          <div
+            role="separator"
+            aria-orientation="vertical"
+            aria-label="Resize host and TV panels"
+            aria-valuemin={20}
+            aria-valuemax={80}
+            aria-valuenow={Math.round(hostShare)}
+            tabIndex={0}
+            title="Drag to resize; double-click to reset"
+            onPointerDown={(e) => {
+              e.preventDefault();
+              setDragging(true);
+            }}
+            onDoubleClick={() => setHostShare(50)}
+            onKeyDown={(e) => {
+              if (e.key === "ArrowLeft") setHostShare((s) => clampShare(s - 2));
+              if (e.key === "ArrowRight") setHostShare((s) => clampShare(s + 2));
+            }}
+            className="group hidden w-3 cursor-col-resize items-center justify-center xl:flex"
+          >
+            <span
+              className={`h-16 w-1.5 rounded-full transition-colors ${
+                dragging ? "bg-blue-500" : "bg-gray-300 group-hover:bg-gray-500 group-focus:bg-blue-500"
+              }`}
+            />
+          </div>
+        )}
         {view !== "host" && tvPane}
       </main>
+      {/* While dragging, a full-window layer takes the pointer so the
+          YouTube iframes under it can't swallow the moves. */}
+      {dragging && (
+        <div
+          data-testid="resize-layer"
+          className="fixed inset-0 z-50 cursor-col-resize"
+          onPointerMove={(e) => dragTo(e.clientX)}
+          onPointerUp={() => setDragging(false)}
+          onPointerLeave={() => setDragging(false)}
+        />
+      )}
 
-      <footer className="mx-auto mt-4 max-w-[1800px]">
+      <footer className="mx-auto mt-4">
         <button
           type="button"
           onClick={() => setShowState((s) => !s)}

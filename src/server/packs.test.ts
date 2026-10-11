@@ -81,6 +81,48 @@ describe("parsePack", () => {
     expect(Object.keys(pack.tiles).sort()).toEqual(["act", "charades", "order", "scavenger"]);
   });
 
+  it("lets a column's tiles play as other games (\"type\")", () => {
+    const pack = parsePack("p", {
+      columns: [
+        col("head", [
+          { round: 1, value: 100, title: "Staring contest", players: 1 },
+          { round: 1, value: 200, type: "scavenger", item: "A rosary" },
+          { round: 1, value: 300, type: "minute", title: "Stack Attack" },
+          { round: 2, value: 200, type: "scavenger", item: "A Bible" },
+        ]),
+      ],
+    });
+    expect(pack.errors).toEqual([]);
+    expect(pack.columns).toEqual([
+      { title: "Head to Head", game: "head", tiles: { 200: "scavenger", 300: "minute", 101: "scavenger" } },
+    ]);
+    expect(pack.tiles.head![100]).toEqual({ title: "Staring contest", players: 1, adminInfo: "" });
+    expect(pack.tiles.scavenger).toEqual({ 200: { item: "A rosary" }, 101: { item: "A Bible" } });
+    // A Minute challenge without a video is title only.
+    expect(pack.tiles.minute![300]).toEqual({ title: "Stack Attack", link: "", materials: [], description: "" });
+  });
+
+  it("refuses mixed tiles that would collide", () => {
+    const pack = parsePack("p", {
+      columns: [
+        col("head", [
+          { round: 1, value: 100, type: "feud", prompt: "x", answers: [{ answer: "a", points: 1 }] },
+          { round: 1, value: 200, type: "scavenger", item: "A" },
+          { round: 1, value: 200, title: "Same tile", players: 1 },
+          { round: 1, value: 300, type: "trivia" },
+        ]),
+        col("act", [{ round: 1, value: 200, type: "scavenger", item: "B" }]),
+        col("feud"),
+      ],
+    });
+    expect(pack.errors).toEqual([
+      expect.stringContaining('"type": "feud" can\'t be used here because feud has its own column'),
+      expect.stringContaining("round 1 200 is already used by an earlier question"),
+      expect.stringContaining('"type" must be one of'),
+      expect.stringContaining("round 1 200 as scavenger clashes with another column's scavenger tile"),
+    ]);
+  });
+
   it("allows a column with no questions (all normal questions)", () => {
     const pack = parsePack("p", { columns: [col("head")] });
     expect(pack.errors).toEqual([]);
@@ -98,7 +140,7 @@ describe("parsePack", () => {
           { round: 1, value: 200, prompt: "No answers", answers: [] },
         ]),
         col("millionaire", [{ round: 1, value: 100, questions: ladder.slice(0, 2) }]),
-        col("minute", [{ round: 1, value: 100, title: "No link" }]),
+        col("minute", [{ round: 1, value: 100, title: "Bad link", link: "https://example.com/video" }]),
         col("order", [{ round: 1, value: 100, prompt: "Dupes", direction: "x", items: ["A", "A"] }]),
       ],
     });
@@ -110,7 +152,7 @@ describe("parsePack", () => {
       expect.stringContaining("columns[0] (feud) questions[2]: needs round 1"),
       expect.stringContaining("columns[0] (feud) questions[3]: needs answers"),
       expect.stringContaining("columns[1] (millionaire) questions[0]: needs exactly 3 questions"),
-      expect.stringContaining("columns[2] (minute) questions[0]: needs a link"),
+      expect.stringContaining("columns[2] (minute) questions[0]: link must look like"),
       expect.stringContaining("columns[3] (order) questions[0]: needs 2 or more different items"),
     ]);
   });
@@ -165,6 +207,63 @@ describe("parsePack", () => {
     ]);
   });
 
+  it("takes a title screen decor, ignoring unknown ones", () => {
+    const pack = parsePack("p", { title: "T", decor: "catholic-icons", columns: [col("head")] });
+    expect(pack.errors).toEqual([]);
+    expect(pack.titleScreen).toEqual({ title: "T", decor: "catholic-icons" });
+    const bad = parsePack("p", { title: "T", decor: "sparkles", columns: [col("head")] });
+    expect(bad.titleScreen).toEqual({ title: "T" });
+    expect(bad.errors).toEqual([expect.stringContaining('"decor" must be one of')]);
+  });
+
+  it("sizes the board by rows (default 5) and rejects tiles that aren't on it", () => {
+    expect(parsePack("p", { columns: [col("head")] }).rows).toBe(5);
+    const pack = parsePack("p", {
+      rows: 4,
+      columns: [
+        col("feud", [
+          { round: 1, value: 400, prompt: "On the board", answers: [{ answer: "A", points: 1 }] },
+          { round: 1, value: 500, prompt: "Off the board", answers: [{ answer: "A", points: 1 }] },
+          { round: 2, value: 800, prompt: "On the board", answers: [{ answer: "A", points: 1 }] },
+          { round: 2, value: 1000, prompt: "Off the board", answers: [{ answer: "A", points: 1 }] },
+        ]),
+      ],
+    });
+    expect(pack.rows).toBe(4);
+    expect(Object.keys(pack.tiles.feud!).sort()).toEqual(["400", "401"]);
+    expect(pack.errors).toEqual([
+      expect.stringContaining("round 1 500 isn't on this 4-row board (round 1 goes up to 400, round 2 up to 800)"),
+      expect.stringContaining("round 2 1000 isn't on this 4-row board"),
+    ]);
+  });
+
+  it("can switch Double Jeopardy off: round 2 questions are then reported unused", () => {
+    expect(parsePack("p", { columns: [col("head")] }).doubleJeopardy).toBe(true);
+    const pack = parsePack("p", {
+      doubleJeopardy: false,
+      columns: [
+        col("feud", [
+          { round: 1, value: 100, prompt: "Played", answers: [{ answer: "A", points: 1 }] },
+          { round: 2, value: 200, prompt: "Never played", answers: [{ answer: "A", points: 1 }] },
+        ]),
+      ],
+    });
+    expect(pack.doubleJeopardy).toBe(false);
+    expect(Object.keys(pack.tiles.feud!)).toEqual(["100"]);
+    expect(pack.errors).toEqual([expect.stringContaining('round 2 isn\'t played ("doubleJeopardy": false)')]);
+    expect(parsePack("p", { doubleJeopardy: "no", columns: [col("head")] }).errors).toEqual([
+      expect.stringContaining('"doubleJeopardy" must be true or false'),
+    ]);
+  });
+
+  it("rejects a bad rows value and keeps 5", () => {
+    for (const rows of [0, 6, 2.5, "4"]) {
+      const pack = parsePack("p", { rows, columns: [col("head")] });
+      expect(pack.rows).toBe(5);
+      expect(pack.errors).toEqual([expect.stringContaining('"rows" must be a whole number from 1 to 5')]);
+    }
+  });
+
   it("reports a file that isn't an object", () => {
     expect(parsePack("x", []).errors).toEqual(["the file must be a JSON object"]);
   });
@@ -174,8 +273,18 @@ describe("packBoard", () => {
   it("is one custom page named after the pack", () => {
     const pack = parsePack("p", { name: "Smith night", columns: [col("feud", undefined, "Smith Feud")] });
     expect(packBoard(pack)).toEqual([
-      { id: "custom", label: "Smith night", columns: [{ title: "Smith Feud", game: "feud" }] },
+      {
+        id: "custom",
+        label: "Smith night",
+        columns: [{ title: "Smith Feud", game: "feud" }],
+        values: [100, 200, 300, 400, 500],
+      },
     ]);
+  });
+
+  it("carries a smaller board's tile values", () => {
+    const pack = parsePack("p", { rows: 4, columns: [col("feud")] });
+    expect(packBoard(pack)[0].values).toEqual([100, 200, 300, 400]);
   });
 });
 

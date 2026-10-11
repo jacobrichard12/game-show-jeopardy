@@ -45,10 +45,16 @@ const prune = () => {
   });
 };
 
-export function createAudio(src?: string): HTMLAudioElement {
+// Per-sound level (0–1) on top of the master volume, for sounds that are
+// louder than the rest (e.g. the Double Jeopardy "wow").
+const gains = new WeakMap<HTMLAudioElement, number>();
+
+export function createAudio(src?: string, gain = 1): HTMLAudioElement {
   const audio = src === undefined ? new Audio() : new Audio(src);
+  const level = clampVolume(gain);
+  if (level !== 1) gains.set(audio, level);
   audio.muted = muted;
-  audio.volume = volume;
+  audio.volume = volume * level;
   if (instances.size > PRUNE_THRESHOLD) prune();
   instances.add(new WeakRef(audio));
   return audio;
@@ -57,8 +63,8 @@ export function createAudio(src?: string): HTMLAudioElement {
 // Fire-and-forget: plays a one-shot sound and swallows the rejection a browser
 // raises when autoplay hasn't been unlocked yet (the display's "Enable sound"
 // overlay handles that), so a blocked sound never becomes an unhandled error.
-export function playSound(src: string): void {
-  playAudio(createAudio(src));
+export function playSound(src: string, gain = 1): void {
+  playAudio(createAudio(src, gain));
 }
 
 // The same, for an Audio kept around to replay (e.g. created once in state).
@@ -95,7 +101,7 @@ export function setVolume(value: number): void {
   prune();
   instances.forEach((ref) => {
     const audio = ref.deref();
-    if (audio) audio.volume = volume;
+    if (audio) audio.volume = volume * (gains.get(audio) ?? 1);
   });
   listeners.forEach((listener) => listener());
 }

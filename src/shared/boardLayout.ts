@@ -8,18 +8,32 @@ import standardBoard from "../data/boards/standard.json";
 export interface BoardColumn {
   title: string;
   game: string; // a GameData key: "feud", "millionaire", "wheel", ...
+  // Tiles that play as another game (custom packs): slot key -> game, e.g.
+  // { "200": "scavenger" } in a Head to Head column.
+  tiles?: Record<string, string>;
 }
 
 export interface BoardLayoutPage {
   id: string;
   label: string;
   columns: BoardColumn[];
+  // Round 1 tile values down each column (a custom pack's "rows"); missing =
+  // all of TILE_VALUES (the usual 5 rows).
+  values?: number[];
 }
 
 export const STANDARD_PAGES: BoardLayoutPage[] = standardBoard.pages;
 export const CUSTOM_PAGE_ID = "custom";
-// Round 1 tile values; Double Jeopardy doubles what the board shows.
+// Round 1 tile values; Double Jeopardy doubles what the board shows. A board
+// can use fewer rows (the first N values); 5 is the most the normal question
+// banks fill.
 export const TILE_VALUES = [100, 200, 300, 400, 500];
+export const MAX_ROWS = TILE_VALUES.length;
+
+// The round 1 values a page's columns use.
+export function pageValues(page: BoardLayoutPage): number[] {
+  return page.values && page.values.length > 0 ? page.values : TILE_VALUES;
+}
 
 interface HasBoard {
   board?: BoardLayoutPage[];
@@ -35,6 +49,15 @@ export function boardPages(state: HasBoard): BoardLayoutPage[] {
 export function currentBoardPage(state: HasBoard): BoardLayoutPage {
   const pages = boardPages(state);
   return pages.find((page) => page.id === state.boardPage) ?? pages[0];
+}
+
+// The game a tile plays as: its column's game unless the pack mixed in
+// another type for that tile. `slotKey` is the bank key (DJ: value/2 + 1).
+export function tileGame(state: HasBoard, columnGame: string, slotKey: number): string {
+  const column = boardPages(state)
+    .flatMap((page) => page.columns)
+    .find((c) => c.game === columnGame);
+  return column?.tiles?.[String(slotKey)] ?? columnGame;
 }
 
 export function isCustomBoard(state: HasBoard): boolean {

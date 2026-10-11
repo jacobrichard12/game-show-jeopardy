@@ -27,53 +27,78 @@ const SyncedYouTube: React.FC<SyncedYouTubeProps> = ({
   const muted = useMuted();
   const volume = useVolume();
 
-  const apply = () => {
+  // Player calls are queued promises that run once the iframe is ready. If
+  // the embed is removed first (e.g. the host toggles the timer off right
+  // after on), they reject with "Cannot read properties of null"; nothing
+  // is left to control by then, so drop those failures.
+  const call = (command: (player: YouTubePlayer) => unknown) => {
     const player = playerRef.current;
     if (!player) return;
-    if (appliedRestart.current !== restartToken) {
-      appliedRestart.current = restartToken;
-      player.seekTo(0, true);
-    }
-    if (playing) {
-      player.playVideo();
-    } else {
-      player.pauseVideo();
+    try {
+      const result = command(player) as Promise<unknown> | undefined;
+      if (result && typeof result.catch === "function") result.catch(() => {});
+    } catch {
+      // Same: the player went away mid-call.
     }
   };
 
-  const applySound = () => {
-    const player = playerRef.current;
-    if (!player) return;
-    // The IFrame API takes volume as 0–100.
-    player.setVolume(Math.round(volume * 100));
-    if (muted) {
-      player.mute();
-    } else {
-      player.unMute();
+  const apply = () => {
+    if (!playerRef.current) return;
+    if (appliedRestart.current !== restartToken) {
+      appliedRestart.current = restartToken;
+      call((player) => player.seekTo(0, true));
     }
+    call((player) => (playing ? player.playVideo() : player.pauseVideo()));
+  };
+
+  const applySound = () => {
+    // The IFrame API takes volume as 0–100.
+    call((player) => player.setVolume(Math.round(volume * 100)));
+    call((player) => (muted ? player.mute() : player.unMute()));
   };
 
   // Re-apply whenever the host changes either value.
   useEffect(apply);
+  // Unmounting destroys the player; stop talking to it.
+  useEffect(
+    () => () => {
+      playerRef.current = null;
+    },
+    []
+  );
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(applySound, [muted, volume]);
 
+  // The host drives the video, so the TV needs none of YouTube's own UI:
+  // no control bar (its title/gradient overlay then fades once playing), no
+  // annotations or keyboard shortcuts, and a transparent shield over the
+  // iframe so a parked mouse cursor never keeps the overlay up.
   return (
-    <YouTube
-      videoId={videoId}
-      className={className}
-      iframeClassName="w-full h-full"
-      opts={{
-        width: "100%",
-        height: "100%",
-        playerVars: { rel: 0, playsinline: 1 },
-      }}
-      onReady={(event: YouTubeEvent) => {
-        playerRef.current = event.target;
-        applySound();
-        apply();
-      }}
-    />
+    <div className={`relative ${className ?? ""}`}>
+      <YouTube
+        videoId={videoId}
+        className="w-full h-full"
+        iframeClassName="w-full h-full"
+        opts={{
+          width: "100%",
+          height: "100%",
+          playerVars: {
+            rel: 0,
+            playsinline: 1,
+            controls: 0,
+            disablekb: 1,
+            iv_load_policy: 3,
+            fs: 0,
+          },
+        }}
+        onReady={(event: YouTubeEvent) => {
+          playerRef.current = event.target;
+          applySound();
+          apply();
+        }}
+      />
+      <div data-testid="video-shield" aria-hidden="true" className="absolute inset-0" />
+    </div>
   );
 };
 

@@ -22,6 +22,15 @@ describe("sound volume", () => {
     expect(createAudio().volume).toBe(1);
   });
 
+  it("plays a quieter sound at its share of the master volume, and keeps it", () => {
+    setVolume(0.5);
+    const quiet = createAudio(undefined, 0.6);
+    expect(quiet.volume).toBeCloseTo(0.3);
+    setVolume(1);
+    expect(quiet.volume).toBeCloseTo(0.6);
+    expect(createAudio().volume).toBe(1);
+  });
+
   it("remembers the volume", () => {
     setVolume(0.25);
     expect(window.localStorage.getItem("soundVolume")).toBe("0.25");

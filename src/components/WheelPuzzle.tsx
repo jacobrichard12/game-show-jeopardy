@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from "react";
-import { buzzerAudio, dingAudio, getRandomAudio, happyFiles, puzzleDisplayAudio } from "../shared/audio";
+import { BUZZER_LEVEL, buzzerAudio, dingAudio, getRandomAudio, happyFiles, puzzleDisplayAudio } from "../shared/audio";
 import {
   ALPHABET,
   countRevealedLetters,
@@ -66,7 +66,8 @@ const WheelPuzzle: React.FC<QuestionProps> = ({
       return;
     }
     if (guessed.length <= before.guessed) return;
-    playSound(revealedLetters > before.revealed ? dingAudio : buzzerAudio);
+    if (revealedLetters > before.revealed) playSound(dingAudio);
+    else playSound(buzzerAudio, BUZZER_LEVEL);
   }, [isAdmin, guessed.length, revealedLetters, solved]);
 
   if (!puzzle) {

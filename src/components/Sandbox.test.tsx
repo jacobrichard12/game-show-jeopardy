@@ -56,7 +56,7 @@ describe("Sandbox", () => {
     render(<Sandbox />);
     expect(screen.getByText("Host panel")).toBeInTheDocument();
     expect(screen.getByText("TV display")).toBeInTheDocument();
-    expect(within(tv()).getByText(/The question will be revealed soon/)).toBeInTheDocument();
+    expect(within(tv()).getByText(/The challenge will be revealed soon/)).toBeInTheDocument();
 
     revealToTv();
     expect(within(tv()).queryByText(/revealed soon/)).not.toBeInTheDocument();
@@ -191,7 +191,7 @@ describe("Sandbox", () => {
       const before = played.length;
       click(screen.getByRole("button", { name: "Show item" }));
       // The orchestra hit plays once, on the TV.
-      expect(playedSince(before)).toEqual([expect.stringMatching(/scavenger-reveal/)]);
+      expect(playedSince(before)).toEqual([expect.stringMatching(/reveal-hit/)]);
       expect(within(tv()).queryByText("Get ready…")).not.toBeInTheDocument();
       expect(screen.getByText("On the TV now")).toBeInTheDocument();
       expect(screen.getByRole("button", { name: "Show item" })).toBeDisabled();
@@ -560,10 +560,42 @@ describe("Sandbox", () => {
     it("the host can play the video on the TV", () => {
       render(<Sandbox />);
       chooseGame("Minute To Win It");
+      const before = played.length;
       revealToTv();
+      // The orchestra hit plays when the challenge is revealed on the TV.
+      expect(playedSince(before)).toEqual([expect.stringMatching(/reveal-hit/)]);
       expect(screen.getByText("Video on the display is paused.")).toBeInTheDocument();
       click(screen.getByRole("button", { name: /Play video/ }));
       expect(screen.getByText("Video on the display is playing.")).toBeInTheDocument();
+    });
+
+    it("has its own Show timer button", () => {
+      render(<Sandbox />);
+      chooseGame("Minute To Win It");
+      revealToTv();
+      expect(screen.getByRole("button", { name: "⏱ Show timer" })).toBeInTheDocument();
+    });
+
+    it("Show timer puts the timer on the TV, in the corner or full screen", () => {
+      render(<Sandbox />);
+      chooseGame("Minute To Win It");
+      revealToTv();
+      expect(within(tv()).queryByTestId("timer-overlay")).toBeNull();
+
+      click(screen.getByRole("button", { name: "⏱ Show timer" }));
+      expect(within(tv()).getByTestId("timer-overlay")).toBeInTheDocument();
+      // The challenge stays on screen under the corner box; full screen
+      // hides it (Tailwind's "hidden"; jsdom has no stylesheet to check).
+      const challenge = () => within(tv()).getByRole("heading", { level: 1, name: /Sample Minute/ });
+      expect(challenge().closest(".hidden")).toBeNull();
+
+      click(screen.getByRole("button", { name: "⛶ Full-screen timer" }));
+      expect(challenge().closest(".hidden")).not.toBeNull();
+      click(screen.getByRole("button", { name: "⧉ Timer in corner" }));
+      expect(challenge().closest(".hidden")).toBeNull();
+
+      click(screen.getByRole("button", { name: "⏱ Hide timer" }));
+      expect(within(tv()).queryByTestId("timer-overlay")).toBeNull();
     });
   });
 
@@ -575,9 +607,41 @@ describe("Sandbox", () => {
       expect(within(tv()).getByText(/Players Per Team/)).toBeInTheDocument();
 
       const before = within(tv()).getAllByRole("heading", { level: 1 }).length;
+      const soundsBefore = played.length;
       click(screen.getByRole("button", { name: "Show Title" }));
       expect(within(tv()).getAllByRole("heading", { level: 1 }).length).toBe(before + 1);
+      // The same orchestra hit as Scavenger Sprint's reveal, once, on the TV.
+      expect(playedSince(soundsBefore)).toEqual([expect.stringMatching(/reveal-hit/)]);
     });
+  });
+
+  it("the divider between the panels resizes them (drag, keys, double-click)", () => {
+    render(<Sandbox />);
+    const divider = screen.getByRole("separator", { name: "Resize host and TV panels" });
+    expect(divider).toHaveAttribute("aria-valuenow", "50");
+
+    // A 1000px-wide layout starting at x=0: dropping at x=300 → 30% host.
+    const main = divider.parentElement!;
+    main.getBoundingClientRect = () => ({ left: 0, width: 1000 } as DOMRect);
+    // jsdom's PointerEvent has no clientX; a MouseEvent named pointermove does.
+    const moveTo = (clientX: number) =>
+      fireEvent(screen.getByTestId("resize-layer"), new MouseEvent("pointermove", { bubbles: true, clientX }));
+    fireEvent.pointerDown(divider);
+    moveTo(300);
+    fireEvent.pointerUp(screen.getByTestId("resize-layer"));
+    expect(divider).toHaveAttribute("aria-valuenow", "30");
+    expect(screen.queryByTestId("resize-layer")).toBeNull();
+
+    // Clamped to 20–80%.
+    fireEvent.pointerDown(divider);
+    moveTo(50);
+    fireEvent.pointerUp(screen.getByTestId("resize-layer"));
+    expect(divider).toHaveAttribute("aria-valuenow", "20");
+
+    fireEvent.keyDown(divider, { key: "ArrowRight" });
+    expect(divider).toHaveAttribute("aria-valuenow", "22");
+    fireEvent.doubleClick(divider);
+    expect(divider).toHaveAttribute("aria-valuenow", "50");
   });
 
   // Every game must have a question for every tile, in both rounds. This is

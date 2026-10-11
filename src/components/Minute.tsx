@@ -7,6 +7,7 @@ import {
 import SyncedYouTube from "./SyncedYouTube";
 import NoQuestionAvailable from "./NoQuestionAvailable";
 
+
 interface MinuteProps extends QuestionProps {}
 
 const Minute: React.FC<MinuteProps> = ({
@@ -42,7 +43,7 @@ const Minute: React.FC<MinuteProps> = ({
   return (
     <div className="minute-container">
       {/* Title */}
-      <h1 className="text-3xl md:text-5xl xl:text-7xl font-bold mb-4 text-center">{title}</h1>
+      <h1 className="text-4xl md:text-6xl xl:text-8xl font-bold mb-4 text-center">{title}</h1>
 
       {/* Video and Timer Layout */}
       <div className="flex justify-center items-center">
@@ -58,7 +59,14 @@ const Minute: React.FC<MinuteProps> = ({
         )}
       </div>
 
-      {isAdmin && (
+      {/* A pack's Minute challenge may have no video: title only, and the
+          host explains it (Toggle Timer is in the toolbar). */}
+      {isAdmin && !videoId && (
+        <p className="mt-4 text-center text-sm text-gray-600">
+          No video for this challenge: explain it, and use the timer below.
+        </p>
+      )}
+      {isAdmin && videoId && (
         <div className="mt-4 flex flex-col items-center gap-2">
           <div className="flex flex-wrap justify-center gap-2">
             <button
@@ -82,6 +90,28 @@ const Minute: React.FC<MinuteProps> = ({
           <p className="text-sm text-gray-500">
             Video on the display is {playing ? "playing" : "paused"}.
           </p>
+        </div>
+      )}
+
+      {/* Every Minute challenge (any column, video or not) can bring up the
+          countdown timer from here; same as the toolbar's Toggle Timer, whose
+          Play/Pause/Restart then control it. */}
+      {isAdmin && (
+        <div className="mt-4 flex justify-center">
+          <button
+            type="button"
+            onClick={() =>
+              sendGameStateToServer({
+                ...gameState,
+                showTimer: !gameState.showTimer,
+                timerPlaying: false,
+                timerFullScreen: false,
+              })
+            }
+            className="rounded bg-green-500 px-4 py-2 text-white hover:bg-green-600"
+          >
+            {gameState.showTimer ? "⏱ Hide timer" : "⏱ Show timer"}
+          </button>
         </div>
       )}
     </div>

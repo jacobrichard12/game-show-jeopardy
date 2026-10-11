@@ -22,8 +22,11 @@ import tick from "../assets/tick.wav";
 import puzzleDisplay from "../assets/puzzle-display.mp3";
 // "Hyper-Ultra-Fanfare", CC0: https://opengameart.org/content/hyper-ultra-fanfare
 import winnerFanfare from "../assets/winner-fanfare.mp3";
-// Owner-supplied orchestra hit (2 s) for Scavenger Sprint's reveal.
-import scavengerReveal from "../assets/scavenger-reveal.mp3";
+// Owner-supplied orchestra hit (2 s) for reveals (Scavenger Sprint's item,
+// Head to Head's challenge).
+import revealHit from "../assets/reveal-hit.mp3";
+// Owner-supplied (5.6 s), played on the TV when the host presses Start Game.
+import gameStart from "../assets/game-start.mp3";
 // Lobby music, all CC0 from OpenGameArt (the .ogg originals converted to
 // AAC .m4a so every browser plays them):
 //   opengameart.org/content/bouncy-hamster-dancing-menu-music
@@ -49,6 +52,9 @@ export const happyFiles = [
     winning6,
 ];
 export const buzzerAudio = buzzer;
+// The buzzer plays at this share of the master volume everywhere (owner:
+// a little loud); pass it to playSound(buzzerAudio, BUZZER_LEVEL).
+export const BUZZER_LEVEL = 0.8;
 export const dingAudio = ding;  
 export const familyFeudTheme = feudTheme;
 // Countdown clocks, last 5 seconds (distinct from the answer-reveal ding).
@@ -57,8 +63,9 @@ export const tickAudio = tick;
 export const puzzleDisplayAudio = puzzleDisplay;
 // End-of-game screen, when the host ends the game.
 export const winnerFanfareAudio = winnerFanfare;
-// Scavenger Sprint: when the host shows the item on the TV.
-export const scavengerRevealAudio = scavengerReveal;
+// When the host reveals a Scavenger Sprint item or a Head to Head challenge.
+export const revealHitAudio = revealHit;
+export const gameStartAudio = gameStart;
 // Played shuffled on the TV's title screen while the host has music on.
 export const lobbyMusicFiles = [
     lobbyBouncyHamster,

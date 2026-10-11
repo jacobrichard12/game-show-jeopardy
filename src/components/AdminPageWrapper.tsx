@@ -7,6 +7,7 @@ import GameBoard from "./GameBoard";
 import HeadToHead from "./HeadToHead";
 import Millionaire from "./Millionaire";
 import Minute from "./Minute";
+import { questionPreview } from "./questionPreview";
 import { PARTY_GAME_COMPONENTS } from "./partyGameComponents";
 import ScoreBoard from "./Scoreboard";
 import TitlePage from "./TitlePage";
@@ -130,16 +131,19 @@ const AdminPageWrapper: React.FC<AdminPageWrapperProps> = ({
         {/* Title Section */}
 
         <div className="absolute top-2 left-2 sm:top-4 sm:left-4 flex flex-wrap items-center gap-1 sm:gap-2 max-w-[160px] sm:max-w-none">
-          <button
-            onClick={handleToggleDoubleJeopardy}
-            className={`p-1.5 sm:p-2 text-xs sm:text-base rounded ${
-              gameState.isDoubleJeopardy ? "bg-red-600" : "bg-yellow-500"
-            } text-white`}
-          >
-            {gameState.isDoubleJeopardy
-              ? "Double Jeopardy: ON"
-              : "Double Jeopardy: OFF"}
-          </button>
+          {/* A pack can play a single round ("doubleJeopardy": false). */}
+          {!gameState.noDoubleJeopardy && (
+            <button
+              onClick={handleToggleDoubleJeopardy}
+              className={`p-1.5 sm:p-2 text-xs sm:text-base rounded ${
+                gameState.isDoubleJeopardy ? "bg-red-600" : "bg-yellow-500"
+              } text-white`}
+            >
+              {gameState.isDoubleJeopardy
+                ? "Double Jeopardy: ON"
+                : "Double Jeopardy: OFF"}
+            </button>
+          )}
           {code && (
             <div className="p-1.5 sm:p-2 text-xs sm:text-base bg-white border rounded font-mono font-bold tracking-widest">
               {code}
@@ -197,6 +201,8 @@ const AdminPageWrapper: React.FC<AdminPageWrapperProps> = ({
     );
   };
 
+  const preview = questionPreview(gameState);
+
   const getChildAdminGamePage = () => {
     return (
       <div className="p-4">
@@ -216,6 +222,14 @@ const AdminPageWrapper: React.FC<AdminPageWrapperProps> = ({
             >
               Next
             </button>
+          )}
+          {/* A peek at the tile before revealing it, so the host can get
+              ready (admin page only; the TV shows the waiting screen). */}
+          {!gameState.currentGame.questionState.promptVisible && preview && (
+            <p className="mt-3 text-lg">
+              <span className="text-sm uppercase tracking-widest text-gray-500">Up next: </span>
+              <span className="font-semibold">{preview}</span>
+            </p>
           )}
         </div>
 

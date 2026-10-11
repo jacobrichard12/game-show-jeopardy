@@ -20,14 +20,6 @@ interface PageWrapperProps {
 
 const PageWrapper: React.FC<PageWrapperProps> = ({ gameState, boardIntro = 0 }) => {
   const getComponent = (): React.ReactNode => {
-    if (gameState.showTimer) {
-      return (
-        <Timer
-          playing={gameState.timerPlaying ?? false}
-          restartToken={gameState.timerRestart ?? 0}
-        />
-      );
-    }
     switch (gameState.currentGame.gameName) {
       case GameName.BOARD:
         return (
@@ -112,11 +104,10 @@ const PageWrapper: React.FC<PageWrapperProps> = ({ gameState, boardIntro = 0 }) 
   };
 
   // Questions are scaled to fill the space above the scoreboard exactly, so
-  // a reveal never pushes anything below the fold. The board and the timer
-  // video size themselves to the screen already.
+  // a reveal never pushes anything below the fold. The board sizes itself
+  // to the screen already.
   const component = getComponent();
-  const fitsToScreen =
-    !gameState.showTimer && gameState.currentGame.gameName !== GameName.BOARD;
+  const fitsToScreen = gameState.currentGame.gameName !== GameName.BOARD;
 
   return (
     // At lg: and up the display is exactly one screen tall: the scoreboard is
@@ -125,7 +116,20 @@ const PageWrapper: React.FC<PageWrapperProps> = ({ gameState, boardIntro = 0 }) 
     // the fold on a wide-but-short window.
     <div className="p-2 sm:p-4 lg:h-screen lg:flex lg:flex-col lg:gap-2 lg:overflow-hidden">
       <div className="p-2 lg:flex lg:flex-col lg:flex-1 lg:min-h-0 lg:overflow-y-auto">
-        {fitsToScreen ? <FitToScreen>{component}</FitToScreen> : component}
+        {/* Toggle Timer: a corner overlay over whatever is on screen, or
+            (full screen) this whole area, with the question hidden rather
+            than unmounted so it comes back as it was. The timer stays in one
+            place in the tree so switching modes doesn't reload the video. */}
+        {gameState.showTimer && (
+          <Timer
+            playing={gameState.timerPlaying ?? false}
+            restartToken={gameState.timerRestart ?? 0}
+            fullScreen={!!gameState.timerFullScreen}
+          />
+        )}
+        <div className={gameState.showTimer && gameState.timerFullScreen ? "hidden" : "contents"}>
+          {fitsToScreen ? <FitToScreen>{component}</FitToScreen> : component}
+        </div>
       </div>
       <div className="lg:shrink-0">
         <ScoreBoard gameState={gameState} isAdmin={false} />

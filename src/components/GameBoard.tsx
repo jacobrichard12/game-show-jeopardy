@@ -39,6 +39,8 @@ export function nextIntroKey(): number {
   return introCounter;
 }
 const INTRO_STEP_MS = 300;
+// The Double Jeopardy "wow", relative to the TV's master volume.
+const DJ_WOW_LEVEL = 0.4;
 
 const GameBoard: React.FC<GameBoardProps> = ({
   isAdmin,
@@ -76,7 +78,8 @@ const GameBoard: React.FC<GameBoardProps> = ({
   const wasDoubleJeopardy = useRef(isDoubleJeopardy);
   useEffect(() => {
     if (!isAdmin && isDoubleJeopardy && !wasDoubleJeopardy.current) {
-      playSound(wow);
+      // Quieter than other sounds: the "wow" clip is mastered loud (owner).
+      playSound(wow, DJ_WOW_LEVEL);
     }
     wasDoubleJeopardy.current = isDoubleJeopardy;
   }, [isAdmin, isDoubleJeopardy]);

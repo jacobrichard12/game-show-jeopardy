@@ -1,4 +1,4 @@
-import { boardPages, currentBoardPage, TILE_VALUES } from "../shared/boardLayout";
+import { boardPages, currentBoardPage, pageValues } from "../shared/boardLayout";
 import { GameState } from "../shared/types";
 import { GameBoardData } from "./GameBoard";
 
@@ -12,8 +12,10 @@ export function boardPageTabs(gameState: GameState): { id: string; label: string
 // The columns of the page on screen, in the shape GameBoard renders.
 export function boardData(gameState: GameState): Record<string, GameBoardData> {
   const data: Record<string, GameBoardData> = {};
-  currentBoardPage(gameState).columns.forEach((column) => {
-    data[column.game] = { gameName: column.game, gameTitle: column.title, points: TILE_VALUES };
+  const page = currentBoardPage(gameState);
+  const values = pageValues(page);
+  page.columns.forEach((column) => {
+    data[column.game] = { gameName: column.game, gameTitle: column.title, points: values };
   });
   return data;
 }

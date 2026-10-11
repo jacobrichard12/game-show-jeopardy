@@ -84,6 +84,34 @@ module.exports = {
           "85%": { opacity: "1", transform: "perspective(1200px) translate(0, 0) rotateY(0deg) scale(1, 1)" },
           "100%": { opacity: "0", transform: "perspective(1200px) translate(0, 0) rotateY(0deg) scale(1, 1)" },
         },
+        // A pack's title-screen decor rises from below the screen to above
+        // it, swaying a little (TitleDecor sets duration/delay/position).
+        "decor-rise": {
+          "0%": { transform: "translateY(105vh) rotate(-10deg)" },
+          "50%": { transform: "translateY(45vh) translateX(2vw) rotate(10deg)" },
+          "100%": { transform: "translateY(-15vh) rotate(-10deg)" },
+        },
+        // Start Game tunnel: each glyph starts tiny in the middle and flies
+        // out to its --dx/--dy, accelerating and growing as if it passes the
+        // viewer (StartTunnel sets them).
+        "tunnel-fly": {
+          "0%": { opacity: "0", transform: "translate(-50%, -50%) scale(0.05)" },
+          "20%": { opacity: "1" },
+          "100%": {
+            opacity: "1",
+            transform: "translate(-50%, -50%) translate(var(--dx, 0), var(--dy, 0)) scale(3)",
+          },
+        },
+        // ...and the board arrives from the end of the tunnel. Fill mode is
+        // backwards only, so no transform stays on the board afterwards.
+        "title-exit": {
+          "0%, 35%": { opacity: "1", transform: "scale(1)" },
+          "100%": { opacity: "0", transform: "scale(4)" },
+        },
+        "board-zoom": {
+          "0%": { opacity: "0", transform: "scale(0.1)" },
+          "100%": { opacity: "1", transform: "scale(1)" },
+        },
         "winner-pop": {
           "0%": { opacity: "0", transform: "scale(0.6)" },
           "60%": { opacity: "1", transform: "scale(1.08)" },
@@ -98,6 +126,10 @@ module.exports = {
         strike: "strike 1.3s ease-out forwards",
         "confetti-fall": "confetti-fall 4s linear infinite",
         "winner-pop": "winner-pop 0.9s ease-out both",
+        "decor-rise": "decor-rise 18s linear infinite",
+        "tunnel-fly": "tunnel-fly 1.1s cubic-bezier(0.55, 0, 1, 0.45) both",
+        "title-exit": "title-exit 1.4s cubic-bezier(0.55, 0, 1, 0.45) both",
+        "board-zoom": "board-zoom 1.1s cubic-bezier(0.2, 0.8, 0.3, 1) 0.9s backwards",
         "tile-zoom": "tile-zoom 1.8s ease-in-out forwards",
         // Board category intro: each header flips down in turn (GameBoard
         // sets the delay); "both" keeps it hidden until its turn.

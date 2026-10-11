@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import Sandbox from "./Sandbox";
+import TitlePreview from "./TitlePreview";
 import { useSocket } from "./SocketContext";
 
 // /sandbox is only for the host (ROADMAP S1): the server checks the venue's
@@ -53,7 +54,10 @@ const SandboxGate: React.FC = () => {
     };
   }, [socket, check]);
 
-  if (status === "open") return <Sandbox />;
+  // /sandbox?title previews the lobby title screen instead (TitlePreview).
+  if (status === "open") {
+    return new URLSearchParams(window.location.search).has("title") ? <TitlePreview /> : <Sandbox />;
+  }
 
   if (status === "checking") {
     return (

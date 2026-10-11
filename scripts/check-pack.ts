@@ -29,23 +29,37 @@ targets.forEach((id) => {
     failed = true;
     return;
   }
-  console.log(`${pack.errors.length ? "✗" : "✓"} ${id} ("${pack.name}"): ${pack.columns.length} column(s)`);
+  console.log(
+    `${pack.errors.length ? "✗" : "✓"} ${id} ("${pack.name}"): ${pack.columns.length} column(s) × ${pack.rows} row(s)` +
+      (pack.doubleJeopardy ? "" : ", no Double Jeopardy")
+  );
   console.log(
     `    Title screen: "${pack.titleScreen.title}"` +
-      (pack.titleScreen.subtitle ? ` / "${pack.titleScreen.subtitle}"` : " (usual welcome line)")
+      (pack.titleScreen.subtitle ? ` / "${pack.titleScreen.subtitle}"` : " (usual welcome line)") +
+      (pack.titleScreen.decor ? `, decor: ${pack.titleScreen.decor}` : "")
   );
   // Each column, and which of its 10 tiles fall back to normal questions.
   pack.columns.forEach((column) => {
-    const tiles = (pack.tiles as Record<string, Record<string, unknown>>)[column.game] ?? {};
-    const normal = ([1, 2] as const).flatMap((round) =>
-      [1, 2, 3, 4, 5]
+    // A tile is custom if the column's game, or a mixed-in type, has it.
+    const own = (pack.tiles as Record<string, Record<string, unknown>>)[column.game] ?? {};
+    const tiles: Record<string, unknown> = { ...own, ...(column.tiles ?? {}) };
+    const steps = Array.from({ length: pack.rows }, (_, i) => i + 1);
+    const rounds = pack.doubleJeopardy ? ([1, 2] as const) : ([1] as const);
+    const total = pack.rows * rounds.length;
+    const normal = rounds.flatMap((round) =>
+      steps
         .map((step) => step * (round === 1 ? 100 : 200))
         .filter((value) => tiles[String(slotKeyFor(round, value))] === undefined)
         .map((value) => `R${round} ${value}`)
     );
-    const custom = 10 - normal.length;
+    const custom = total - normal.length;
     console.log(
-      `    ${column.title} (${column.game}): ${custom}/10 custom` +
+      `    ${column.title} (${column.game}): ${custom}/${total} custom` +
+        (column.tiles
+          ? ` [mixed: ${Object.entries(column.tiles)
+              .map(([slot, game]) => `${Number(slot) % 100 === 1 ? `R2 ${(Number(slot) - 1) * 2}` : `R1 ${slot}`} ${game}`)
+              .join(", ")}]`
+          : "") +
         (normal.length === 0 ? "" : custom === 0 ? ", all normal questions" : `; normal: ${normal.join(", ")}`)
     );
   });

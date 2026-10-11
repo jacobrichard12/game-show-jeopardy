@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { buzzerAudio, tickAudio } from "../shared/audio";
+import { BUZZER_LEVEL, buzzerAudio, tickAudio } from "../shared/audio";
 import { useCountdown } from "../shared/countdown";
 import { MAX_CLOCK_SECONDS, MIN_CLOCK_SECONDS, setClockSeconds } from "../shared/partyGames";
 import { playSound } from "../shared/sound";
@@ -35,7 +35,7 @@ const CountdownClock: React.FC<CountdownClockProps> = ({
     const prev = prevSeconds.current;
     prevSeconds.current = seconds;
     if (isAdmin || !clock.running || seconds === prev) return;
-    if (seconds === 0) playSound(buzzerAudio);
+    if (seconds === 0) playSound(buzzerAudio, BUZZER_LEVEL);
     else if (seconds <= 5) playSound(tickAudio);
   }, [seconds, isAdmin, clock.running]);
 

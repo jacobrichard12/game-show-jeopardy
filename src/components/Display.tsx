@@ -1,8 +1,8 @@
 import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
-import { winnerFanfareAudio } from "../shared/audio";
+import { gameStartAudio, winnerFanfareAudio } from "../shared/audio";
 import { hasUserActivation, playSound, setMuted, unlockAudio } from "../shared/sound";
-import { GameName, GameState } from "../shared/types";
+import { GameName, GameState, tileColumn } from "../shared/types";
 import { useWakeLock } from "../shared/wakeLock";
 import { nextIntroKey, tileColors } from "./GameBoard";
 import GameOverScreen from "./GameOverScreen";
@@ -11,6 +11,7 @@ import SoundMenu from "./SoundMenu";
 import { useLobbyMusic } from "./useLobbyMusic";
 import { useTheme } from "./useTheme";
 import { useSocket } from "./SocketContext";
+import StartTunnel, { BOARD_ZOOM_CLASS, TITLE_EXIT_CLASS, TUNNEL_MS } from "./StartTunnel";
 import TitlePage from "./TitlePage";
 
 type JoinStatus = "joining" | "joined" | "not_found";
@@ -84,12 +85,26 @@ const Display: React.FC = () => {
   // when the host switches board pages, and right after the Double Jeopardy
   // card (above). Refs start unset so a TV joining mid-game doesn't replay it.
   const wasStarted = useRef<boolean | null>(null);
+  // Bumped on Start Game: the tunnel into the board (StartTunnel).
+  const [startTunnel, setStartTunnel] = useState(0);
+  // The title screen lingers over the board during the tunnel (TITLE_EXIT_CLASS).
+  const [leavingTitle, setLeavingTitle] = useState(false);
+  useEffect(() => {
+    if (!leavingTitle) return;
+    const timer = setTimeout(() => setLeavingTitle(false), TUNNEL_MS);
+    return () => clearTimeout(timer);
+  }, [leavingTitle]);
   const started = gameState ? !!gameState.started : undefined;
   useEffect(() => {
     if (started === undefined) return;
     const prev = wasStarted.current;
     wasStarted.current = started;
-    if (prev === false && started) startIntro();
+    if (prev === false && started) {
+      startIntro();
+      playSound(gameStartAudio);
+      setStartTunnel((n) => n + 1);
+      setLeavingTitle(true);
+    }
   }, [started]);
   const prevBoardPage = useRef<string | null>(null);
   const boardPage = gameState ? gameState.boardPage ?? "classic" : undefined;
@@ -124,7 +139,7 @@ const Display: React.FC = () => {
     prevGameName.current = currentGame.gameName;
     if (prev === GameName.BOARD && currentGame.gameName !== GameName.BOARD) {
       const tile = document.querySelector(
-        `[data-tile="${currentGame.gameName}-${currentGame.value}"]`
+        `[data-tile="${tileColumn(currentGame)}-${currentGame.value}"]`
       );
       setPickCard({
         title: currentGame.gameTitle,
@@ -248,16 +263,39 @@ const Display: React.FC = () => {
         />
       ) : (
         <>
-          <PageWrapper
-            gameState={showBoardUnderCard ? boardSnapshot.current! : gameState}
-            boardIntro={boardIntro}
-          />
+          {/* After Start Game the board zooms in at the end of the tunnel.
+              The first started render is caught too (wasStarted still false
+              there), so the board never flashes full size before it. */}
+          <div
+            className={
+              startTunnel > 0 || wasStarted.current === false ? BOARD_ZOOM_CLASS : undefined
+            }
+          >
+            <PageWrapper
+              gameState={showBoardUnderCard ? boardSnapshot.current! : gameState}
+              boardIntro={boardIntro}
+            />
+          </div>
           {/* Room code stays on screen after the game starts, for latecomers. */}
           <div className="fixed top-2 left-2 z-40 rounded bg-black/60 px-3 py-1 font-mono text-sm text-white sm:text-lg xl:text-3xl">
             Join: <span className="font-bold tracking-widest">{code?.toUpperCase()}</span>
           </div>
         </>
       )}
+
+      {gameState.started &&
+        !gameState.gameOver &&
+        (leavingTitle || wasStarted.current === false) && (
+          <div className={TITLE_EXIT_CLASS}>
+            <TitlePage
+              isAdmin={false}
+              code={code?.toUpperCase()}
+              gameState={gameState}
+              sendGameStateToServer={() => {}}
+            />
+          </div>
+        )}
+      <StartTunnel tunnelKey={startTunnel} decor={gameState.titleScreen?.decor} />
 
       {pickCard && (
         <div aria-hidden="true" className="pointer-events-none fixed inset-0 z-50">

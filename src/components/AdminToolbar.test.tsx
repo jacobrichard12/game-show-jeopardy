@@ -89,6 +89,25 @@ describe("host toolbar", () => {
     expect(button(/Music/)).toBeNull();
     expect(button(/Shuffle/)).toBeNull();
   });
+
+  it("timer: full screen only while shown, and each show starts in the corner", () => {
+    render(<Admin />);
+    joinAs(state({ started: true }));
+    expect(button(/Full-screen timer/)).toBeNull();
+
+    push(state({ started: true, showTimer: true }));
+    fireEvent.click(button(/Full-screen timer/)!);
+    expect(mockEmitted[mockEmitted.length - 1][1].gameState.timerFullScreen).toBe(true);
+
+    push(state({ started: true, showTimer: true, timerFullScreen: true }));
+    expect(button(/Timer in corner/)).toBeInTheDocument();
+    // Hiding and showing again goes back to the corner.
+    fireEvent.click(button(/Toggle Timer/)!);
+    expect(mockEmitted[mockEmitted.length - 1][1].gameState).toMatchObject({
+      showTimer: false,
+      timerFullScreen: false,
+    });
+  });
 });
 
 describe("picking a tile", () => {
@@ -172,5 +191,35 @@ describe("lobby Game setup", () => {
     act(() => listeners.reconfigureError({ reason: 'Content pack "x" wasn\'t found.' }));
     expect(screen.getByText('Content pack "x" wasn\'t found.')).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Apply" })).not.toBeDisabled();
+  });
+});
+
+describe("a mixed tile", () => {
+  beforeEach(() => {
+    mockEmitted.length = 0;
+  });
+
+  it("plays as its own game but belongs to its column (title + used tile)", () => {
+    render(<Admin />);
+    joinAs(
+      state({
+        started: true,
+        board: [
+          {
+            id: "custom",
+            label: "Exult",
+            columns: [{ title: "Head to Head", game: "feud", tiles: { 100: "scavenger" } }],
+          },
+        ],
+        boardPage: "custom",
+      })
+    );
+    // The stub board clicks the "feud" column's $100 tile.
+    fireEvent.click(screen.getByRole("button", { name: "pick feud 100" }));
+    const picked = mockEmitted[mockEmitted.length - 1][1].gameState.currentGame;
+    expect(picked).toEqual(
+      expect.objectContaining({ gameName: "scavenger", column: "feud", gameTitle: "Head to Head" })
+    );
+    expect(picked.questionState).toEqual(expect.objectContaining({ itemRevealed: false }));
   });
 });

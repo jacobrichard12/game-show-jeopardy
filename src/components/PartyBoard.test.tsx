@@ -200,3 +200,158 @@ describe("board layout per screen", () => {
     expect(screen.getAllByRole("button", { name: "$100" })[0].className).not.toContain("lg:py-0");
   });
 });
+
+describe("a smaller custom board", () => {
+  const fourRows = (isDoubleJeopardy = false) =>
+    roomState({
+      isDoubleJeopardy,
+      board: [
+        {
+          id: "custom",
+          label: "Exult",
+          columns: [
+            { title: "Family Feud", game: "feud" },
+            { title: "Head to Head", game: "head" },
+          ],
+          values: [100, 200, 300, 400],
+        },
+      ],
+      boardPage: "custom",
+    });
+  const tileLabels = () =>
+    screen.getAllByRole("button").map((b) => b.textContent).filter((t) => t?.startsWith("$"));
+
+  it("shows only its rows: $100–$400, doubled in Double Jeopardy", () => {
+    const { unmount } = render(<PageWrapper gameState={fourRows()} />);
+    expect(tileLabels()).toEqual(["$100", "$100", "$200", "$200", "$300", "$300", "$400", "$400"]);
+    unmount();
+    render(<PageWrapper gameState={fourRows(true)} />);
+    expect(tileLabels()).toEqual(["$200", "$200", "$400", "$400", "$600", "$600", "$800", "$800"]);
+  });
+});
+
+describe("Double Jeopardy toggle", () => {
+  it("is on the host page unless the pack plays a single round", () => {
+    const { unmount } = render(<AdminPageWrapper gameState={roomState()} {...hostProps()} />);
+    expect(screen.getByRole("button", { name: /Double Jeopardy: OFF/ })).toBeInTheDocument();
+    unmount();
+    render(<AdminPageWrapper gameState={roomState({ noDoubleJeopardy: true })} {...hostProps()} />);
+    expect(screen.queryByRole("button", { name: /Double Jeopardy/ })).toBeNull();
+  });
+});
+
+describe("awarding a mixed tile", () => {
+  it("marks its board column's tile, not the game it played as", () => {
+    const props = hostProps();
+    const state = onTile(roomState({ boardPage: "party" }), GameName.SCAVENGER, 300);
+    state.currentGame.column = "head";
+    render(<AdminPageWrapper gameState={state} {...props} />);
+    click(screen.getByRole("button", { name: /Add 300 points to Team A/ }));
+    expect(props.handleAddPoints).toHaveBeenCalledWith(expect.anything(), 300, "head", expect.anything());
+  });
+});
+
+describe("a Minute challenge inside another category", () => {
+  const minuteState = (column: string | undefined, promptVisible: boolean) => {
+    const state = roomState({
+      gameData: {
+        ...roomState().gameData,
+        minute: { 300: { title: "Stick the Landing", link: "", materials: [], description: "" } },
+      },
+    });
+    state.currentGame = {
+      gameName: GameName.MINUTE,
+      gameTitle: column ? "Head to Head" : "Minute To Win It",
+      value: 300,
+      questionState: { promptVisible },
+      ...(column ? { column } : {}),
+    };
+    return state;
+  };
+
+  it("keeps the category heading until the reveal, then switches to the real game", () => {
+    const { rerender } = render(<PageWrapper gameState={minuteState("head", false)} />);
+    expect(screen.getByRole("heading", { name: "Head to Head" })).toBeInTheDocument();
+    expect(screen.getByText(/The challenge will be revealed soon/)).toBeInTheDocument();
+
+    rerender(<PageWrapper gameState={minuteState("head", true)} />);
+    expect(screen.getByRole("heading", { name: "Minute To Win It" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Head to Head" })).toBeNull();
+    // The challenge itself keeps its plain name (no prefix).
+    expect(screen.getByRole("heading", { name: "Stick the Landing" })).toBeInTheDocument();
+  });
+
+  it("leaves the regular Minute column as it was", () => {
+    render(<PageWrapper gameState={minuteState(undefined, true)} />);
+    expect(screen.getByRole("heading", { name: "Minute To Win It" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Stick the Landing" })).toBeInTheDocument();
+  });
+});
+
+describe("host preview of a Minute challenge", () => {
+  it("shows the name on the admin page before Next, not after", () => {
+    const state = roomState({
+      gameData: {
+        ...roomState().gameData,
+        minute: { 300: { title: "Stick the Landing", link: "", materials: [], description: "" } },
+      },
+    });
+    state.currentGame = {
+      gameName: GameName.MINUTE,
+      gameTitle: "Head to Head",
+      value: 300,
+      questionState: { promptVisible: false },
+      column: "head",
+    };
+    const { unmount } = render(<AdminPageWrapper gameState={state} {...hostProps()} />);
+    expect(screen.getByText(/Up next:/)).toBeInTheDocument();
+    expect(screen.queryByText(/host only/)).toBeNull();
+    expect(screen.getByText("Minute to win it: Stick the Landing")).toBeInTheDocument();
+    unmount();
+    // The TV never shows it before the reveal.
+    render(<PageWrapper gameState={state} />);
+    expect(screen.queryByText(/Stick the Landing/)).toBeNull();
+  });
+});
+
+describe("a mixed Scavenger Sprint tile on the TV", () => {
+  it("is headed Scavenger Sprint once revealed, with the plain item", () => {
+    const state = roomState({
+      gameData: { ...roomState().gameData, scavenger: { 200: { item: "A rosary" } } },
+    });
+    state.currentGame = {
+      gameName: GameName.SCAVENGER,
+      gameTitle: "Head to Head",
+      value: 200,
+      questionState: { ...createInitialQuestionState(GameName.SCAVENGER, state.teams), promptVisible: true, itemRevealed: true } as any,
+      column: "head",
+    };
+    render(<PageWrapper gameState={state} />);
+    expect(screen.getByRole("heading", { name: "Scavenger Sprint" })).toBeInTheDocument();
+    expect(screen.getByText("A rosary")).toBeInTheDocument();
+  });
+});
+
+describe("Minute timer button", () => {
+  it("is on every Minute challenge, video or not, and shows the timer", () => {
+    const props = hostProps();
+    const state = roomState({
+      gameData: {
+        ...roomState().gameData,
+        minute: { 300: { title: "Box Stack", link: "", materials: [], description: "" } },
+      },
+    });
+    state.currentGame = {
+      gameName: GameName.MINUTE,
+      gameTitle: "Head to Head",
+      value: 300,
+      questionState: { promptVisible: true },
+      column: "head",
+    };
+    render(<AdminPageWrapper gameState={state} {...props} />);
+    click(screen.getByRole("button", { name: "⏱ Show timer" }));
+    expect(props.sendGameStateToServer).toHaveBeenCalledWith(
+      expect.objectContaining({ showTimer: true, timerPlaying: false })
+    );
+  });
+});

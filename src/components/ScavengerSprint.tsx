@@ -1,8 +1,12 @@
 import React, { useEffect, useRef } from "react";
-import { scavengerRevealAudio } from "../shared/audio";
+import { revealHitAudio } from "../shared/audio";
 import { updateQuestionState } from "../shared/partyGames";
 import { playSound } from "../shared/sound";
-import { getCurrentQuestion, QuestionProps, ScavengerQuestionState } from "../shared/types";
+import {
+  getCurrentQuestion,
+  QuestionProps,
+  ScavengerQuestionState,
+} from "../shared/types";
 import NoQuestionAvailable from "./NoQuestionAvailable";
 
 // A race: the TV shows an item to find; the first team to bring it to the
@@ -23,7 +27,7 @@ const ScavengerSprint: React.FC<QuestionProps> = ({
   // after the reveal: the ref starts at the current value).
   const wasRevealed = useRef(itemRevealed);
   useEffect(() => {
-    if (!isAdmin && itemRevealed && !wasRevealed.current) playSound(scavengerRevealAudio);
+    if (!isAdmin && itemRevealed && !wasRevealed.current) playSound(revealHitAudio);
     wasRevealed.current = itemRevealed;
   }, [isAdmin, itemRevealed]);
 

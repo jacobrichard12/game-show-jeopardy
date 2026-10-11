@@ -1,4 +1,5 @@
 import { BoardLayoutPage } from "./boardLayout";
+import { DecorId } from "./decor";
 import { ThemeId } from "./themes";
 
 export interface TeamState {
@@ -23,6 +24,9 @@ export interface GameState {
     // Same host-driven play/pause/restart for the timer clip.
     timerPlaying?: boolean;
     timerRestart?: number;
+    // The timer fills the question area (scores stay) instead of the corner
+    // box; reset to the corner each time the timer is shown.
+    timerFullScreen?: boolean;
     isDoubleJeopardy: boolean;
     // Which board page the host (and so the TV) is showing: a page id from
     // `board` (Standard: "classic" or "party"). Undefined means the first page.
@@ -33,8 +37,12 @@ export interface GameState {
     // The content pack's id (file name), so the lobby's Game setup can show
     // the current choice. Missing = Standard.
     packId?: string;
-    // A content pack's lobby title screen; missing = the usual one.
-    titleScreen?: { title: string; subtitle?: string };
+    // A content pack's lobby title screen; missing = the usual one. `decor`
+    // = floating symbols on it (and in the start burst); missing = none.
+    titleScreen?: { title: string; subtitle?: string; decor?: DecorId };
+    // A content pack can switch Double Jeopardy off (single round); the host's
+    // toggle is then hidden. Missing = Double Jeopardy available.
+    noDoubleJeopardy?: boolean;
     // Set by the host from Settings to show the end-of-game standings on the
     // TV; cleared by "Back to board" or a reset. Missing means false.
     gameOver?: boolean;
@@ -77,10 +85,21 @@ export function createDefaultTeams(count: number, names?: unknown): TeamState[] 
 }
 
 export interface CurrentGame {
+    // The game being played (which screen and question bank).
     gameName: GameName;
     gameTitle: string;
     value: number;
     questionState: QuestionState;
+    // The board column the tile belongs to, when a custom pack's tile plays
+    // as a different game than its column (e.g. a Scavenger Sprint tile in a
+    // "Head to Head" column). Missing = gameName.
+    column?: string;
+}
+
+// Which board column a question's tile is in: used tiles are tracked per
+// column, so a mixed tile marks its own column's tile as used.
+export function tileColumn(game: CurrentGame): string {
+    return game.column ?? game.gameName;
 }
 
 export enum Difficulty {
@@ -326,6 +345,17 @@ export function getCurrentQuestion<T>(
     const { value } = gameState.currentGame;
     const key = gameState.isDoubleJeopardy ? value / 2 + 1 : value;
     return bank[key];
+}
+
+// A mixed tile (a custom pack's tile playing inside another game's column,
+// e.g. Scavenger Sprint in Head to Head) prefixes its revealed name with its
+// own game, so the room knows what kind of challenge it is. Tiles in their own
+// column are unchanged. Minute keeps the owner's wording.
+export function withGamePrefix(gameState: GameState, text: string): string {
+    const { gameName, column } = gameState.currentGame;
+    if (!column || column === gameName) return text;
+    const label = gameName === GameName.MINUTE ? "Minute to win it" : getGameTitle(gameName);
+    return `${label}: ${text}`;
 }
 
 export function getGameTitle(gameName: GameName): string {

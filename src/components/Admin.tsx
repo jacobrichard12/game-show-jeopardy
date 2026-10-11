@@ -12,8 +12,9 @@ import {
   MinuteQuestionState,
 } from "../shared/types";
 import AdminPageWrapper from "./AdminPageWrapper";
-import { customColumnTitle } from "../shared/boardLayout";
+import { customColumnTitle, tileGame } from "../shared/boardLayout";
 import GameOverScreen from "./GameOverScreen";
+import TimerControls from "./TimerControls";
 import GameSetupModal from "./GameSetupModal";
 import SettingsModal from "./SettingsModal";
 import { getStoredAdminKey, useSocket } from "./SocketContext";
@@ -133,40 +134,17 @@ const Admin: React.FC = () => {
     }
   };
 
-  const handleToggleTimer = () => {
-    if (!gameState) return;
-    const updatedGameState = { ...gameState };
-    updatedGameState.showTimer = !updatedGameState.showTimer;
-    // Each time the timer appears it starts paused, ready for the host to
-    // press play.
-    updatedGameState.timerPlaying = false;
-    sendGameStateToServer(updatedGameState);
-  };
-
-  const handleTimerPlayPause = () => {
-    if (!gameState) return;
-    sendGameStateToServer({
-      ...gameState,
-      timerPlaying: !gameState.timerPlaying,
-    });
-  };
-
-  const handleTimerRestart = () => {
-    if (!gameState) return;
-    sendGameStateToServer({
-      ...gameState,
-      timerPlaying: false,
-      timerRestart: (gameState.timerRestart ?? 0) + 1,
-    });
-  };
-
   // A custom board's column title (e.g. "Smith Family Feud") on the tile card
   // and question page; the Standard game keeps its usual titles.
   const tileTitle = (game: GameName) =>
     (gameState && customColumnTitle(gameState, game)) || getGameTitle(game);
 
-  const handleUpdateCurrentGame = (newGame: GameName, points: number) => {
+  // `column` is the board column that was clicked; the tile may play as
+  // another game in a custom pack (e.g. Scavenger Sprint in Head to Head).
+  const handleUpdateCurrentGame = (column: GameName, points: number) => {
     if (!gameState) return;
+    const slotKey = gameState.isDoubleJeopardy ? points / 2 + 1 : points;
+    const newGame = tileGame(gameState, column, slotKey) as GameName;
     const updatedGameState = { ...gameState };
     switch (newGame) {
       case GameName.FAMILY_FEUD: {
@@ -178,7 +156,7 @@ const Admin: React.FC = () => {
         };
         updatedGameState.currentGame = {
           gameName: newGame,
-          gameTitle: tileTitle(newGame),
+          gameTitle: tileTitle(column),
           value: points,
           questionState: questionState,
         };
@@ -190,7 +168,7 @@ const Admin: React.FC = () => {
         };
         updatedGameState.currentGame = {
           gameName: newGame,
-          gameTitle: tileTitle(newGame),
+          gameTitle: tileTitle(column),
           value: points,
           questionState: questionState,
         };
@@ -203,7 +181,7 @@ const Admin: React.FC = () => {
         };
         updatedGameState.currentGame = {
           gameName: newGame,
-          gameTitle: tileTitle(newGame),
+          gameTitle: tileTitle(column),
           value: points,
           questionState: questionState,
         };
@@ -217,7 +195,7 @@ const Admin: React.FC = () => {
         };
         updatedGameState.currentGame = {
           gameName: newGame,
-          gameTitle: tileTitle(newGame),
+          gameTitle: tileTitle(column),
           value: points,
           questionState: questionState,
         };
@@ -238,7 +216,7 @@ const Admin: React.FC = () => {
           : undefined;
         updatedGameState.currentGame = {
           gameName: newGame,
-          gameTitle: tileTitle(newGame),
+          gameTitle: tileTitle(column),
           value: points,
           questionState: isPartyGame(newGame)
             ? createInitialQuestionState(newGame, gameState.teams, question)
@@ -246,6 +224,12 @@ const Admin: React.FC = () => {
         };
         break;
       }
+    }
+
+    // Remember the clicked column when the tile plays as another game, so
+    // awarding it marks the right board tile as used.
+    if (newGame !== column) {
+      updatedGameState.currentGame = { ...updatedGameState.currentGame, column };
     }
 
     sendGameStateToServer(updatedGameState);
@@ -440,28 +424,7 @@ const Admin: React.FC = () => {
           {/* The timer is for gameplay only: hidden in the lobby and on the
               game-over screen. */}
           {gameState.started && !gameState.gameOver && (
-            <button
-              onClick={handleToggleTimer}
-              className="p-1.5 sm:p-2 text-xs sm:text-base bg-green-500 text-white rounded"
-            >
-              Toggle Timer
-            </button>
-          )}
-          {gameState.started && !gameState.gameOver && gameState.showTimer && (
-            <>
-              <button
-                onClick={handleTimerPlayPause}
-                className="p-1.5 sm:p-2 text-xs sm:text-base bg-blue-500 text-white rounded"
-              >
-                {gameState.timerPlaying ? "⏸ Pause" : "▶ Play"}
-              </button>
-              <button
-                onClick={handleTimerRestart}
-                className="p-1.5 sm:p-2 text-xs sm:text-base bg-gray-500 text-white rounded"
-              >
-                ↺ Restart
-              </button>
-            </>
+            <TimerControls gameState={gameState} sendGameStateToServer={sendGameStateToServer} />
           )}
           <button
             onClick={() => setIsSettingsOpen(true)}

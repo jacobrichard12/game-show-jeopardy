@@ -1,6 +1,7 @@
 import React from "react";
 import { teamColor } from "../shared/teamColors";
 import { GameState } from "../shared/types";
+import TitleDecor from "./TitleDecor";
 import WatchLink from "./WatchLink";
 
 interface TitlePageProps {
@@ -31,6 +32,9 @@ const TitlePage: React.FC<TitlePageProps> = ({
       <div className="absolute top-0 left-0 w-full h-full animate-pulse opacity-20">
         <div className="absolute inset-0 bg-gradient-radial from-flare via-flare2 to-transparent blur-3xl mix-blend-overlay"></div>
       </div>
+
+      {/* A content pack's floating symbols (decor), behind the title. */}
+      <TitleDecor decor={gameState.titleScreen?.decor} />
 
       {/* Animated Title */}
       <div className="relative text-center">

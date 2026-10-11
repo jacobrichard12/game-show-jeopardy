@@ -1,6 +1,6 @@
 import React from "react";
 import { teamColor } from "../shared/teamColors";
-import { GameName, GameState } from "../shared/types";
+import { GameName, GameState, tileColumn } from "../shared/types";
 
 interface AdminPointsButtonsProps {
   gameState: GameState;
@@ -15,15 +15,15 @@ interface AdminPointsButtonsProps {
 const havePointsBeenAwarded = (gameState: GameState) => {
   if (gameState.isDoubleJeopardy) {
     return (
-      gameState.doubleJeopardyAnswered[gameState.currentGame.gameName] &&
-      gameState.doubleJeopardyAnswered[gameState.currentGame.gameName].includes(
+      gameState.doubleJeopardyAnswered[tileColumn(gameState.currentGame)] &&
+      gameState.doubleJeopardyAnswered[tileColumn(gameState.currentGame)].includes(
         gameState.currentGame.value
       )
     );
   }
   return (
-    gameState.answered[gameState.currentGame.gameName] &&
-    gameState.answered[gameState.currentGame.gameName].includes(
+    gameState.answered[tileColumn(gameState.currentGame)] &&
+    gameState.answered[tileColumn(gameState.currentGame)].includes(
       gameState.currentGame.value
     )
   );
@@ -37,7 +37,8 @@ const AdminPointsButtons: React.FC<AdminPointsButtonsProps> = ({
     handleAddPoints(
       teamId,
       gameState.currentGame.value,
-      gameState.currentGame.gameName,
+      // The board column (a mixed tile marks its own column's tile used).
+      tileColumn(gameState.currentGame) as GameName,
       noPointsOverride
     );
   };
@@ -78,7 +79,8 @@ export const NoPointsButton: React.FC<AdminPointsButtonsProps> = ({
           handleAddPoints(
             gameState.teams[0].id,
             gameState.currentGame.value,
-            gameState.currentGame.gameName,
+            // The board column (a mixed tile marks its own column's tile used).
+      tileColumn(gameState.currentGame) as GameName,
             true
           )
         }

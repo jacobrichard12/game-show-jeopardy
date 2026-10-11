@@ -5,6 +5,7 @@ import path from "path";
 import { Server, Socket } from "socket.io";
 import { clampTeamCount, createDefaultTeams, GameName, GameState } from "../shared/types";
 import { createRoomGameData, fetchMillionairePool, MillionairePool } from "./datagen";
+import { shouldSweepRoom, SWEEP_INTERVAL_MS } from "./roomSweep";
 import { applyPack, listPacks, LoadedPack, loadPack, packBoard, PackSummary } from "./packs";
 import { toThemeId } from "../shared/themes";
 
@@ -194,15 +195,15 @@ async function buildInitialGameState(
           boardPage: packBoard(pack)[0].id,
           packId: pack.id,
           titleScreen: pack.titleScreen,
+          ...(pack.doubleJeopardy ? {} : { noDoubleJeopardy: true }),
         }
       : {}),
   };
 }
 
 // Idle rooms are swept periodically so a long-running server doesn't
-// accumulate abandoned games forever.
-const ROOM_IDLE_MS = 6 * 60 * 60 * 1000; // 6 hours
-const SWEEP_INTERVAL_MS = 30 * 60 * 1000; // 30 minutes
+// accumulate abandoned games forever (rules in roomSweep.ts: never while a
+// screen is connected; otherwise after 24 idle hours).
 setInterval(() => {
   const now = Date.now();
   // .forEach rather than for...of — the latter needs --downlevelIteration
@@ -210,7 +211,8 @@ setInterval(() => {
   // as part of the CRA app, even though it's compiled separately for real
   // via tsconfig.server.json).
   rooms.forEach((room, code) => {
-    if (now - room.lastActivity > ROOM_IDLE_MS) {
+    const connected = io.sockets.adapter.rooms.get(code)?.size ?? 0;
+    if (shouldSweepRoom(room.lastActivity, now, connected)) {
       rooms.delete(code);
       console.log(`Swept idle room ${code}`);
     }
