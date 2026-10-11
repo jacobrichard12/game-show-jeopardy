@@ -3,9 +3,9 @@
 // glyphs themselves live in components/decorItems.tsx; no React here, the
 // server imports this to validate packs.
 
-export type DecorId = "catholic-emoji" | "catholic-icons";
+export type DecorId = "catholic-emoji" | "catholic-icons" | "catholic-clipart";
 
-export const DECOR_IDS: DecorId[] = ["catholic-emoji", "catholic-icons"];
+export const DECOR_IDS: DecorId[] = ["catholic-emoji", "catholic-icons", "catholic-clipart"];
 
 export function isDecorId(value: unknown): value is DecorId {
   return DECOR_IDS.includes(value as DecorId);

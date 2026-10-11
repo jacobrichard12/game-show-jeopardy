@@ -1,10 +1,28 @@
 import React from "react";
 import { DecorId } from "../shared/decor";
+// Openclipart, CC0 (sources: assets/lobby/images/SOURCES.md).
+import chaliceAndBread from "../assets/lobby/images/chalice-and-bread.png";
+import crossWithHalo from "../assets/lobby/images/cross-with-halo.png";
+import doveFlying from "../assets/lobby/images/dove-flying.png";
+import doveInFlame from "../assets/lobby/images/dove-in-flame.png";
+import goldenCross from "../assets/lobby/images/golden-cross.png";
+import maryAndJesusGold from "../assets/lobby/images/mary-and-jesus-gold.png";
+import monstranceRays from "../assets/lobby/images/monstrance-rays.png";
+import monstrance from "../assets/lobby/images/monstrance.png";
+import openBible from "../assets/lobby/images/open-bible.png";
+import papalMitre from "../assets/lobby/images/papal-mitre.png";
+import pentecostFlame from "../assets/lobby/images/pentecost-flame.png";
+import prayingHands from "../assets/lobby/images/praying-hands.png";
+import sacredHeart from "../assets/lobby/images/sacred-heart.png";
+import starOfBethlehem from "../assets/lobby/images/star-of-bethlehem.png";
+import whiteDove from "../assets/lobby/images/white-dove.png";
+import woodenCross from "../assets/lobby/images/wooden-cross.png";
 
-// The glyphs behind each title-screen decor (shared/decor.ts): emoji, or
-// simple one-color icons drawn here (they take the theme's accent color).
+// The glyphs behind each title-screen decor (shared/decor.ts): emoji,
+// simple one-color icons drawn here (they take the theme's accent color), or
+// clip art images.
 type Icon = React.FC<{ className?: string }>;
-export type DecorItem = string | Icon;
+export type DecorItem = string | Icon | { image: string };
 
 const svgProps = {
   viewBox: "0 0 48 48",
@@ -76,6 +94,24 @@ const CandleIcon: Icon = ({ className }) => (
 export const DECOR_ITEMS: Record<DecorId, DecorItem[]> = {
   "catholic-emoji": ["✝️", "🕊️", "🙏", "📿", "⛪", "🕯️", "😇", "✨", "🔥", "❤️‍🔥"],
   "catholic-icons": [CrossIcon, DoveIcon, FlameIcon, SacredHeartIcon, ChiRhoIcon, StarIcon, CandleIcon],
+  "catholic-clipart": [
+    { image: chaliceAndBread },
+    { image: crossWithHalo },
+    { image: doveFlying },
+    { image: doveInFlame },
+    { image: goldenCross },
+    { image: maryAndJesusGold },
+    { image: monstranceRays },
+    { image: monstrance },
+    { image: openBible },
+    { image: papalMitre },
+    { image: pentecostFlame },
+    { image: prayingHands },
+    { image: sacredHeart },
+    { image: starOfBethlehem },
+    { image: whiteDove },
+    { image: woodenCross },
+  ],
 };
 
 // The start burst for games without a decor.
@@ -85,6 +121,10 @@ export const PARTY_BURST: DecorItem[] = ["🎉", "✨", "⭐", "🎊", "🌟"];
 export const DecorGlyph: React.FC<{ item: DecorItem }> = ({ item }) => {
   if (typeof item === "string") {
     return <span className="block leading-none">{item}</span>;
+  }
+  if ("image" in item) {
+    // Clip art is a bit bigger than a glyph, so it reads at a distance.
+    return <img src={item.image} alt="" className="block h-[1.4em] w-[1.4em] object-contain" draggable={false} />;
   }
   const Glyph = item;
   return <Glyph className="h-[1em] w-[1em] text-accent" />;

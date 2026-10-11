@@ -27,6 +27,9 @@ export interface GameState {
     // The timer fills the question area (scores stay) instead of the corner
     // box; reset to the corner each time the timer is shown.
     timerFullScreen?: boolean;
+    // Bumped each time the host presses "No One Gets Points"; the TV plays a
+    // sad sound and animation on each increase (NoPointsFlash).
+    noPointsCount?: number;
     isDoubleJeopardy: boolean;
     // Which board page the host (and so the TV) is showing: a page id from
     // `board` (Standard: "classic" or "party"). Undefined means the first page.

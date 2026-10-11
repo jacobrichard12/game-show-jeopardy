@@ -112,6 +112,17 @@ module.exports = {
           "0%": { opacity: "0", transform: "scale(0.1)" },
           "100%": { opacity: "1", transform: "scale(1)" },
         },
+        // "No One Gets Points": the text rises in, wobbles, sinks away.
+        "no-points": {
+          "0%": { opacity: "0", transform: "translateY(20vh) scale(0.6)" },
+          "22%": { opacity: "1", transform: "translateY(0) scale(1.05) rotate(0deg)" },
+          "32%": { transform: "translateY(0) scale(1) rotate(-8deg)" },
+          "42%": { transform: "translateY(0) scale(1) rotate(8deg)" },
+          "52%": { transform: "translateY(0) scale(1) rotate(-4deg)" },
+          "62%": { transform: "translateY(0) scale(1) rotate(0deg)" },
+          "85%": { opacity: "1", transform: "translateY(0) scale(1)" },
+          "100%": { opacity: "0", transform: "translateY(8vh) scale(0.95)" },
+        },
         "winner-pop": {
           "0%": { opacity: "0", transform: "scale(0.6)" },
           "60%": { opacity: "1", transform: "scale(1.08)" },
@@ -126,6 +137,7 @@ module.exports = {
         strike: "strike 1.3s ease-out forwards",
         "confetti-fall": "confetti-fall 4s linear infinite",
         "winner-pop": "winner-pop 0.9s ease-out both",
+        "no-points": "no-points 2.2s ease-out both",
         "decor-rise": "decor-rise 18s linear infinite",
         "tunnel-fly": "tunnel-fly 1.1s cubic-bezier(0.55, 0, 1, 0.45) both",
         "title-exit": "title-exit 1.4s cubic-bezier(0.55, 0, 1, 0.45) both",

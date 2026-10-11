@@ -19,12 +19,14 @@ export function awardPoints(
   );
   // "No one gets points" isn't a win, so the turn stays where it was.
   const whoseTurn = noPoints ? gameState.whoseTurn : teamId;
+  const noPointsCount = noPoints ? (gameState.noPointsCount ?? 0) + 1 : gameState.noPointsCount;
 
   if (gameState.isDoubleJeopardy) {
     return {
       ...gameState,
       teams,
       whoseTurn,
+      noPointsCount,
       doubleJeopardyAnswered: {
         ...gameState.doubleJeopardyAnswered,
         [gameName]: [...(gameState.doubleJeopardyAnswered[gameName] ?? []), points],
@@ -35,6 +37,7 @@ export function awardPoints(
     ...gameState,
     teams,
     whoseTurn,
+    noPointsCount,
     answered: {
       ...gameState.answered,
       [gameName]: [...(gameState.answered[gameName] ?? []), points],

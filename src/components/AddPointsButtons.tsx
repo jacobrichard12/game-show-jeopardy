@@ -12,7 +12,8 @@ interface AdminPointsButtonsProps {
   ) => void;
 }
 
-const havePointsBeenAwarded = (gameState: GameState) => {
+// The current tile has been scored (a team's points, or "No One Gets Points").
+export const havePointsBeenAwarded = (gameState: GameState) => {
   if (gameState.isDoubleJeopardy) {
     return (
       gameState.doubleJeopardyAnswered[tileColumn(gameState.currentGame)] &&

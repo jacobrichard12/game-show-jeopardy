@@ -10,6 +10,7 @@ import Minute from "./Minute";
 import { PARTY_GAME_COMPONENTS } from "./partyGameComponents";
 import QuestionWrapper from "./QuestionWrapper";
 import ScoreBoard from "./Scoreboard";
+import NoPointsFlash from "./NoPointsFlash";
 import Timer from "./Timer";
 
 interface PageWrapperProps {
@@ -134,6 +135,7 @@ const PageWrapper: React.FC<PageWrapperProps> = ({ gameState, boardIntro = 0 }) 
       <div className="lg:shrink-0">
         <ScoreBoard gameState={gameState} isAdmin={false} />
       </div>
+      <NoPointsFlash count={gameState.noPointsCount ?? 0} />
     </div>
   );
 };

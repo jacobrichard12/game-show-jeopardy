@@ -11,6 +11,7 @@ import {
   QuestionProps,
 } from "../shared/types";
 import { createAudio, playAudio } from "../shared/sound";
+import { havePointsBeenAwarded } from "./AddPointsButtons";
 import NoQuestionAvailable from "./NoQuestionAvailable";
 
 interface MillionaireProps extends QuestionProps {}
@@ -47,6 +48,14 @@ const Millionaire: React.FC<MillionaireProps> = ({
       }
     };
   }, [isAdmin, questionState.questionIdx]);
+
+  // Any award button (a team's points or "No One Gets Points") ends the
+  // tile, so the soundtrack stops on the TV.
+  const pointsAwarded = !!havePointsBeenAwarded(gameState);
+  useEffect(() => {
+    if (isAdmin || !pointsAwarded) return;
+    audioRef.current.pause();
+  }, [isAdmin, pointsAwarded]);
 
   const questionData = getCurrentQuestion(
     gameState.gameData.millionaire,

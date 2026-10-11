@@ -33,6 +33,10 @@ describe("awardPoints", () => {
     expect(next.teams.map((t) => t.score)).toEqual([0, 0]);
     expect(next.answered).toEqual({ order: [200] });
     expect(next.whoseTurn).toBe("team-1");
+    // The TV's sad moment keys off this count.
+    expect(next.noPointsCount).toBe(1);
+    expect(awardPoints(next, "team-1", 300, GameName.ORDER, true).noPointsCount).toBe(2);
+    expect(awardPoints(next, "team-1", 300, GameName.ORDER, false).noPointsCount).toBe(1);
   });
 
   it("uses the Double Jeopardy answered map in the second round", () => {

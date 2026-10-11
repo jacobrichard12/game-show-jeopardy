@@ -281,6 +281,9 @@ const Admin: React.FC = () => {
     // happened to be wired to.
     if (!noPointsOverride) {
       updatedGameState.whoseTurn = teamId;
+    } else {
+      // The TV's sad sound + animation (NoPointsFlash).
+      updatedGameState.noPointsCount = (gameState.noPointsCount ?? 0) + 1;
     }
     sendGameStateToServer(updatedGameState);
   };

@@ -66,6 +66,8 @@ export const winnerFanfareAudio = winnerFanfare;
 // When the host reveals a Scavenger Sprint item or a Head to Head challenge.
 export const revealHitAudio = revealHit;
 export const gameStartAudio = gameStart;
+// "No One Gets Points" (NoPointsFlash): owner's pick, 6 s.
+export const noPointsAudio = losing2;
 // Played shuffled on the TV's title screen while the host has music on.
 export const lobbyMusicFiles = [
     lobbyBouncyHamster,

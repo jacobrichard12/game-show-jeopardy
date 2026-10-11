@@ -39,5 +39,9 @@ describe("TitleDecor", () => {
     // Drawn icons render as SVGs.
     rerender(<TitleDecor decor="catholic-icons" />);
     expect(container.querySelectorAll("svg").length).toBeGreaterThan(0);
+
+    // Clip art renders as images.
+    rerender(<TitleDecor decor="catholic-clipart" />);
+    expect(container.querySelectorAll("img").length).toBeGreaterThan(0);
   });
 });

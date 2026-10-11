@@ -554,6 +554,23 @@ describe("Sandbox", () => {
       expect(screen.getByRole("button", { name: "Highlight Correct Answer" })).toBeEnabled();
       expect(screen.getByRole("button", { name: "Next Question" })).toBeEnabled();
     });
+
+    it.each([["a team's points", /Add 100 points to Team A/], ["no points", /No One Gets Points/]])(
+      "awarding %s stops the soundtrack on the TV",
+      (_, buttonName) => {
+        render(<Sandbox />);
+        chooseGame("Who Wants To Be A Millionaire");
+        revealToTv();
+        expect(played).toContainEqual(expect.stringMatching(/sountrack/));
+        const pause = window.HTMLMediaElement.prototype.pause as jest.Mock;
+        const soundtrackPauses = () =>
+          pause.mock.instances.filter((el: HTMLMediaElement) => /sountrack/.test(el.src)).length;
+        const before = soundtrackPauses();
+
+        click(screen.getByRole("button", { name: buttonName }));
+        expect(soundtrackPauses()).toBeGreaterThan(before);
+      }
+    );
   });
 
   describe("Minute To Win It (original game)", () => {
@@ -613,6 +630,15 @@ describe("Sandbox", () => {
       // The same orchestra hit as Scavenger Sprint's reveal, once, on the TV.
       expect(playedSince(soundsBefore)).toEqual([expect.stringMatching(/reveal-hit/)]);
     });
+  });
+
+  it("No One Gets Points plays a sad sound and shows 'No points!' on the TV", () => {
+    render(<Sandbox />);
+    revealToTv();
+    const before = played.length;
+    click(screen.getByRole("button", { name: "No One Gets Points" }));
+    expect(playedSince(before)).toEqual([expect.stringMatching(/losing2/)]);
+    expect(screen.getByRole("img", { name: "No points" })).toHaveTextContent("No points!");
   });
 
   it("the divider between the panels resizes them (drag, keys, double-click)", () => {

@@ -36,6 +36,7 @@ import AdminPointsButtons, { NoPointsButton } from "./AddPointsButtons";
 import ClosestWins from "./ClosestWins";
 import FamilyFeud from "./FamilyFeud";
 import FitToScreen from "./FitToScreen";
+import NoPointsFlash from "./NoPointsFlash";
 import Timer from "./Timer";
 import TimerControls from "./TimerControls";
 import HeadToHead from "./HeadToHead";
@@ -417,6 +418,7 @@ const Sandbox: React.FC = () => {
       <div className="mt-2">
         <ScoreBoard isAdmin={false} gameState={gameState} />
       </div>
+      <NoPointsFlash count={gameState.noPointsCount ?? 0} />
     </section>
   );
 

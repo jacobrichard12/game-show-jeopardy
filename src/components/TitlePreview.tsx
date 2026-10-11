@@ -13,6 +13,7 @@ import { useTheme } from "./useTheme";
 const DECOR_LABELS: Record<DecorId, string> = {
   "catholic-emoji": "Catholic emoji",
   "catholic-icons": "Catholic icons (drawn)",
+  "catholic-clipart": "Catholic clip art",
 };
 
 // /sandbox?title: the lobby title screen as the TV shows it, to try each
