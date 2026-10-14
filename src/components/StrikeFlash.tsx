@@ -4,6 +4,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { BUZZER_LEVEL, buzzerAudio } from "../shared/audio";
 import { playSound } from "../shared/sound";
+import { useFrameDocument } from "./frameContext";
 
 interface StrikeFlashProps {
   // Total wrong guesses so far; each increase flashes the X once.
@@ -17,6 +18,8 @@ interface StrikeFlashProps {
 // ancestor would otherwise trap this `fixed` overlay inside the game area.
 const StrikeFlash: React.FC<StrikeFlashProps> = ({ count, isAdmin }) => {
   const [showing, setShowing] = useState(false);
+  // The page's body, or a sandbox frame's.
+  const doc = useFrameDocument();
   const prevCount = useRef(count);
 
   useEffect(() => {
@@ -42,7 +45,7 @@ const StrikeFlash: React.FC<StrikeFlashProps> = ({ count, isAdmin }) => {
         style={{ fontSize: "min(70vh, 70vw)" }}
       />
     </div>,
-    document.body
+    doc.body
   );
 };
 

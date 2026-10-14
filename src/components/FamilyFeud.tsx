@@ -9,6 +9,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faTimesCircle } from "@fortawesome/free-solid-svg-icons";
 import { BUZZER_LEVEL, buzzerAudio, dingAudio, familyFeudTheme } from "../shared/audio";
 import { createAudio, playSound } from "../shared/sound";
+import { useFrameDocument } from "./frameContext";
 import NoQuestionAvailable from "./NoQuestionAvailable";
 
 interface FamilyFeudProps extends QuestionProps {}
@@ -76,6 +77,8 @@ const FamilyFeud: React.FC<FamilyFeudProps> = ({
 
   // Buzzer + a full-screen red X on each new wrong guess (display side only).
   const [showStrike, setShowStrike] = useState(false);
+  // The page's body, or a sandbox frame's, for the X overlay.
+  const frameDoc = useFrameDocument();
   const prevWrongGuesses = useRef(wrongGuesses);
   useEffect(() => {
     if (isAdmin) return;
@@ -148,7 +151,7 @@ const FamilyFeud: React.FC<FamilyFeudProps> = ({
               style={{ fontSize: "min(70vh, 70vw)" }}
             />
           </div>,
-          document.body
+          frameDoc.body
         )}
       <div className="bg-ink border-2 border-accent/50 shadow-md rounded-lg p-3 sm:p-6 mx-auto max-w-4xl xl:max-w-6xl">
         {/* The prompt always takes its space (faint for the host, invisible

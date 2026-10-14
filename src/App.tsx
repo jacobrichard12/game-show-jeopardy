@@ -29,6 +29,7 @@ const App: React.FC = () => {
         <Route path="/admin" element={<CreateGame />} />
         <Route path="/admin/:code" element={<Admin />} />
         {SANDBOX_ENABLED && <Route path="/sandbox" element={<SandboxGate />} />}
+        {SANDBOX_ENABLED && <Route path="/sandbox/demo" element={<SandboxGate page="demo" />} />}
       </Routes>
     </div>
   );

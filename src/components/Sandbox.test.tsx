@@ -651,7 +651,8 @@ describe("Sandbox", () => {
   it("the divider between the panels resizes them (drag, keys, double-click)", () => {
     render(<Sandbox />);
     const divider = screen.getByRole("separator", { name: "Resize host and TV panels" });
-    expect(divider).toHaveAttribute("aria-valuenow", "50");
+    // Starts a quarter of the way across.
+    expect(divider).toHaveAttribute("aria-valuenow", "25");
 
     // A 1000px-wide layout starting at x=0: dropping at x=300 → 30% host.
     const main = divider.parentElement!;
@@ -674,7 +675,7 @@ describe("Sandbox", () => {
     fireEvent.keyDown(divider, { key: "ArrowRight" });
     expect(divider).toHaveAttribute("aria-valuenow", "22");
     fireEvent.doubleClick(divider);
-    expect(divider).toHaveAttribute("aria-valuenow", "50");
+    expect(divider).toHaveAttribute("aria-valuenow", "25");
   });
 
   // Every game must have a question for every tile, in both rounds. This is

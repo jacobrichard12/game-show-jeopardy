@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import Sandbox from "./Sandbox";
+import SandboxDemo from "./SandboxDemo";
 import { readStoredToken, storeToken } from "./sandboxToken";
 import { useSocket } from "./SocketContext";
 
@@ -10,7 +11,9 @@ import { useSocket } from "./SocketContext";
 
 type GateStatus = "checking" | "locked" | "open";
 
-const SandboxGate: React.FC = () => {
+// Which sandbox page: single games (/sandbox) or the whole-game demo
+// (/sandbox/demo). Both sit behind the same token check.
+const SandboxGate: React.FC<{ page?: "games" | "demo" }> = ({ page = "games" }) => {
   const socket = useSocket();
   const [status, setStatus] = useState<GateStatus>("checking");
   const [tokenInput, setTokenInput] = useState("");
@@ -37,7 +40,7 @@ const SandboxGate: React.FC = () => {
     };
   }, [socket, check]);
 
-  if (status === "open") return <Sandbox />;
+  if (status === "open") return page === "demo" ? <SandboxDemo /> : <Sandbox />;
 
   if (status === "checking") {
     return (

@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { noPointsAudio } from "../shared/audio";
 import { playSound } from "../shared/sound";
+import { useFrameDocument } from "./frameContext";
 
 const SHOW_MS = 2200;
 
@@ -12,6 +13,8 @@ const SHOW_MS = 2200;
 // the fixed overlay.
 const NoPointsFlash: React.FC<{ count: number }> = ({ count }) => {
   const [showing, setShowing] = useState(false);
+  // The page's body, or a sandbox frame's.
+  const doc = useFrameDocument();
   const prevCount = useRef(count);
 
   useEffect(() => {
@@ -35,7 +38,7 @@ const NoPointsFlash: React.FC<{ count: number }> = ({ count }) => {
         No points!
       </span>
     </div>,
-    document.body
+    doc.body
   );
 };
 

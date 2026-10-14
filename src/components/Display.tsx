@@ -7,6 +7,7 @@ import { useWakeLock } from "../shared/wakeLock";
 import { nextIntroKey, tileColors } from "./GameBoard";
 import GameOverScreen from "./GameOverScreen";
 import IntermissionScreen from "./IntermissionScreen";
+import { useFrameDocument, useFrameWindow } from "./frameContext";
 import PageWrapper from "./PageWrapper";
 import SoundMenu from "./SoundMenu";
 import { useLobbyMusic } from "./useLobbyMusic";
@@ -26,9 +27,9 @@ interface PickCard {
   doubleJeopardy: boolean; // colors the card like the tile it grows from
   from: React.CSSProperties | null; // null = tile not found, zoom from the middle
 }
-function zoomFrom(tile: DOMRect): React.CSSProperties | null {
-  const vw = window.innerWidth;
-  const vh = window.innerHeight;
+function zoomFrom(tile: DOMRect, win: Window): React.CSSProperties | null {
+  const vw = win.innerWidth;
+  const vh = win.innerHeight;
   if (!tile.width || !tile.height || !vw || !vh) return null;
   const cardW = (CARD.width / 100) * vw;
   const cardH = (CARD.height / 100) * vh;
@@ -47,6 +48,8 @@ function zoomFrom(tile: DOMRect): React.CSSProperties | null {
 // react to state changes. Display feeds it from a room; the sandbox's full
 // game run-through feeds it local state.
 export const DisplayScreen: React.FC<{ code?: string; gameState: GameState }> = ({ code, gameState }) => {
+  // The page, or a sandbox frame: where tiles are measured from.
+  const frame = { win: useFrameWindow(), doc: useFrameDocument() };
   // Browsers block all audio until the page has had a user gesture. Arriving
   // via a click (e.g. from the join screen) already counts; opening
   // /watch/:code directly doesn't, and every sound would then silently fail.
@@ -135,14 +138,14 @@ export const DisplayScreen: React.FC<{ code?: string; gameState: GameState }> = 
     const prev = prevGameName.current;
     prevGameName.current = currentGame.gameName;
     if (prev === GameName.BOARD && currentGame.gameName !== GameName.BOARD) {
-      const tile = document.querySelector(
+      const tile = frame.doc.querySelector(
         `[data-tile="${tileColumn(currentGame)}-${currentGame.value}"]`
       );
       setPickCard({
         title: currentGame.gameTitle,
         value: currentGame.value,
         doubleJeopardy: !!gameState?.isDoubleJeopardy,
-        from: tile ? zoomFrom(tile.getBoundingClientRect()) : null,
+        from: tile ? zoomFrom(tile.getBoundingClientRect(), frame.win) : null,
       });
       const timer = setTimeout(() => setPickCard(null), PICK_CARD_MS);
       return () => clearTimeout(timer);

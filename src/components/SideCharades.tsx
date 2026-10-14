@@ -80,9 +80,10 @@ const SideCharades: React.FC<SideCharadesProps> = ({ isAdmin, gameState, sendGam
       <p className="font-display text-3xl font-semibold text-accent sm:text-5xl xl:text-8xl">
         {list?.category ?? "Reverse Charades"}
       </p>
-      <p className="mt-2 text-base text-blue-100 sm:text-xl xl:text-4xl">
-        {state.turns > 0 ? `Round ${round}` : "Back and forth, as many rounds as you like"}
-      </p>
+      {/* The round, once the first turn has started. */}
+      {state.turns > 0 && (
+        <p className="mt-2 text-base text-blue-100 sm:text-xl xl:text-4xl">Round {round}</p>
+      )}
 
       {activeTeam && (
         <p className="mt-4 text-lg sm:text-2xl xl:text-5xl">

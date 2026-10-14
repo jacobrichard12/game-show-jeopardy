@@ -96,13 +96,13 @@ describe("Sandbox with a content pack", () => {
     expect(screen.getByRole("button", { name: /Restart tile/ })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Reset scores/ })).toBeInTheDocument();
 
-    // The full game has no tile picker or tile actions.
-    choose("Game mode", gameOption("Full game (title → board → tiles)").value);
+    // The side game has no tile picker or tile actions.
+    choose("Game mode", gameOption("Reverse Charades tab (side game)").value);
     expect(screen.queryByLabelText("Tile value")).toBeNull();
     expect(screen.queryByLabelText("Double Jeopardy")).toBeNull();
     expect(screen.queryByRole("button", { name: /Reset scores/ })).toBeNull();
-    expect(screen.getByRole("button", { name: /Restart game/ })).toBeInTheDocument();
-    expect(screen.getByText(/Night · the full game/)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /↺ Restart$/ })).toBeInTheDocument();
+    expect(screen.getByText(/Night · the Reverse Charades tab/)).toBeInTheDocument();
   });
 
   it("offers the pack's side game", () => {
@@ -110,37 +110,6 @@ describe("Sandbox with a content pack", () => {
     choose("Game mode", gameOption("Reverse Charades tab (side game)").value);
     expect(screen.getByRole("button", { name: "Reset totals" })).toBeInTheDocument();
     expect(within(tv()).getByText("Get ready…")).toBeInTheDocument();
-  });
-
-  it("shows the pack's title screen, without the join code on the TV, then starts", () => {
-    loadPack();
-    choose("Game mode", gameOption("Title screen (Start Game)").value);
-    expect(within(tv()).getByRole("heading", { name: "Night Games" })).toBeInTheDocument();
-    expect(within(tv()).queryByText("ABCD")).toBeNull();
-    act(() => {
-      fireEvent.click(screen.getByRole("button", { name: "▶ Start Game" }));
-    });
-    expect(within(tv()).getByText("Head to Head")).toBeInTheDocument();
-  });
-
-  it("runs the full game with the real host page and TV: title, start, board, pause", () => {
-    loadPack();
-    choose("Game mode", gameOption("Full game (title → board → tiles)").value);
-    const host = () => screen.getByText("Host panel").closest("section") as HTMLElement;
-    expect(within(tv()).getByRole("heading", { name: "Night Games" })).toBeInTheDocument();
-    // The real lobby: no Game setup (that needs a room), but Start Game.
-    expect(within(host()).queryByRole("button", { name: /Game setup/ })).toBeNull();
-    act(() => {
-      fireEvent.click(within(host()).getByRole("button", { name: "Start Game" }));
-    });
-    // Both screens move to the pack's board, with its tabs on the host.
-    expect(within(host()).getByRole("button", { name: "Reverse Charades" })).toBeInTheDocument();
-    expect(within(tv()).getAllByText("Head to Head").length).toBeGreaterThan(0);
-
-    act(() => {
-      fireEvent.click(within(host()).getByRole("button", { name: /Pause game/ }));
-    });
-    expect(within(tv()).getByText("We'll be right back!")).toBeInTheDocument();
   });
 
   it("explains a rejected token", () => {

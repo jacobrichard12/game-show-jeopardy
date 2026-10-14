@@ -24,6 +24,7 @@ const mockSocket = {
 
 jest.mock("./SocketContext", () => ({ useSocket: () => mockSocket }));
 jest.mock("./Sandbox", () => () => <div>SANDBOX PAGE</div>);
+jest.mock("./SandboxDemo", () => () => <div>DEMO PAGE</div>);
 
 describe("SandboxGate", () => {
   beforeEach(() => {
@@ -41,6 +42,13 @@ describe("SandboxGate", () => {
     expect(screen.getByText("Checking access...")).toBeInTheDocument();
     flush();
     expect(screen.getByText("SANDBOX PAGE")).toBeInTheDocument();
+  });
+
+  it("guards the whole-game demo the same way", () => {
+    accept = () => true;
+    render(<SandboxGate page="demo" />);
+    flush();
+    expect(screen.getByText("DEMO PAGE")).toBeInTheDocument();
   });
 
   it("asks for the token, rejects a wrong one, and remembers a right one", () => {

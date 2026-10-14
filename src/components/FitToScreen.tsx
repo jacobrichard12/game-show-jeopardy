@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useFrameWindow } from "./frameContext";
 
 interface FitToScreenProps {
   children: React.ReactNode;
@@ -29,16 +30,19 @@ const FitToScreen: React.FC<FitToScreenProps> = ({
 }) => {
   const outerRef = useRef<HTMLDivElement>(null);
   const innerRef = useRef<HTMLDivElement>(null);
-  const [enabled, setEnabled] = useState(() => matches(media));
+  // The page's window, or a sandbox frame's (so the media query is the
+  // frame's width).
+  const win = useFrameWindow();
+  const [enabled, setEnabled] = useState(() => matches(media, win));
 
   useEffect(() => {
-    if (typeof window.matchMedia !== "function") return;
-    const query = window.matchMedia(media);
+    if (typeof win.matchMedia !== "function") return;
+    const query = win.matchMedia(media);
     const update = () => setEnabled(query.matches);
     update();
     query.addEventListener?.("change", update);
     return () => query.removeEventListener?.("change", update);
-  }, [media]);
+  }, [media, win]);
 
   const fit = useCallback(() => {
     const outer = outerRef.current;
@@ -118,10 +122,8 @@ const FitToScreen: React.FC<FitToScreenProps> = ({
   );
 };
 
-function matches(media: string): boolean {
-  return typeof window !== "undefined" && typeof window.matchMedia === "function"
-    ? window.matchMedia(media).matches
-    : false;
+function matches(media: string, win: Window): boolean {
+  return typeof win !== "undefined" && typeof win.matchMedia === "function" ? win.matchMedia(media).matches : false;
 }
 
 export default FitToScreen;
