@@ -14,6 +14,7 @@ import {
 import AdminPageWrapper from "./AdminPageWrapper";
 import { customColumnTitle, tileGame } from "../shared/boardLayout";
 import GameOverScreen from "./GameOverScreen";
+import IntermissionScreen from "./IntermissionScreen";
 import TimerControls from "./TimerControls";
 import GameSetupModal from "./GameSetupModal";
 import SettingsModal from "./SettingsModal";
@@ -22,83 +23,29 @@ import { useTheme } from "./useTheme";
 
 type AdminStatus = "joining" | "authorized" | "denied" | "not_found";
 
-// Admin has no state passed down from a parent — it owns the room it's
-// scoped to (from the URL) end to end: joining it, tracking whether this
-// browser holds admin rights for it, and holding the resulting GameState.
-const Admin: React.FC = () => {
-  const { code: rawCode } = useParams<{ code: string }>();
-  const code = rawCode?.toUpperCase();
-  const socket = useSocket();
+interface AdminHostProps {
+  code?: string;
+  gameState: GameState;
+  sendGameStateToServer: (gameState: GameState) => void;
+  // Settings' reset: a fresh game (the server rebuilds it for a room).
+  onReset: () => void;
+  // The lobby's Game setup (teams, theme, pack) needs a room on the server.
+  canChangeSetup?: boolean;
+}
 
+// The host's page for a game state: toolbar, board, question panels, pause
+// and game-over screens, and their handlers. Admin feeds it from a room; the
+// sandbox's full game run-through feeds it local state.
+export const AdminHost: React.FC<AdminHostProps> = ({
+  code,
+  gameState,
+  sendGameStateToServer,
+  onReset,
+  canChangeSetup = false,
+}) => {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isSetupOpen, setIsSetupOpen] = useState(false);
-  const [gameState, setGameState] = useState<GameState | null>(null);
-  const [status, setStatus] = useState<AdminStatus>("joining");
-  const [tokenInput, setTokenInput] = useState("");
-  // Only show "that token was rejected" once they've actually tried one —
-  // "denied" on the very first attempt just means nobody's entered a token
-  // for this browser/room yet, not that one was wrong.
-  const [hasAttempted, setHasAttempted] = useState(false);
-
-  // Join (or rejoin, on reconnect) this room. The adminKey cached when this
-  // browser created the room re-establishes admin rights automatically; if
-  // it's missing or wrong, adminAuthResult comes back false and the
-  // token-entry fallback below takes over.
-  useEffect(() => {
-    if (!socket || !code) return;
-
-    const attemptJoin = () => {
-      socket.emit("joinGame", { code, adminKey: getStoredAdminKey(code) });
-    };
-    const handleJoined = (data: { code: string; gameState: GameState }) => {
-      if (data.code !== code) return;
-      setGameState(data.gameState);
-    };
-    const handleAuthResult = (data: { isAdmin: boolean }) => {
-      setStatus(data.isAdmin ? "authorized" : "denied");
-    };
-    const handleNotFound = () => setStatus("not_found");
-    // The server only routes this to sockets it has joined to this room, but
-    // a socket can end up briefly in more than one room's group when
-    // switching games without a full page reload (see server.ts's
-    // leaveCurrentRoom) — checking the code here is cheap insurance against
-    // ever rendering another room's state.
-    const handleGameStateUpdate = (data: { code: string; gameState: GameState }) => {
-      if (data.code !== code) return;
-      setGameState(data.gameState);
-    };
-    const handleUnauthorized = () => setStatus("denied");
-
-    socket.on("connect", attemptJoin);
-    socket.on("gameJoined", handleJoined);
-    socket.on("adminAuthResult", handleAuthResult);
-    socket.on("gameNotFound", handleNotFound);
-    socket.on("gameStateUpdate", handleGameStateUpdate);
-    socket.on("unauthorized", handleUnauthorized);
-
-    if (socket.connected) attemptJoin();
-
-    return () => {
-      socket.off("connect", attemptJoin);
-      socket.off("gameJoined", handleJoined);
-      socket.off("adminAuthResult", handleAuthResult);
-      socket.off("gameNotFound", handleNotFound);
-      socket.off("gameStateUpdate", handleGameStateUpdate);
-      socket.off("unauthorized", handleUnauthorized);
-    };
-  }, [socket, code]);
-
-  const handleSubmitToken = () => {
-    if (!socket || !code) return;
-    setHasAttempted(true);
-    socket.emit("joinGame", { code, adminToken: tokenInput });
-  };
-
-  const sendGameStateToServer = (updatedGameState: GameState) => {
-    if (socket && code) {
-      socket.emit("gameStateUpdate", { code, gameState: updatedGameState });
-    }
-  };
+  const handleReset = onReset;
 
   const handleSaveSettings = (updatedGameState: GameState) => {
     sendGameStateToServer(updatedGameState);
@@ -108,6 +55,13 @@ const Admin: React.FC = () => {
   const handleToggleLobbyMusic = () => {
     if (!gameState) return;
     sendGameStateToServer({ ...gameState, lobbyMusic: !gameState.lobbyMusic });
+  };
+
+  // "We'll be right back": the TV switches to IntermissionScreen until the
+  // host resumes; nothing else about the game changes.
+  const handleSetPaused = (paused: boolean) => {
+    if (!gameState) return;
+    sendGameStateToServer({ ...gameState, paused });
   };
 
   const handleShuffleLobbyMusic = () => {
@@ -128,11 +82,6 @@ const Admin: React.FC = () => {
     sendGameStateToServer({ ...gameState, gameOver: false });
   };
 
-  const handleReset = async () => {
-    if (socket && code) {
-      socket.emit("resetGameState", { code });
-    }
-  };
 
   // A custom board's column title (e.g. "Smith Family Feud") on the tile card
   // and question page; the Standard game keeps its usual titles.
@@ -211,7 +160,7 @@ const Admin: React.FC = () => {
                 string,
                 { seconds?: number }
               >,
-              { ...gameState, currentGame: { ...gameState.currentGame, value: points } }
+              { ...gameState, currentGame: { ...gameState.currentGame, gameName: newGame, value: points, column } }
             )
           : undefined;
         updatedGameState.currentGame = {
@@ -236,7 +185,7 @@ const Admin: React.FC = () => {
   };
 
   const handleUpdateTurn = (teamId: string) => {
-    if (!socket || !gameState) return;
+    if (!gameState) return;
 
     const updatedGameState = { ...gameState };
     updatedGameState.whoseTurn = teamId;
@@ -250,7 +199,7 @@ const Admin: React.FC = () => {
     gameName: GameName,
     noPointsOverride: boolean
   ) => {
-    if (!socket || !gameState) return;
+    if (!gameState) return;
     const updatedGameState = { ...gameState };
     const team = updatedGameState.teams.find((t) => t.id === teamId);
     if (!team) return;
@@ -289,7 +238,7 @@ const Admin: React.FC = () => {
   };
 
   const handleBackButton = () => {
-    if (!socket || !gameState) return;
+    if (!gameState) return;
 
     const updatedGameState = { ...gameState };
     updatedGameState.currentGame = {
@@ -305,13 +254,210 @@ const Admin: React.FC = () => {
   };
 
   const handleRevealQuestion = () => {
-    if (!socket || !gameState) return;
+    if (!gameState) return;
     const updatedGameState = { ...gameState };
     updatedGameState.currentGame.questionState.promptVisible = true;
 
     sendGameStateToServer(updatedGameState);
   };
 
+  return (
+    <div className="admin-container">
+      {/*
+        z-50: without an explicit z-index, this fixed toolbar paints in DOM
+        order relative to its siblings — TitlePage (full-viewport, no
+        z-index of its own) is later in the tree and was covering it
+        entirely on the pre-game screen despite `fixed` positioning, which
+        only opts out of normal layout flow, not stacking order.
+      */}
+      <div className="fixed top-2 right-2 sm:top-4 sm:right-4 z-50 max-w-[160px] sm:max-w-none">
+        {/* Wrap buttons in a span for alignment. flex-wrap + a constrained
+            max-width on mobile lets this stack to a couple of lines in the
+            corner instead of stretching across the screen and colliding with
+            page titles, which is fine at desktop/TV widths without the cap. */}
+        <span className="flex flex-wrap justify-end gap-1 sm:gap-2">
+          {canChangeSetup && !gameState.started && !gameState.gameOver && (
+            <button
+              onClick={() => setIsSetupOpen(true)}
+              className="p-1.5 sm:p-2 text-xs sm:text-base bg-blue-500 text-white rounded"
+            >
+              ⚙️ Game setup
+            </button>
+          )}
+          {/* Music plays in the lobby, and during a pause. */}
+          {(!gameState.started || gameState.paused) && !gameState.gameOver && (
+            <button
+              onClick={handleToggleLobbyMusic}
+              aria-pressed={!!gameState.lobbyMusic}
+              className={`p-1.5 sm:p-2 text-xs sm:text-base text-white rounded ${
+                gameState.lobbyMusic ? "bg-purple-600" : "bg-gray-500"
+              }`}
+            >
+              {gameState.lobbyMusic ? "🎵 Music on" : "🎵 Music off"}
+            </button>
+          )}
+          {(!gameState.started || gameState.paused) && !gameState.gameOver && gameState.lobbyMusic && (
+            <button
+              onClick={handleShuffleLobbyMusic}
+              className="p-1.5 sm:p-2 text-xs sm:text-base bg-purple-600 text-white rounded"
+            >
+              🔀 Shuffle
+            </button>
+          )}
+          {/* The timer is for gameplay only: hidden in the lobby and on the
+              game-over screen. */}
+          {gameState.started && !gameState.gameOver && !gameState.paused && (
+            <TimerControls gameState={gameState} sendGameStateToServer={sendGameStateToServer} />
+          )}
+          {gameState.started && !gameState.gameOver && !gameState.paused && (
+            <button
+              onClick={() => handleSetPaused(true)}
+              className="p-1.5 sm:p-2 text-xs sm:text-base bg-orange-500 text-white rounded"
+            >
+              ⏸ Pause game
+            </button>
+          )}
+          <button
+            onClick={() => setIsSettingsOpen(true)}
+            className="p-1.5 sm:p-2 text-xs sm:text-base bg-blue-500 text-white rounded"
+          >
+            Settings
+          </button>
+        </span>
+      </div>
+
+      {/* Lobby only; closes itself if the game starts meanwhile. */}
+      {canChangeSetup && isSetupOpen && code && !gameState.started && (
+        <GameSetupModal code={code} gameState={gameState} onClose={() => setIsSetupOpen(false)} />
+      )}
+
+      <SettingsModal
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
+        onSave={handleSaveSettings}
+        onReset={handleReset}
+        onEndGame={handleEndGame}
+        gameState={gameState}
+      />
+
+      {gameState.gameOver ? (
+        // The host sees the same standings as the TV, plus the way out.
+        <div className="min-h-screen bg-gradient-to-b from-ink to-deep">
+          <GameOverScreen
+            teams={gameState.teams}
+            isAdmin
+            onBackToBoard={handleBackToBoard}
+            onPlayAgain={handleReset}
+          />
+        </div>
+      ) : gameState.started && gameState.paused ? (
+        // The same break screen as the TV, plus the message box and Resume.
+        <div className="min-h-screen bg-gradient-to-br from-glow via-ink to-ink">
+          <IntermissionScreen
+            gameState={gameState}
+            isAdmin
+            code={code}
+            onResume={() => handleSetPaused(false)}
+            onMessageChange={(pauseMessage) => sendGameStateToServer({ ...gameState, pauseMessage })}
+          />
+        </div>
+      ) : (
+      <AdminPageWrapper
+        gameState={gameState}
+        code={code}
+        handleUpdateCurrentGame={handleUpdateCurrentGame}
+        handleAddPoints={handleAddPoints}
+        handleRevealQuestion={handleRevealQuestion}
+        handleBackButon={handleBackButton}
+        sendGameStateToServer={sendGameStateToServer}
+        handleUpdateTurn={handleUpdateTurn}
+      />
+      )}
+    </div>
+  );
+};
+
+// Admin has no state passed down from a parent — it owns the room it's
+// scoped to (from the URL) end to end: joining it, tracking whether this
+// browser holds admin rights for it, and holding the resulting GameState.
+const Admin: React.FC = () => {
+  const { code: rawCode } = useParams<{ code: string }>();
+  const code = rawCode?.toUpperCase();
+  const socket = useSocket();
+
+  const [gameState, setGameState] = useState<GameState | null>(null);
+  const [status, setStatus] = useState<AdminStatus>("joining");
+  const [tokenInput, setTokenInput] = useState("");
+  // Only show "that token was rejected" once they've actually tried one —
+  // "denied" on the very first attempt just means nobody's entered a token
+  // for this browser/room yet, not that one was wrong.
+  const [hasAttempted, setHasAttempted] = useState(false);
+
+  // Join (or rejoin, on reconnect) this room. The adminKey cached when this
+  // browser created the room re-establishes admin rights automatically; if
+  // it's missing or wrong, adminAuthResult comes back false and the
+  // token-entry fallback below takes over.
+  useEffect(() => {
+    if (!socket || !code) return;
+
+    const attemptJoin = () => {
+      socket.emit("joinGame", { code, adminKey: getStoredAdminKey(code) });
+    };
+    const handleJoined = (data: { code: string; gameState: GameState }) => {
+      if (data.code !== code) return;
+      setGameState(data.gameState);
+    };
+    const handleAuthResult = (data: { isAdmin: boolean }) => {
+      setStatus(data.isAdmin ? "authorized" : "denied");
+    };
+    const handleNotFound = () => setStatus("not_found");
+    // The server only routes this to sockets it has joined to this room, but
+    // a socket can end up briefly in more than one room's group when
+    // switching games without a full page reload (see server.ts's
+    // leaveCurrentRoom) — checking the code here is cheap insurance against
+    // ever rendering another room's state.
+    const handleGameStateUpdate = (data: { code: string; gameState: GameState }) => {
+      if (data.code !== code) return;
+      setGameState(data.gameState);
+    };
+    const handleUnauthorized = () => setStatus("denied");
+
+    socket.on("connect", attemptJoin);
+    socket.on("gameJoined", handleJoined);
+    socket.on("adminAuthResult", handleAuthResult);
+    socket.on("gameNotFound", handleNotFound);
+    socket.on("gameStateUpdate", handleGameStateUpdate);
+    socket.on("unauthorized", handleUnauthorized);
+
+    if (socket.connected) attemptJoin();
+
+    return () => {
+      socket.off("connect", attemptJoin);
+      socket.off("gameJoined", handleJoined);
+      socket.off("adminAuthResult", handleAuthResult);
+      socket.off("gameNotFound", handleNotFound);
+      socket.off("gameStateUpdate", handleGameStateUpdate);
+      socket.off("unauthorized", handleUnauthorized);
+    };
+  }, [socket, code]);
+
+  const handleSubmitToken = () => {
+    if (!socket || !code) return;
+    setHasAttempted(true);
+    socket.emit("joinGame", { code, adminToken: tokenInput });
+  };
+
+  const sendGameStateToServer = (updatedGameState: GameState) => {
+    if (socket && code) {
+      socket.emit("gameStateUpdate", { code, gameState: updatedGameState });
+    }
+  };
+
+  const handleReset = async () => {
+    if (socket && code) {
+      socket.emit("resetGameState", { code });
+    }
+  };
   // The host sees the game in its theme too. Before the early returns below
   // (hooks can't be conditional).
   useTheme(gameState?.theme);
@@ -383,98 +529,13 @@ const Admin: React.FC = () => {
   }
 
   return (
-    <div className="admin-container">
-      {/*
-        z-50: without an explicit z-index, this fixed toolbar paints in DOM
-        order relative to its siblings — TitlePage (full-viewport, no
-        z-index of its own) is later in the tree and was covering it
-        entirely on the pre-game screen despite `fixed` positioning, which
-        only opts out of normal layout flow, not stacking order.
-      */}
-      <div className="fixed top-2 right-2 sm:top-4 sm:right-4 z-50 max-w-[160px] sm:max-w-none">
-        {/* Wrap buttons in a span for alignment. flex-wrap + a constrained
-            max-width on mobile lets this stack to a couple of lines in the
-            corner instead of stretching across the screen and colliding with
-            page titles, which is fine at desktop/TV widths without the cap. */}
-        <span className="flex flex-wrap justify-end gap-1 sm:gap-2">
-          {!gameState.started && !gameState.gameOver && (
-            <button
-              onClick={() => setIsSetupOpen(true)}
-              className="p-1.5 sm:p-2 text-xs sm:text-base bg-blue-500 text-white rounded"
-            >
-              ⚙️ Game setup
-            </button>
-          )}
-          {!gameState.started && !gameState.gameOver && (
-            <button
-              onClick={handleToggleLobbyMusic}
-              aria-pressed={!!gameState.lobbyMusic}
-              className={`p-1.5 sm:p-2 text-xs sm:text-base text-white rounded ${
-                gameState.lobbyMusic ? "bg-purple-600" : "bg-gray-500"
-              }`}
-            >
-              {gameState.lobbyMusic ? "🎵 Music on" : "🎵 Music off"}
-            </button>
-          )}
-          {!gameState.started && !gameState.gameOver && gameState.lobbyMusic && (
-            <button
-              onClick={handleShuffleLobbyMusic}
-              className="p-1.5 sm:p-2 text-xs sm:text-base bg-purple-600 text-white rounded"
-            >
-              🔀 Shuffle
-            </button>
-          )}
-          {/* The timer is for gameplay only: hidden in the lobby and on the
-              game-over screen. */}
-          {gameState.started && !gameState.gameOver && (
-            <TimerControls gameState={gameState} sendGameStateToServer={sendGameStateToServer} />
-          )}
-          <button
-            onClick={() => setIsSettingsOpen(true)}
-            className="p-1.5 sm:p-2 text-xs sm:text-base bg-blue-500 text-white rounded"
-          >
-            Settings
-          </button>
-        </span>
-      </div>
-
-      {/* Lobby only; closes itself if the game starts meanwhile. */}
-      {isSetupOpen && code && !gameState.started && (
-        <GameSetupModal code={code} gameState={gameState} onClose={() => setIsSetupOpen(false)} />
-      )}
-
-      <SettingsModal
-        isOpen={isSettingsOpen}
-        onClose={() => setIsSettingsOpen(false)}
-        onSave={handleSaveSettings}
-        onReset={handleReset}
-        onEndGame={handleEndGame}
-        gameState={gameState}
-      />
-
-      {gameState.gameOver ? (
-        // The host sees the same standings as the TV, plus the way out.
-        <div className="min-h-screen bg-gradient-to-b from-ink to-deep">
-          <GameOverScreen
-            teams={gameState.teams}
-            isAdmin
-            onBackToBoard={handleBackToBoard}
-            onPlayAgain={handleReset}
-          />
-        </div>
-      ) : (
-      <AdminPageWrapper
-        gameState={gameState}
-        code={code}
-        handleUpdateCurrentGame={handleUpdateCurrentGame}
-        handleAddPoints={handleAddPoints}
-        handleRevealQuestion={handleRevealQuestion}
-        handleBackButon={handleBackButton}
-        sendGameStateToServer={sendGameStateToServer}
-        handleUpdateTurn={handleUpdateTurn}
-      />
-      )}
-    </div>
+    <AdminHost
+      code={code}
+      gameState={gameState}
+      sendGameStateToServer={sendGameStateToServer}
+      onReset={handleReset}
+      canChangeSetup
+    />
   );
 };
 

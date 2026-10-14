@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 // Filler content only (ROADMAP S2): whatever this page imports ships in the
 // public JS bundle, so real questions must never be imported here.
 import sandboxFeud from "../data/sandbox/feud.json";
@@ -28,16 +28,30 @@ import {
   OrderPuzzle,
   PerformPrompt,
   QuestionProps,
+  SandboxPack,
   ScavengerItem,
   WheelPuzzle as WheelPuzzleData,
 } from "../shared/types";
+import { tileGame } from "../shared/boardLayout";
+import { gameStartAudio } from "../shared/audio";
+import { playSound } from "../shared/sound";
 import ActDrawDescribe from "./ActDrawDescribe";
 import AdminPointsButtons, { NoPointsButton } from "./AddPointsButtons";
 import ClosestWins from "./ClosestWins";
 import FamilyFeud from "./FamilyFeud";
 import FitToScreen from "./FitToScreen";
 import NoPointsFlash from "./NoPointsFlash";
+import { AdminHost } from "./Admin";
+import { boardData } from "./boards";
+import { DisplayScreen } from "./Display";
+import GameBoard from "./GameBoard";
+import { readStoredToken } from "./sandboxToken";
+import StartTunnel, { BOARD_ZOOM_CLASS, TITLE_EXIT_CLASS, TUNNEL_MS } from "./StartTunnel";
+import TitlePage from "./TitlePage";
+import SideCharades from "./SideCharades";
+import { useOptionalSocket } from "./SocketContext";
 import Timer from "./Timer";
+import VirtualScreen from "./VirtualScreen";
 import TimerControls from "./TimerControls";
 import HeadToHead from "./HeadToHead";
 import Millionaire from "./Millionaire";
@@ -184,6 +198,29 @@ function buildSandboxGameData(): GameData {
   };
 }
 
+// A content pack's questions over the sample ones: tiles the pack doesn't
+// fill keep their sample question, like a real game falls back to the banks.
+function withPack(sample: GameData, pack: SandboxPack | null): GameData {
+  if (!pack) return sample;
+  const merged = { ...sample } as Record<string, Record<string, unknown>>;
+  Object.entries(pack.gameData).forEach(([game, tiles]) => {
+    merged[game] = { ...(merged[game] ?? {}), ...(tiles as Record<string, unknown>) };
+  });
+  return merged as unknown as GameData;
+}
+
+// The pack's layout and title screen, so mixed tiles, the side game and the
+// TV options behave as in a real game. Without a pack: the Standard board.
+function packFields(pack: SandboxPack | null): Partial<GameState> {
+  if (!pack) return { board: undefined, titleScreen: undefined, hideJoinCode: undefined, noDoubleJeopardy: undefined };
+  return {
+    board: pack.board,
+    titleScreen: pack.titleScreen,
+    hideJoinCode: pack.hideJoinCode || undefined,
+    noDoubleJeopardy: pack.noDoubleJeopardy || undefined,
+  };
+}
+
 export function newSandboxState(teamCount: number): GameState {
   return {
     started: true,
@@ -207,13 +244,18 @@ export function newSandboxState(teamCount: number): GameState {
 // awarded again when replaying.
 function buildRound(base: GameState, mode: ModeDef, tile: number, doubleJeopardy: boolean): GameState {
   const value = doubleJeopardy ? tile * 2 : tile;
+  // A content pack's tile can play as another game (e.g. Reverse Charades in
+  // Head to Head): use that game's screen and question, tracked by column.
+  const slotKey = doubleJeopardy ? value / 2 + 1 : value;
+  const played = MODES.find((m) => m.name === tileGame(base, mode.name, slotKey)) ?? mode;
+  const column = played.name !== mode.name ? { column: mode.name } : {};
   const positioned: GameState = {
     ...base,
     isDoubleJeopardy: doubleJeopardy,
-    currentGame: { ...base.currentGame, gameName: mode.name, value },
+    currentGame: { gameName: played.name, gameTitle: "", value, questionState: { promptVisible: false }, ...column },
   };
   const question = getCurrentQuestion(
-    (positioned.gameData[mode.bank] ?? {}) as unknown as Record<string, { seconds?: number }>,
+    (positioned.gameData[played.bank] ?? {}) as unknown as Record<string, { seconds?: number }>,
     positioned
   );
   const clear = (map: { [key: string]: number[] }) => ({
@@ -225,12 +267,56 @@ function buildRound(base: GameState, mode: ModeDef, tile: number, doubleJeopardy
     answered: clear(base.answered),
     doubleJeopardyAnswered: clear(base.doubleJeopardyAnswered),
     currentGame: {
-      gameName: mode.name,
-      gameTitle: getGameTitle(mode.name),
+      gameName: played.name,
+      gameTitle: getGameTitle(played.name),
       value,
-      questionState: createInitialQuestionState(mode.name, base.teams, question),
+      questionState: createInitialQuestionState(played.name, base.teams, question),
+      ...column,
     },
   };
+}
+
+// The Game dropdown's special entries: a pack's Reverse Charades side game,
+// and the lobby title screen (with the Start Game tunnel into the board).
+const SIDE_MODE = -1;
+const TITLE_MODE = -2;
+// The whole game as it really runs: the real host page and TV screen
+// (AdminHost, DisplayScreen) driven by one local game state.
+const FULL_MODE = -3;
+const CHARADES_MODE = MODES.find((m) => m.name === GameName.CHARADES)!;
+
+// A fresh sandbox game with the chosen content (sample, or a pack over it).
+function freshBase(teamCount: number, pack: SandboxPack | null): GameState {
+  return {
+    ...newSandboxState(teamCount),
+    ...packFields(pack),
+    gameData: withPack(buildSandboxGameData(), pack),
+  };
+}
+
+// A new full game: the lobby, with the chosen content and its layout.
+function freshFullGame(teamCount: number, pack: SandboxPack | null, theme: ThemeId): GameState {
+  const base = freshBase(teamCount, pack);
+  return {
+    ...base,
+    started: false,
+    theme,
+    boardPage: pack?.board[0]?.id,
+    currentGame: { gameName: GameName.BOARD, gameTitle: "GameBoard", value: 0, questionState: { promptVisible: false } },
+  };
+}
+
+// Puts a game entry on screen: a tile for a normal entry; the board behind a
+// special one (side game, title screen).
+function place(base: GameState, modeIdx: number, tile: number, doubleJeopardy: boolean): GameState {
+  if (modeIdx < 0) {
+    return {
+      ...base,
+      isDoubleJeopardy: false,
+      currentGame: { gameName: GameName.BOARD, gameTitle: "GameBoard", value: 0, questionState: { promptVisible: false } },
+    };
+  }
+  return buildRound(base, MODES[modeIdx], tile, doubleJeopardy);
 }
 
 type View = "both" | "host" | "tv";
@@ -262,8 +348,97 @@ const Sandbox: React.FC = () => {
     buildRound(newSandboxState(MIN_TEAMS), MODES[0], 100, false)
   );
 
-  const mode = MODES[modeIdx];
-  const Game = mode.Component;
+  // Content: the bundled samples, or a content pack loaded from the server
+  // behind the admin token this page was opened with.
+  const socket = useOptionalSocket();
+  const [packList, setPackList] = useState<{ id: string; name: string }[]>([]);
+  const [pack, setPack] = useState<SandboxPack | null>(null);
+  const [packMessage, setPackMessage] = useState<string | null>(null);
+  // The latest selection, for the pack's async reply.
+  const selection = useRef({ modeIdx, tile, doubleJeopardy });
+  selection.current = { modeIdx, tile, doubleJeopardy };
+  useEffect(() => {
+    if (!socket) return;
+    const handleList = (data: { packs: { id: string; name: string }[] }) => setPackList(data.packs);
+    const handlePack = (data: { ok: boolean; reason?: string; pack?: SandboxPack }) => {
+      if (!data.ok || !data.pack) {
+        setPackMessage(data.reason ?? "Couldn't load that pack.");
+        return;
+      }
+      const loaded = data.pack;
+      setPack(loaded);
+      setPackMessage(null);
+      const sel = selection.current;
+      // A board-level entry stays; a tile restarts with the pack's question.
+      setRound((r) => r + 1);
+      setGameState((prev) => place(freshBase(prev.teams.length, loaded), sel.modeIdx, sel.tile, sel.doubleJeopardy));
+      setFullGame((prev) => freshFullGame(prev.teams.length, loaded, prev.theme ?? "original"));
+    };
+    socket.on("packList", handleList);
+    socket.on("sandboxPackResult", handlePack);
+    socket.emit("listPacks");
+    return () => {
+      socket.off("packList", handleList);
+      socket.off("sandboxPackResult", handlePack);
+    };
+  }, [socket]);
+
+  const choosePack = (id: string) => {
+    if (!id) {
+      setPack(null);
+      setPackMessage(null);
+      // The side game belongs to the pack.
+      const nextMode = modeIdx === SIDE_MODE ? 0 : modeIdx;
+      setModeIdx(nextMode);
+      setRound((r) => r + 1);
+      setGameState((prev) => place(freshBase(prev.teams.length, null), nextMode, tile, doubleJeopardy));
+      restartFullGame(teamCount, null);
+      return;
+    }
+    setPackMessage("Loading…");
+    socket?.emit("sandboxPack", { adminToken: readStoredToken(), packId: id });
+  };
+  const hasSideGame = !!pack?.board.some((page) => page.sideGame === "charades");
+
+  // Title screen entry: the lobby, then Start Game plays the tunnel into the
+  // board (on the TV panel), with the pack's decor.
+  const [titleStarted, setTitleStarted] = useState(false);
+  const [tunnel, setTunnel] = useState(0);
+  const [leavingTitle, setLeavingTitle] = useState(false);
+  useEffect(() => {
+    if (!leavingTitle) return;
+    const timer = setTimeout(() => setLeavingTitle(false), TUNNEL_MS);
+    return () => clearTimeout(timer);
+  }, [leavingTitle]);
+  const decor = pack?.titleScreen?.decor;
+  const titleState: GameState = {
+    ...gameState,
+    started: false,
+    titleScreen: {
+      title: pack?.titleScreen?.title ?? "Game Show Jeopardy",
+      ...(pack?.titleScreen?.subtitle ? { subtitle: pack.titleScreen.subtitle } : {}),
+      ...(decor ? { decor } : {}),
+    },
+  };
+  const startFromTitle = () => {
+    setTitleStarted(true);
+    setLeavingTitle(true);
+    setTunnel((n) => n + 1);
+    playSound(gameStartAudio);
+  };
+
+  // The full game run-through's own state (separate from the tile tester's).
+  const [fullGame, setFullGame] = useState<GameState>(() => freshFullGame(MIN_TEAMS, null, "original"));
+  const fullMode = modeIdx === FULL_MODE;
+  const restartFullGame = (teams = teamCount, withContent: SandboxPack | null = pack) =>
+    setFullGame(freshFullGame(teams, withContent, theme));
+
+  const sideMode = modeIdx === SIDE_MODE;
+  const titleMode = modeIdx === TITLE_MODE;
+  const mode = MODES[modeIdx] ?? CHARADES_MODE;
+  // The game actually playing (a pack tile can play as another game).
+  const played = MODES.find((m) => m.name === gameState.currentGame.gameName) ?? mode;
+  const Game = played.Component;
   const questionState = gameState.currentGame.questionState;
   const promptVisible = questionState.promptVisible;
 
@@ -282,34 +457,32 @@ const Sandbox: React.FC = () => {
     setDoubleJeopardy(nextDj);
     setTeamCount(nextTeams);
     setRound((r) => r + 1);
+    if (nextMode === TITLE_MODE) setTitleStarted(false);
+    if (nextMode === FULL_MODE) restartFullGame(nextTeams);
     setGameState((prev) =>
-      buildRound(
-        nextTeams !== prev.teams.length ? newSandboxState(nextTeams) : prev,
-        MODES[nextMode],
-        nextTile,
-        nextDj
-      )
+      place(nextTeams !== prev.teams.length ? freshBase(nextTeams, pack) : prev, nextMode, nextTile, nextDj)
     );
   };
 
   const reshuffleContent = () => {
     setRound((r) => r + 1);
     setGameState((prev) =>
-      buildRound({ ...prev, gameData: buildSandboxGameData() }, mode, tile, doubleJeopardy)
+      place({ ...prev, gameData: withPack(buildSandboxGameData(), pack) }, modeIdx, tile, doubleJeopardy)
     );
   };
 
   const resetScores = () => {
     setRound((r) => r + 1);
     setGameState((prev) =>
-      buildRound(
+      place(
         {
           ...prev,
           teams: prev.teams.map((team) => ({ ...team, score: 0 })),
           answered: {},
           doubleJeopardyAnswered: {},
+          sideCharades: undefined,
         },
-        mode,
+        modeIdx,
         tile,
         doubleJeopardy
       )
@@ -329,62 +502,139 @@ const Sandbox: React.FC = () => {
 
   const gameProps = { gameState, sendGameStateToServer: setGameState };
   const slotKey = doubleJeopardy ? gameState.currentGame.value / 2 + 1 : gameState.currentGame.value;
-  const hasQuestion = !!(gameState.gameData[mode.bank] ?? {})[slotKey];
+  const hasQuestion =
+    modeIdx < 0 ||
+    !!getCurrentQuestion((gameState.gameData[played.bank] ?? {}) as Record<string, unknown>, gameState);
+  // One line for the bar: the content and what's on screen.
+  const contentName = pack?.name ?? "Sample content";
+  const columnTitle =
+    pack?.board.flatMap((page) => page.columns).find((c) => c.game === mode.name)?.title ?? getGameTitle(mode.name);
+  const tileValue = doubleJeopardy ? tile * 2 : tile;
+  const nowShowing = fullMode
+    ? `${contentName} · the full game, on the real host page and TV`
+    : titleMode
+    ? `${contentName} · the title screen and Start Game`
+    : sideMode
+    ? `${contentName} · the Reverse Charades tab`
+    : `${contentName} · ${columnTitle} $${tileValue}${doubleJeopardy ? " (Double Jeopardy)" : ""}` +
+      (played.name !== mode.name ? ` → plays as ${getGameTitle(played.name)}` : "");
+  const howTo = fullMode
+    ? "The whole game as the real host page and TV run it: start from the title screen, pick tiles on the board, award points, use the tabs, pause, end the game. Restart round starts it over. Nothing is sent to a server."
+    : sideMode
+    ? "The pack's Reverse Charades tab: start a team's turn, tap Got it / Skip, End turn; totals carry over across rounds. Time turns with Toggle Timer."
+    : titleMode
+    ? "The lobby as the TV shows it (the pack's title, decor and join code setting). Start Game plays the tunnel into the board and the start sound."
+    : played.howTo;
 
-  const hostPane = (
+  const hostPane = fullMode ? (
     <section className="rounded-xl bg-gray-50 p-3 text-left text-gray-900 shadow sm:p-4">
       <h2 className="mb-3 text-lg font-bold">Host panel</h2>
-      {!promptVisible ? (
-        <button
-          type="button"
-          onClick={revealToTv}
-          className="rounded bg-blue-500 p-2 text-white hover:bg-blue-600"
-        >
-          Next (reveal to TV)
-        </button>
-      ) : (
-        <>
-          <div className="rounded bg-white p-3 shadow-lg">
-            <Game key={`host-${round}`} isAdmin={true} {...gameProps} />
+      {/* The real host page, laid out at laptop width and scaled to the
+          panel; its toolbar and dialogs stay inside the panel. */}
+      <VirtualScreen width={1280} height="auto">
+        <div className="relative min-h-[720px] bg-gray-100">
+          <AdminHost
+            code="DEMO"
+            gameState={fullGame}
+            sendGameStateToServer={setFullGame}
+            onReset={() => restartFullGame(fullGame.teams.length)}
+          />
+        </div>
+      </VirtualScreen>
+    </section>
+  ) : (
+    <section className="rounded-xl bg-gray-50 p-3 text-left text-gray-900 shadow sm:p-4">
+      <h2 className="mb-3 text-lg font-bold">Host panel</h2>
+      {/* Scaled as one piece to the panel's width, like the TV panel: laid
+          out at a laptop-ish 900px, so text grows on a wide panel and shrinks
+          on a narrow one. */}
+      <VirtualScreen width={900} height="auto">
+        {titleMode ? (
+          <div className="space-y-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={startFromTitle}
+                className="rounded bg-blue-500 px-3 py-1 text-white hover:bg-blue-600"
+              >
+                ▶ Start Game
+              </button>
+              {titleStarted && (
+                <button
+                  type="button"
+                  onClick={() => setTitleStarted(false)}
+                  className="rounded bg-gray-200 px-3 py-1 text-gray-800 hover:bg-gray-300"
+                >
+                  ↺ Back to title
+                </button>
+              )}
+            </div>
+            <p className="text-sm text-gray-600">The host's lobby (what the TV shows is on the right):</p>
+            <div className="overflow-hidden rounded bg-gradient-to-b from-ink to-deep">
+              <TitlePage isAdmin code="ABCD" gameState={titleState} sendGameStateToServer={startFromTitle} />
+            </div>
           </div>
-          <div className="mt-3">
-            <AdminPointsButtons gameState={gameState} handleAddPoints={handleAddPoints} />
-          </div>
-        </>
-      )}
-
-      {/* The host toolbar's timer buttons. */}
-      <div className="mt-4 flex flex-wrap items-center gap-2">
-        <TimerControls gameState={gameState} sendGameStateToServer={setGameState} />
-      </div>
-
-      {/* The real board's "Set Turn" buttons only show on the board itself. */}
-      <div className="mt-4 flex flex-wrap items-center gap-2">
-        <span className="text-sm text-gray-600">Whose turn:</span>
-        {gameState.teams.map((team, index) => (
+        ) : sideMode ? (
+          <SideCharades isAdmin gameState={gameState} sendGameStateToServer={setGameState} />
+        ) : !promptVisible ? (
           <button
-            key={team.id}
             type="button"
-            onClick={() => handleUpdateTurn(team.id)}
-            className={`rounded px-3 py-1 text-sm text-white ${teamColor(index).chip} ${
-              gameState.whoseTurn === team.id ? "ring-2 ring-offset-2 ring-gray-800" : "opacity-70"
-            }`}
+            onClick={revealToTv}
+            className="rounded bg-blue-500 p-2 text-white hover:bg-blue-600"
           >
-            {team.name}
+            Next (reveal to TV)
           </button>
-        ))}
-      </div>
+        ) : (
+          <>
+            <div className="rounded bg-white p-3 shadow-lg">
+              <Game key={`host-${round}`} isAdmin={true} {...gameProps} />
+            </div>
+            <div className="mt-3">
+              <AdminPointsButtons gameState={gameState} handleAddPoints={handleAddPoints} />
+            </div>
+          </>
+        )}
 
-      <div className="mt-4">
-        <ScoreBoard isAdmin={true} gameState={gameState} handleUpdateTurn={handleUpdateTurn} />
-      </div>
-      {promptVisible && (
-        <NoPointsButton gameState={gameState} handleAddPoints={handleAddPoints} />
-      )}
+        {/* The host toolbar's timer buttons. */}
+        <div className="mt-4 flex flex-wrap items-center gap-2">
+          <TimerControls gameState={gameState} sendGameStateToServer={setGameState} />
+        </div>
+
+        {/* The real board's "Set Turn" buttons only show on the board itself. */}
+        <div className="mt-4 flex flex-wrap items-center gap-2">
+          <span className="text-sm text-gray-600">Whose turn:</span>
+          {gameState.teams.map((team, index) => (
+            <button
+              key={team.id}
+              type="button"
+              onClick={() => handleUpdateTurn(team.id)}
+              className={`rounded px-3 py-1 text-sm text-white ${teamColor(index).chip} ${
+                gameState.whoseTurn === team.id ? "ring-2 ring-offset-2 ring-gray-800" : "opacity-70"
+              }`}
+            >
+              {team.name}
+            </button>
+          ))}
+        </div>
+
+        <div className="mt-4">
+          <ScoreBoard isAdmin={true} gameState={gameState} handleUpdateTurn={handleUpdateTurn} />
+        </div>
+        {promptVisible && modeIdx >= 0 && (
+          <NoPointsButton gameState={gameState} handleAddPoints={handleAddPoints} />
+        )}
+      </VirtualScreen>
     </section>
   );
 
-  const tvPane = (
+  const tvPane = fullMode ? (
+    <section aria-label="TV display" className="rounded-xl bg-gradient-to-b from-ink to-deep p-2 text-white shadow sm:p-4">
+      <h2 className="mb-2 text-left text-sm font-semibold uppercase tracking-widest text-white/60">TV display</h2>
+      <VirtualScreen>
+        <DisplayScreen code="DEMO" gameState={fullGame} />
+      </VirtualScreen>
+    </section>
+  ) : (
     <section
       aria-label="TV display"
       className="rounded-xl bg-gradient-to-b from-ink to-deep p-2 text-white shadow sm:p-4"
@@ -392,32 +642,70 @@ const Sandbox: React.FC = () => {
       <h2 className="mb-2 text-left text-sm font-semibold uppercase tracking-widest text-white/60">
         TV display
       </h2>
-      {/* Shaped like the real TV's question area (a 16:9 screen minus the
-          scoreboard, about 16:7) and fitted the same way, so it previews
-          whether a game fits without scrolling. */}
-      <div className="relative flex flex-col lg:aspect-[16/7]">
-        {/* Toggle Timer, as on the real TV (PageWrapper): a corner box in
-            this panel, or the whole area with the question hidden. */}
-        {gameState.showTimer && (
-          <Timer
-            contained
-            playing={gameState.timerPlaying ?? false}
-            restartToken={gameState.timerRestart ?? 0}
-            fullScreen={!!gameState.timerFullScreen}
-          />
-        )}
-        <div className={gameState.showTimer && gameState.timerFullScreen ? "hidden" : "contents"}>
-          <FitToScreen>
-            <QuestionWrapper
-              gameState={gameState}
-              question={<Game key={`tv-${round}`} isAdmin={false} {...gameProps} />}
-            />
-          </FitToScreen>
+      {/* A scaled-down 1080p TV laid out like the real one (PageWrapper:
+          question area fitted above the scoreboard), so everything grows and
+          shrinks with the panel and it previews whether a game fits. */}
+      <VirtualScreen>
+        {titleMode ? (
+          // The lobby, then the tunnel and board zoom, as on the real TV.
+          <div className="relative h-full overflow-hidden">
+            {titleStarted ? (
+              <div key={tunnel} className={`h-full p-4 ${BOARD_ZOOM_CLASS}`}>
+                <GameBoard
+                  isAdmin={false}
+                  introKey={tunnel}
+                  gameState={gameState}
+                  gameBoardData={boardData(gameState)}
+                  handleUpdateCurrentGame={() => {}}
+                  sendGameStateToServer={() => {}}
+                />
+              </div>
+            ) : (
+              <TitlePage isAdmin={false} code="ABCD" gameState={titleState} sendGameStateToServer={() => {}} />
+            )}
+            {titleStarted && leavingTitle && (
+              <div key={`exit-${tunnel}`} className={TITLE_EXIT_CLASS}>
+                <TitlePage isAdmin={false} code="ABCD" gameState={titleState} sendGameStateToServer={() => {}} />
+              </div>
+            )}
+            <StartTunnel tunnelKey={tunnel} decor={decor} />
+          </div>
+        ) : (
+        <div className="flex h-full flex-col gap-2 p-4">
+          <div className="relative flex min-h-0 flex-1 flex-col">
+            {/* Toggle Timer, as on the real TV: a corner box, or the whole
+                area with the question hidden. */}
+            {gameState.showTimer && (
+              <Timer
+                contained
+                playing={gameState.timerPlaying ?? false}
+                restartToken={gameState.timerRestart ?? 0}
+                fullScreen={!!gameState.timerFullScreen}
+              />
+            )}
+            <div className={gameState.showTimer && gameState.timerFullScreen ? "hidden" : "contents"}>
+              {/* Always fitted here: the screen is TV-sized at any window width. */}
+              <FitToScreen media="all">
+                {sideMode ? (
+                  <SideCharades isAdmin={false} gameState={gameState} sendGameStateToServer={() => {}} />
+                ) : (
+                  <QuestionWrapper
+                    gameState={gameState}
+                    question={<Game key={`tv-${round}`} isAdmin={false} {...gameProps} />}
+                  />
+                )}
+              </FitToScreen>
+            </div>
+          </div>
+          {/* The side game shows its own totals instead. */}
+          {!sideMode && (
+            <div className="shrink-0">
+              <ScoreBoard isAdmin={false} gameState={gameState} />
+            </div>
+          )}
         </div>
-      </div>
-      <div className="mt-2">
-        <ScoreBoard isAdmin={false} gameState={gameState} />
-      </div>
+        )}
+      </VirtualScreen>
       <NoPointsFlash count={gameState.noPointsCount ?? 0} />
     </section>
   );
@@ -425,25 +713,46 @@ const Sandbox: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-100 p-3 text-left text-gray-900 sm:p-6">
       <header className="mx-auto">
-        <h1 className="text-2xl font-bold">Game sandbox</h1>
-        <p className="mb-3 text-sm text-gray-600">
-          Runs locally, no server or room code. The host panel and TV share one game state.{" "}
-          <a href="/sandbox?title" className="text-blue-600 underline">
-            Preview title screens and the Start Game tunnel
-          </a>
-        </p>
-
-        <div className="flex flex-wrap items-end gap-3 rounded-xl bg-white p-3 shadow">
-          <label className="text-sm">
-            <span className="block text-gray-600">Game</span>
+        {/* One compact bar: what to show (content, game, tile), the setup
+            that applies to every view (teams, theme), the actions that fit
+            what's on screen, and the panel layout. */}
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-xl bg-white px-3 py-2 text-sm shadow">
+          <span className="font-bold">Sandbox</span>
+          {/* Shown when the server lists packs (it doesn't without one). */}
+          {packList.length > 0 && (
+            <label className="flex items-center gap-1" title="Sample questions, or one of your content packs (loaded from the server)">
+              <span className="text-xs text-gray-500">Content</span>
+              <select
+                aria-label="Content"
+                value={pack?.id ?? ""}
+                onChange={(e) => choosePack(e.target.value)}
+                className="rounded border px-1 py-1"
+              >
+                <option value="">Sample content</option>
+                {packList.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name}
+                  </option>
+                ))}
+              </select>
+              {packMessage && <span className="text-xs text-gray-500">{packMessage}</span>}
+            </label>
+          )}
+          <label className="flex items-center gap-1" title="A whole game, a screen, or one game to test tile by tile">
+            <span className="text-xs text-gray-500">Show</span>
             <select
               aria-label="Game mode"
               value={modeIdx}
               onChange={(e) => start({ modeIdx: Number(e.target.value) })}
-              className="rounded border p-2"
+              className="rounded border px-1 py-1"
             >
+              <optgroup label="Screens">
+                <option value={FULL_MODE}>Full game (title → board → tiles)</option>
+                <option value={TITLE_MODE}>Title screen (Start Game)</option>
+                {hasSideGame && <option value={SIDE_MODE}>Reverse Charades tab (side game)</option>}
+              </optgroup>
               {(["party", "original"] as const).map((group) => (
-                <optgroup key={group} label={group === "party" ? "Party games" : "Original games"}>
+                <optgroup key={group} label={group === "party" ? "Party games, one tile" : "Original games, one tile"}>
                   {MODES.map((m, i) =>
                     m.group === group ? (
                       <option key={m.name} value={i}>
@@ -455,37 +764,45 @@ const Sandbox: React.FC = () => {
               ))}
             </select>
           </label>
-          <label className="text-sm">
-            <span className="block text-gray-600">Tile</span>
-            <select
-              aria-label="Tile value"
-              value={tile}
-              onChange={(e) => start({ tile: Number(e.target.value) })}
-              className="rounded border p-2"
-            >
-              {TILE_VALUES.map((v) => (
-                <option key={v} value={v}>
-                  {v}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="flex items-center gap-2 pb-2 text-sm">
-            <input
-              type="checkbox"
-              aria-label="Double Jeopardy"
-              checked={doubleJeopardy}
-              onChange={(e) => start({ doubleJeopardy: e.target.checked })}
-            />
-            Double Jeopardy (doubles points, uses the twin question)
-          </label>
-          <label className="text-sm">
-            <span className="block text-gray-600">Teams</span>
+
+          {/* Only when testing a single tile. */}
+          {modeIdx >= 0 && (
+            <>
+              <label className="flex items-center gap-1" title="Which tile of the column to play">
+                <span className="text-xs text-gray-500">Tile</span>
+                <select
+                  aria-label="Tile value"
+                  value={tile}
+                  onChange={(e) => start({ tile: Number(e.target.value) })}
+                  className="rounded border px-1 py-1"
+                >
+                  {TILE_VALUES.map((v) => (
+                    <option key={v} value={v}>
+                      ${doubleJeopardy ? v * 2 : v}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="flex items-center gap-1" title="Double Jeopardy: doubles the points and uses the round 2 question">
+                <input
+                  type="checkbox"
+                  aria-label="Double Jeopardy"
+                  checked={doubleJeopardy}
+                  onChange={(e) => start({ doubleJeopardy: e.target.checked })}
+                />
+                <span>Double Jeopardy</span>
+              </label>
+            </>
+          )}
+
+          <span className="hidden h-5 w-px bg-gray-200 sm:block" aria-hidden="true" />
+          <label className="flex items-center gap-1" title="Number of teams (restarts what's on screen)">
+            <span className="text-xs text-gray-500">Teams</span>
             <select
               aria-label="Team count"
               value={teamCount}
               onChange={(e) => start({ teamCount: Number(e.target.value) })}
-              className="rounded border p-2"
+              className="rounded border px-1 py-1"
             >
               {Array.from({ length: MAX_TEAMS - MIN_TEAMS + 1 }, (_, i) => MIN_TEAMS + i).map((n) => (
                 <option key={n} value={n}>
@@ -494,14 +811,13 @@ const Sandbox: React.FC = () => {
               ))}
             </select>
           </label>
-
-          <label className="text-sm">
-            <span className="block text-gray-600">Theme</span>
+          <label className="flex items-center gap-1" title="Board colors">
+            <span className="text-xs text-gray-500">Theme</span>
             <select
               aria-label="Theme"
               value={theme}
               onChange={(e) => setTheme(e.target.value as ThemeId)}
-              className="rounded border p-2"
+              className="rounded border px-1 py-1"
             >
               {THEMES.map((t) => (
                 <option key={t.id} value={t.id}>
@@ -511,36 +827,70 @@ const Sandbox: React.FC = () => {
             </select>
           </label>
 
-          <button type="button" onClick={() => start({})} className="rounded bg-blue-500 px-3 py-2 text-sm text-white hover:bg-blue-600">
-            Restart round
-          </button>
-          <button type="button" onClick={reshuffleContent} className="rounded bg-gray-200 px-3 py-2 text-sm hover:bg-gray-300">
-            Reshuffle content
-          </button>
-          <button type="button" onClick={resetScores} className="rounded bg-gray-200 px-3 py-2 text-sm hover:bg-gray-300">
-            Reset scores
-          </button>
+          <span className="hidden h-5 w-px bg-gray-200 sm:block" aria-hidden="true" />
+          {/* Actions for what's on screen. */}
+          <div className="flex flex-wrap gap-1" role="group" aria-label="Actions">
+            <button
+              type="button"
+              onClick={() => start({})}
+              title={
+                fullMode
+                  ? "Start the whole game over from the title screen"
+                  : modeIdx < 0
+                  ? "Start this screen over"
+                  : "Replay this tile with a fresh state"
+              }
+              className="rounded bg-blue-500 px-2 py-1 text-white hover:bg-blue-600"
+            >
+              ↺ {fullMode ? "Restart game" : modeIdx < 0 ? "Restart" : "Restart tile"}
+            </button>
+            {modeIdx >= 0 && (
+              <>
+                <button
+                  type="button"
+                  onClick={reshuffleContent}
+                  title={pack ? "New sample questions for tiles the pack doesn't fill" : "Shuffle in different sample questions"}
+                  className="rounded bg-gray-200 px-2 py-1 hover:bg-gray-300"
+                >
+                  🔀 Reshuffle content
+                </button>
+                <button
+                  type="button"
+                  onClick={resetScores}
+                  title="Set every team back to 0"
+                  className="rounded bg-gray-200 px-2 py-1 hover:bg-gray-300"
+                >
+                  Reset scores
+                </button>
+              </>
+            )}
+          </div>
 
-          <div className="ml-auto flex gap-1" role="group" aria-label="View">
+          <div className="ml-auto flex overflow-hidden rounded border" role="group" aria-label="View">
             {(["both", "host", "tv"] as View[]).map((v) => (
               <button
                 key={v}
                 type="button"
                 onClick={() => setView(v)}
                 aria-pressed={view === v}
-                className={`rounded px-3 py-2 text-sm ${
-                  view === v ? "bg-gray-800 text-white" : "bg-gray-200 hover:bg-gray-300"
-                }`}
+                aria-label={v === "both" ? "Both" : v === "host" ? "Host only" : "TV only"}
+                title={v === "both" ? "Host panel and TV side by side" : v === "host" ? "Only the host panel" : "Only the TV"}
+                className={`px-2 py-1 ${view === v ? "bg-gray-800 text-white" : "bg-white hover:bg-gray-100"}`}
               >
-                {v === "both" ? "Both" : v === "host" ? "Host only" : "TV only"}
+                {v === "both" ? "Both" : v === "host" ? "Host" : "TV"}
               </button>
             ))}
           </div>
         </div>
 
-        <p className="mt-3 text-sm text-gray-700">
-          <strong>How to run it:</strong> {mode.howTo}
-        </p>
+        {/* What's on screen, in one line; the rules fold away. */}
+        <details className="mt-1 px-1 text-sm text-gray-700">
+          <summary className="cursor-pointer select-none">
+            <span className="font-semibold">Now:</span> {nowShowing}{" "}
+            <span className="text-xs text-blue-600">ⓘ how to run it</span>
+          </summary>
+          <p className="mt-1 text-gray-600">{howTo}</p>
+        </details>
         {!hasQuestion && (
           <p role="alert" className="mt-2 rounded bg-red-100 p-2 text-sm text-red-800">
             No question in slot {slotKey} for this game. The bank is short for this tile.

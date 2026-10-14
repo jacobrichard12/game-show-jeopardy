@@ -90,6 +90,31 @@ describe("host toolbar", () => {
     expect(button(/Shuffle/)).toBeNull();
   });
 
+  it("pauses mid-game into a break screen, with music, and resumes", () => {
+    render(<Admin />);
+    joinAs(state({ started: true, teams: [{ id: "team-1", name: "Saints", score: 300 }] } as Partial<GameState>));
+    expect(button(/Music/)).toBeNull();
+
+    fireEvent.click(button(/Pause game/)!);
+    expect(mockEmitted[mockEmitted.length - 1][1].gameState.paused).toBe(true);
+
+    push(state({ started: true, paused: true, teams: [{ id: "team-1", name: "Saints", score: 300 }] } as Partial<GameState>));
+    expect(screen.getByText("We'll be right back!")).toBeInTheDocument();
+    expect(screen.getByText("Saints")).toBeInTheDocument();
+    // During the break: lobby music, but no timer or pause button.
+    expect(button(/Music off/)).toBeInTheDocument();
+    expect(button(/Toggle Timer/)).toBeNull();
+    expect(button(/Pause game/)).toBeNull();
+
+    const message = screen.getByLabelText("Message on the TV");
+    fireEvent.change(message, { target: { value: "See you tonight at 7!" } });
+    fireEvent.blur(message);
+    expect(mockEmitted[mockEmitted.length - 1][1].gameState.pauseMessage).toBe("See you tonight at 7!");
+
+    fireEvent.click(button(/Resume game/)!);
+    expect(mockEmitted[mockEmitted.length - 1][1].gameState.paused).toBe(false);
+  });
+
   it("timer: full screen only while shown, and each show starts in the corner", () => {
     render(<Admin />);
     joinAs(state({ started: true }));

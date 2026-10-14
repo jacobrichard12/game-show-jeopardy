@@ -1,4 +1,5 @@
 import React from "react";
+import { currentBoardPage } from "../shared/boardLayout";
 import { BoardPage, GameName, GameState } from "../shared/types";
 import AdminPointsButtons, { NoPointsButton } from "./AddPointsButtons";
 import { boardData, boardPageTabs } from "./boards";
@@ -10,6 +11,7 @@ import Minute from "./Minute";
 import { questionPreview } from "./questionPreview";
 import { PARTY_GAME_COMPONENTS } from "./partyGameComponents";
 import ScoreBoard from "./Scoreboard";
+import SideCharades from "./SideCharades";
 import TitlePage from "./TitlePage";
 
 interface AdminPageWrapperProps {
@@ -156,8 +158,8 @@ const AdminPageWrapper: React.FC<AdminPageWrapperProps> = ({
             one row alongside this title at sm: and up. */}
         <div className="text-center mb-4 pt-16 sm:pt-0">
           <h1 className="text-2xl font-bold mb-2">Admin Page - Board</h1>
-          {/* Tabs only when the board has more than one page (Standard);
-              a custom pack's board is a single page. */}
+          {/* Tabs only when the board has more than one page (Standard, or
+              a pack with "pages"). */}
           {pageTabs.length > 1 && (
           <>
           <div
@@ -185,18 +187,26 @@ const AdminPageWrapper: React.FC<AdminPageWrapperProps> = ({
           </>
           )}
         </div>
-        <GameBoard
-          isAdmin={true}
-          gameState={gameState}
-          gameBoardData={boardData(gameState)}
-          handleUpdateCurrentGame={handleUpdateCurrentGame}
-          sendGameStateToServer={sendGameStateToServer}
-        />
-        <ScoreBoard
-          gameState={gameState}
-          isAdmin={true}
-          handleUpdateTurn={handleUpdateTurn}
-        />
+        {/* A side-game page (a pack's Reverse Charades tab) has no tiles:
+            it is the game itself, with its own totals. */}
+        {currentBoardPage(gameState).sideGame === "charades" ? (
+          <SideCharades isAdmin gameState={gameState} sendGameStateToServer={sendGameStateToServer} />
+        ) : (
+          <>
+            <GameBoard
+              isAdmin={true}
+              gameState={gameState}
+              gameBoardData={boardData(gameState)}
+              handleUpdateCurrentGame={handleUpdateCurrentGame}
+              sendGameStateToServer={sendGameStateToServer}
+            />
+            <ScoreBoard
+              gameState={gameState}
+              isAdmin={true}
+              handleUpdateTurn={handleUpdateTurn}
+            />
+          </>
+        )}
       </div>
     );
   };

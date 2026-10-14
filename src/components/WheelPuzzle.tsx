@@ -122,7 +122,9 @@ const WheelPuzzle: React.FC<QuestionProps> = ({
         {puzzle.category}
       </p>
 
-      <div className="flex flex-wrap justify-center gap-x-6 gap-y-3 xl:gap-x-12 xl:gap-y-6">
+      {/* Gaps between words are about one and a half tiles wide, so word
+          breaks read clearly from across the room. */}
+      <div className="flex flex-wrap justify-center gap-x-10 gap-y-3 sm:gap-x-16 xl:gap-x-28 xl:gap-y-6">
         {words.map((word, wordIndex) => (
           <div key={wordIndex} className="flex gap-1 sm:gap-2">
             {word.map((tile, tileIndex) =>

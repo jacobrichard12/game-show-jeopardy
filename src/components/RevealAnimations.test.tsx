@@ -167,6 +167,29 @@ describe("Display reveal animations", () => {
     expect(mockMusic[mockMusic.length - 1]).toBe(false);
   });
 
+  it("shows the break screen while paused, with lobby music if it's on, then the board again", () => {
+    render(<Display />);
+    join(state());
+    push(state({ paused: true, pauseMessage: "See you tonight at 7!", lobbyMusic: true }));
+    expect(screen.getByText("We'll be right back!")).toBeInTheDocument();
+    expect(screen.getByText("See you tonight at 7!")).toBeInTheDocument();
+    expect(screen.queryByTestId("page")).toBeNull();
+    expect(mockMusic[mockMusic.length - 1]).toBe(true);
+
+    push(state({ paused: false, lobbyMusic: true }));
+    expect(screen.queryByText("We'll be right back!")).toBeNull();
+    expect(screen.getByTestId("page")).toBeInTheDocument();
+    expect(mockMusic[mockMusic.length - 1]).toBe(false);
+  });
+
+  it("hides the in-game join code when the pack asks", () => {
+    render(<Display />);
+    join(state());
+    expect(screen.getByText(/Join:/)).toBeInTheDocument();
+    push(state({ hideJoinCode: true }));
+    expect(screen.queryByText(/Join:/)).toBeNull();
+  });
+
   it("doesn't replay the intro for a TV that joins a running game", () => {
     render(<Display />);
     join(state());

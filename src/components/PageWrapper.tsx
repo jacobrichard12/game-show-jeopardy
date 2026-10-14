@@ -1,4 +1,5 @@
 import React from "react";
+import { currentBoardPage } from "../shared/boardLayout";
 import { GameName, GameState } from "../shared/types";
 import FamilyFeud from "./FamilyFeud";
 import FitToScreen from "./FitToScreen";
@@ -10,6 +11,7 @@ import Minute from "./Minute";
 import { PARTY_GAME_COMPONENTS } from "./partyGameComponents";
 import QuestionWrapper from "./QuestionWrapper";
 import ScoreBoard from "./Scoreboard";
+import SideCharades from "./SideCharades";
 import NoPointsFlash from "./NoPointsFlash";
 import Timer from "./Timer";
 
@@ -20,9 +22,14 @@ interface PageWrapperProps {
 }
 
 const PageWrapper: React.FC<PageWrapperProps> = ({ gameState, boardIntro = 0 }) => {
+  const sideGame = currentBoardPage(gameState).sideGame === "charades";
   const getComponent = (): React.ReactNode => {
     switch (gameState.currentGame.gameName) {
       case GameName.BOARD:
+        // A pack's side-game page shows the game itself, not tiles.
+        if (sideGame) {
+          return <SideCharades isAdmin={false} gameState={gameState} sendGameStateToServer={() => {}} />;
+        }
         return (
           <GameBoard
             isAdmin={false}
@@ -108,7 +115,7 @@ const PageWrapper: React.FC<PageWrapperProps> = ({ gameState, boardIntro = 0 }) 
   // a reveal never pushes anything below the fold. The board sizes itself
   // to the screen already.
   const component = getComponent();
-  const fitsToScreen = gameState.currentGame.gameName !== GameName.BOARD;
+  const fitsToScreen = gameState.currentGame.gameName !== GameName.BOARD || sideGame;
 
   return (
     // At lg: and up the display is exactly one screen tall: the scoreboard is
@@ -132,9 +139,12 @@ const PageWrapper: React.FC<PageWrapperProps> = ({ gameState, boardIntro = 0 }) 
           {fitsToScreen ? <FitToScreen>{component}</FitToScreen> : component}
         </div>
       </div>
-      <div className="lg:shrink-0">
-        <ScoreBoard gameState={gameState} isAdmin={false} />
-      </div>
+      {/* The side game keeps its own totals on screen instead. */}
+      {!(sideGame && gameState.currentGame.gameName === GameName.BOARD) && (
+        <div className="lg:shrink-0">
+          <ScoreBoard gameState={gameState} isAdmin={false} />
+        </div>
+      )}
       <NoPointsFlash count={gameState.noPointsCount ?? 0} />
     </div>
   );

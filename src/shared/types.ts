@@ -30,6 +30,15 @@ export interface GameState {
     // Bumped each time the host presses "No One Gets Points"; the TV plays a
     // sad sound and animation on each increase (NoPointsFlash).
     noPointsCount?: number;
+    // "We'll be right back": the host paused mid-game (IntermissionScreen),
+    // e.g. between a morning and an evening session. Resuming picks up
+    // exactly where the game was. pauseMessage = the host's line on the TV.
+    paused?: boolean;
+    pauseMessage?: string;
+    // A pack's Reverse Charades side-game page (SideCharades): running
+    // totals across as many rounds as the host likes. Its words are
+    // gameData.charades[SIDE_CHARADES_KEY]. Missing = not started.
+    sideCharades?: SideCharadesState;
     isDoubleJeopardy: boolean;
     // Which board page the host (and so the TV) is showing: a page id from
     // `board` (Standard: "classic" or "party"). Undefined means the first page.
@@ -46,6 +55,10 @@ export interface GameState {
     // A content pack can switch Double Jeopardy off (single round); the host's
     // toggle is then hidden. Missing = Double Jeopardy available.
     noDoubleJeopardy?: boolean;
+    // A pack can keep the join code off the TV (title screen, the in-game
+    // corner, the pause screen), so only people the host invites can join.
+    // The host page still shows it. Missing = shown.
+    hideJoinCode?: boolean;
     // Set by the host from Settings to show the end-of-game standings on the
     // TV; cleared by "Back to board" or a reset. Missing means false.
     gameOver?: boolean;
@@ -258,10 +271,15 @@ export interface ClockState {
 
 export type CharadesPrompts = Record<string, CharadesPrompt>;
 export interface CharadesPrompt extends Question {
-    category: string;
+    // Not shown in the game; the bank uses it to group words.
+    category?: string;
     // Shared by every team in turn order; wraps around if a tile runs out.
     words: string[];
     seconds?: number;
+    // A pack tile with no words of its own: it plays from the pack's
+    // Reverse Charades side-game list, continuing from the same place
+    // (GameState.sideCharades.wordIndex), so no word repeats across the two.
+    shared?: boolean;
 }
 
 export interface WheelQuestionState extends QuestionState {
@@ -305,6 +323,39 @@ export interface OrderQuestionState extends QuestionState {
     checkCount: number;
 }
 
+// The Reverse Charades side game: one long word list, teams alternating
+// turns for as many rounds as the host likes (timed with Toggle Timer).
+export interface SideCharadesState {
+    // The team currently acting, or null between turns.
+    activeTeamId: string | null;
+    // The team that played last, so the next team in line can be suggested.
+    lastTeamId: string | null;
+    // Position in the shuffled word list; never repeats until it wraps.
+    wordIndex: number;
+    // teamId -> words guessed, all rounds together.
+    totals: Record<string, number>;
+    // Words the active team has this turn.
+    turnScore: number;
+    // Turns started so far (round = turns / teams, rounded up).
+    turns: number;
+}
+
+// A content pack as /sandbox gets it (server "sandboxPack", admin token
+// only): just the pack's own questions plus its layout. The sandbox keeps its
+// sample questions for any tile the pack doesn't fill.
+export interface SandboxPack {
+    id: string;
+    name: string;
+    gameData: Partial<GameData>;
+    board: BoardLayoutPage[];
+    titleScreen: GameState["titleScreen"];
+    hideJoinCode: boolean;
+    noDoubleJeopardy: boolean;
+}
+
+// gameData.charades key of the side game's word list.
+export const SIDE_CHARADES_KEY = "side";
+
 export interface CharadesQuestionState extends QuestionState {
     clock: ClockState;
     // The team currently acting, or null before the first turn starts.
@@ -345,9 +396,22 @@ export function getCurrentQuestion<T>(
     bank: Record<string, T>,
     gameState: GameState
 ): T | undefined {
-    const { value } = gameState.currentGame;
+    const { value, gameName, column } = gameState.currentGame;
     const key = gameState.isDoubleJeopardy ? value / 2 + 1 : value;
+    // A mixed tile (a pack tile playing as another game) has its own question,
+    // stored under its column, so it never shares one with that game's own
+    // column (e.g. a Reverse Charades tile in Head to Head and a Reverse
+    // Charades column on another page). Falls back to the plain slot.
+    if (column && column !== gameName) {
+        const own = bank[mixedTileKey(column, key)];
+        if (own !== undefined) return own;
+    }
     return bank[key];
+}
+
+// Bank key of a mixed tile's question: "<column game>:<slot key>".
+export function mixedTileKey(column: string, slotKey: number): string {
+    return `${column}:${slotKey}`;
 }
 
 // A mixed tile (a custom pack's tile playing inside another game's column,

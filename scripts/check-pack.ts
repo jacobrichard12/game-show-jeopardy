@@ -4,7 +4,7 @@
 //   npm run check-pack -- family  -> just src/data/custom/family.json
 import fs from "fs";
 import path from "path";
-import { loadPack, PACKS_DIR, slotKeyFor } from "../src/server/packs";
+import { allCharadesWords, loadPack, PACKS_DIR, slotKeyFor } from "../src/server/packs";
 
 const all = (() => {
   try {
@@ -30,38 +30,50 @@ targets.forEach((id) => {
     return;
   }
   console.log(
-    `${pack.errors.length ? "✗" : "✓"} ${id} ("${pack.name}"): ${pack.columns.length} column(s) × ${pack.rows} row(s)` +
-      (pack.doubleJeopardy ? "" : ", no Double Jeopardy")
+    `${pack.errors.length ? "✗" : "✓"} ${id} ("${pack.name}"): ${pack.columns.length} column(s)` +
+      (pack.pages.length > 1 ? ` on ${pack.pages.length} pages` : "") +
+      ` × ${pack.rows} row(s)` +
+      (pack.doubleJeopardy ? "" : ", no Double Jeopardy") +
+      (pack.hideJoinCode ? ", join code hidden on the TV" : "")
   );
   console.log(
     `    Title screen: "${pack.titleScreen.title}"` +
       (pack.titleScreen.subtitle ? ` / "${pack.titleScreen.subtitle}"` : " (usual welcome line)") +
       (pack.titleScreen.decor ? `, decor: ${pack.titleScreen.decor}` : "")
   );
-  // Each column, and which of its 10 tiles fall back to normal questions.
-  pack.columns.forEach((column) => {
-    // A tile is custom if the column's game, or a mixed-in type, has it.
-    const own = (pack.tiles as Record<string, Record<string, unknown>>)[column.game] ?? {};
-    const tiles: Record<string, unknown> = { ...own, ...(column.tiles ?? {}) };
-    const steps = Array.from({ length: pack.rows }, (_, i) => i + 1);
-    const rounds = pack.doubleJeopardy ? ([1, 2] as const) : ([1] as const);
-    const total = pack.rows * rounds.length;
-    const normal = rounds.flatMap((round) =>
-      steps
-        .map((step) => step * (round === 1 ? 100 : 200))
-        .filter((value) => tiles[String(slotKeyFor(round, value))] === undefined)
-        .map((value) => `R${round} ${value}`)
-    );
-    const custom = total - normal.length;
-    console.log(
-      `    ${column.title} (${column.game}): ${custom}/${total} custom` +
-        (column.tiles
-          ? ` [mixed: ${Object.entries(column.tiles)
-              .map(([slot, game]) => `${Number(slot) % 100 === 1 ? `R2 ${(Number(slot) - 1) * 2}` : `R1 ${slot}`} ${game}`)
-              .join(", ")}]`
-          : "") +
-        (normal.length === 0 ? "" : custom === 0 ? ", all normal questions" : `; normal: ${normal.join(", ")}`)
-    );
+  // Each page's columns, and which tiles fall back to normal questions.
+  pack.pages.forEach((page) => {
+    if (pack.pages.length > 1) console.log(`    Page "${page.label}":`);
+    if (page.sideGame === "charades") {
+      console.log(
+        `    Reverse Charades side game: ` +
+          (page.words ? `${page.words.length} words of its own` : `the whole bank (${allCharadesWords().length} words)`)
+      );
+    }
+    page.columns.forEach((column) => {
+      // A tile is custom if the column's game, or a mixed-in type, has it.
+      const own = (pack.tiles as Record<string, Record<string, unknown>>)[column.game] ?? {};
+      const tiles: Record<string, unknown> = { ...own, ...(column.tiles ?? {}) };
+      const steps = Array.from({ length: pack.rows }, (_, i) => i + 1);
+      const rounds = pack.doubleJeopardy ? ([1, 2] as const) : ([1] as const);
+      const total = pack.rows * rounds.length;
+      const normal = rounds.flatMap((round) =>
+        steps
+          .map((step) => step * (round === 1 ? 100 : 200))
+          .filter((value) => tiles[String(slotKeyFor(round, value))] === undefined)
+          .map((value) => `R${round} ${value}`)
+      );
+      const custom = total - normal.length;
+      console.log(
+        `    ${column.title} (${column.game}): ${custom}/${total} custom` +
+          (column.tiles
+            ? ` [mixed: ${Object.entries(column.tiles)
+                .map(([slot, game]) => `${Number(slot) % 100 === 1 ? `R2 ${(Number(slot) - 1) * 2}` : `R1 ${slot}`} ${game}`)
+                .join(", ")}]`
+            : "") +
+          (normal.length === 0 ? "" : custom === 0 ? ", all normal questions" : `; normal: ${normal.join(", ")}`)
+      );
+    });
   });
   pack.errors.forEach((e) => console.log(`    - ${e}`));
   if (pack.errors.length) failed = true;

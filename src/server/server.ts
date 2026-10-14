@@ -3,7 +3,7 @@ import express from "express";
 import http from "http";
 import path from "path";
 import { Server, Socket } from "socket.io";
-import { clampTeamCount, createDefaultTeams, GameName, GameState } from "../shared/types";
+import { clampTeamCount, createDefaultTeams, GameData, GameName, GameState, SandboxPack } from "../shared/types";
 import { createRoomGameData, fetchMillionairePool, MillionairePool } from "./datagen";
 import { shouldSweepRoom, SWEEP_INTERVAL_MS } from "./roomSweep";
 import { applyPack, listPacks, LoadedPack, loadPack, packBoard, PackSummary } from "./packs";
@@ -15,6 +15,7 @@ interface ServerToClientEvents {
   // Names only, for the create-game dropdown; pack questions never leave the server.
   packList: (data: { packs: PackSummary[] }) => void;
   adminTokenResult: (data: { ok: boolean }) => void;
+  sandboxPackResult: (data: { ok: boolean; reason?: string; pack?: SandboxPack }) => void;
   reconfigureError: (data: { reason: string }) => void;
   gameJoined: (data: { code: string; gameState: GameState }) => void;
   gameNotFound: (data: { code: string }) => void;
@@ -45,6 +46,8 @@ interface ClientToServerEvents {
   }) => void;
   // Gate for /sandbox: is this the venue's ADMIN_TOKEN (or is none set)?
   verifyAdminToken: (data: { adminToken?: string }) => void;
+  // /sandbox: a content pack's questions and layout, to test it (same gate).
+  sandboxPack: (data: { adminToken?: string; packId?: string }) => void;
   joinGame: (data: { code: string; adminKey?: string; adminToken?: string }) => void;
   gameStateUpdate: (data: { code: string; gameState: GameState }) => void;
   resetGameState: (data: { code: string }) => void;
@@ -196,6 +199,7 @@ async function buildInitialGameState(
           packId: pack.id,
           titleScreen: pack.titleScreen,
           ...(pack.doubleJeopardy ? {} : { noDoubleJeopardy: true }),
+          ...(pack.hideJoinCode ? { hideJoinCode: true } : {}),
         }
       : {}),
   };
@@ -251,6 +255,35 @@ io.on("connection", (socket) => {
     const ok = !ADMIN_TOKEN || data?.adminToken === ADMIN_TOKEN;
     if (!ok) console.warn(`Rejected sandbox token from ${socket.id}`);
     socket.emit("adminTokenResult", { ok });
+  });
+
+  // The sandbox tries out a content pack: just the pack's own questions (no
+  // normal banks; the sandbox keeps its sample questions for the rest) and
+  // its layout. Questions only leave the server behind the admin token.
+  socket.on("sandboxPack", (data) => {
+    const ok = !ADMIN_TOKEN || data?.adminToken === ADMIN_TOKEN;
+    if (!ok) {
+      console.warn(`Rejected sandboxPack from ${socket.id}`);
+      socket.emit("sandboxPackResult", { ok: false, reason: "Invalid admin token." });
+      return;
+    }
+    const pack = typeof data?.packId === "string" ? loadPack(data.packId) : null;
+    if (!pack || pack.columns.length === 0) {
+      socket.emit("sandboxPackResult", { ok: false, reason: `Content pack "${data?.packId}" not found or has no valid columns.` });
+      return;
+    }
+    socket.emit("sandboxPackResult", {
+      ok: true,
+      pack: {
+        id: pack.id,
+        name: pack.name,
+        gameData: applyPack({} as GameData, pack),
+        board: packBoard(pack),
+        titleScreen: pack.titleScreen,
+        hideJoinCode: pack.hideJoinCode,
+        noDoubleJeopardy: !pack.doubleJeopardy,
+      },
+    });
   });
 
   // Change the setup (teams, theme, content pack) before the game starts. The

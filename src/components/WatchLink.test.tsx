@@ -51,6 +51,20 @@ describe("lobby screen", () => {
     rerender(<TitlePage isAdmin={false} code="ABCD" gameState={gameState} sendGameStateToServer={() => {}} />);
     expect(screen.queryByLabelText("TV link")).toBeNull();
   });
+
+  it("keeps the join code off the TV when the pack hides it, but not off the host's page", () => {
+    const hidden = { ...gameState, hideJoinCode: true } as GameState;
+    const { rerender } = render(
+      <TitlePage isAdmin={false} code="ABCD" gameState={gameState} sendGameStateToServer={() => {}} />
+    );
+    expect(screen.getByText("ABCD")).toBeInTheDocument();
+    rerender(<TitlePage isAdmin={false} code="ABCD" gameState={hidden} sendGameStateToServer={() => {}} />);
+    expect(screen.queryByText("ABCD")).toBeNull();
+    expect(screen.queryByText(/Join at/)).toBeNull();
+    rerender(<TitlePage isAdmin code="ABCD" gameState={hidden} sendGameStateToServer={() => {}} />);
+    expect(screen.getByText("ABCD")).toBeInTheDocument();
+    expect(screen.getByText(/Hidden on the TV/)).toBeInTheDocument();
+  });
 });
 
 describe("lobby title screen", () => {

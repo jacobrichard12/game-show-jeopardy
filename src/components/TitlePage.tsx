@@ -47,9 +47,13 @@ const TitlePage: React.FC<TitlePageProps> = ({
         </p>
 
         {/* Lobby: everything a latecomer needs to join, readable from across
-            the room, instead of a wasted welcome screen. */}
-        {code && (
+            the room, instead of a wasted welcome screen. A pack can keep it
+            off the TV ("hideJoinCode"); the host still sees it. */}
+        {code && (isAdmin || !gameState.hideJoinCode) && (
           <div className="mt-8 xl:mt-14">
+            {gameState.hideJoinCode && (
+              <p className="mb-2 text-sm text-white/70 sm:text-base">Hidden on the TV (only you see the code)</p>
+            )}
             <p className="text-base sm:text-xl xl:text-3xl text-white/80">
               Join at {window.location.host} with code
             </p>

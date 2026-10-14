@@ -8,6 +8,8 @@ import Sandbox from "./Sandbox";
 
 // The Minute game embeds a YouTube player; don't load the real iframe API.
 jest.mock("react-youtube", () => ({ __esModule: true, default: () => null }));
+// The sandbox embeds the real host page and TV screen, which import the router.
+jest.mock("react-router-dom", () => ({ useParams: () => ({}), useNavigate: () => () => {} }), { virtual: true });
 
 // user-event v13 ships its own copy of @testing-library/dom, separate from the
 // one React Testing Library configures, so its events aren't wrapped in act()
@@ -438,7 +440,7 @@ describe("Sandbox", () => {
   });
 
   describe("Reverse Charades", () => {
-    it("each team takes a timed turn; Got it scores, Skip moves on", () => {
+    it("each team takes a turn; Got it scores, Skip moves on, End turn hides the word", () => {
       render(<Sandbox />);
       chooseGame("Reverse Charades");
       revealToTv();
@@ -449,7 +451,8 @@ describe("Sandbox", () => {
 
       click(screen.getByRole("button", { name: "Start Team A's turn" }));
       expect(within(tv()).getByText(/Up now:/)).toHaveTextContent("Team A");
-      expect(screen.getByRole("button", { name: /Pause clock/ })).toBeInTheDocument();
+      // No clock of its own: the host uses Toggle Timer.
+      expect(screen.queryByRole("button", { name: /Pause clock/ })).toBeNull();
       const firstWord = within(tv()).getByLabelText("Current word").textContent!;
       expect(firstWord.length).toBeGreaterThan(0);
 
@@ -460,6 +463,10 @@ describe("Sandbox", () => {
       click(screen.getByRole("button", { name: /Got it/ }));
       expect(within(tv()).getByText("2 words")).toBeInTheDocument();
       expect(within(tv()).getByLabelText("Current word")).not.toHaveTextContent(firstWord);
+
+      click(screen.getByRole("button", { name: "End turn" }));
+      expect(within(tv()).getByText("Get ready…")).toBeInTheDocument();
+      expect(within(tv()).queryByLabelText("Current word")).toBeNull();
 
       click(screen.getByRole("button", { name: "Start Team B's turn" }));
       expect(within(tv()).getByText(/Up now:/)).toHaveTextContent("Team B");

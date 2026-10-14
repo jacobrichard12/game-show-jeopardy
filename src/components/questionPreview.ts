@@ -27,7 +27,7 @@ function previewText(gameState: GameState): string | undefined {
     case GameName.ACT:
       return `${q.mode[0].toUpperCase()}${q.mode.slice(1)}: ${q.word}`;
     case GameName.CHARADES:
-      return q.category;
+      return q.shared ? "words from the Reverse Charades tab" : q.category;
     case GameName.SCAVENGER:
       return q.item;
     case GameName.CLOSEST:

@@ -1,23 +1,25 @@
 import React, { useEffect, useRef } from "react";
 import { dingAudio } from "../shared/audio";
-import { useCountdown } from "../shared/countdown";
-import { bestTeams, charadesWord, startClock, updateQuestionState } from "../shared/partyGames";
+import { bestTeams, charadesWord, updateQuestionState } from "../shared/partyGames";
 import { playSound } from "../shared/sound";
 import { teamColor } from "../shared/teamColors";
 import {
   CharadesQuestionState,
-  ClockState,
+  GameState,
   getCurrentQuestion,
   QuestionProps,
+  SIDE_CHARADES_KEY,
 } from "../shared/types";
-import CountdownClock from "./CountdownClock";
 import NoQuestionAvailable from "./NoQuestionAvailable";
 
 // Reverse charades: one guesser per team stands with their back to the TV
 // while the rest of the team acts out the word on screen. Each team gets one
-// timed turn to get through as many words as they can; the host taps
-// "Got it" or "Skip". Words carry on from where the last team stopped, so no
-// team sees a word twice. Most words wins; the host awards the tile with the
+// turn to get through as many words as they can (timed with the host's Toggle
+// Timer, not a clock of its own); the host taps "Got it" or "Skip", then
+// "End turn". Words carry on from where the last team stopped, so no
+// team sees a word twice. A pack tile with no words of its own ("shared")
+// plays from the pack's Reverse Charades tab list and moves the same place in
+// it, so the tile and the tab never repeat each other's words. Most words wins; the host awards the tile with the
 // normal points buttons.
 const ReverseCharades: React.FC<QuestionProps> = ({
   isAdmin,
@@ -27,7 +29,6 @@ const ReverseCharades: React.FC<QuestionProps> = ({
   const prompt = getCurrentQuestion(gameState.gameData.charades ?? {}, gameState);
   const questionState = gameState.currentGame.questionState as CharadesQuestionState;
   const scores = questionState.scores ?? {};
-  const remaining = useCountdown(questionState.clock);
   const totalGot = Object.values(scores).reduce<number>((sum, n) => sum + (n ?? 0), 0);
 
   // Ding on the TV for every word a team gets.
@@ -42,53 +43,74 @@ const ReverseCharades: React.FC<QuestionProps> = ({
     return <NoQuestionAvailable />;
   }
 
+  // A shared tile reads the tab's list and place; otherwise its own.
+  const sideList = gameState.gameData.charades?.[SIDE_CHARADES_KEY];
+  const shared = !!prompt.shared && !!sideList;
+  const words = shared ? sideList!.words : prompt.words;
+  const wordIndex = shared ? gameState.sideCharades?.wordIndex ?? 0 : questionState.wordIndex;
+
   const teams = gameState.teams;
-  const clock = questionState.clock;
   const activeId = questionState.activeTeamId;
   const activeIndex = teams.findIndex((team) => team.id === activeId);
   const activeTeam = activeIndex >= 0 ? teams[activeIndex] : undefined;
-  const word = charadesWord(prompt.words, questionState.wordIndex);
-  const longestWord = prompt.words.reduce((a, b) => (b.length > a.length ? b : a), "");
-  const turnLive = !!activeTeam && remaining > 0;
+  const word = charadesWord(words, wordIndex);
+  const longestWord = words.reduce((a, b) => (b.length > a.length ? b : a), "");
+  const turnLive = !!activeTeam;
   const allPlayed = teams.every((team) => typeof scores[team.id] === "number");
-  const showWinner = allPlayed && (remaining === 0 || !clock.running);
+  const showWinner = allPlayed && !turnLive;
   const winners = showWinner ? bestTeams(scores) : [];
 
   const patch = (changes: Partial<CharadesQuestionState>) =>
     sendGameStateToServer(updateQuestionState<CharadesQuestionState>(gameState, changes));
-
-  const setClock = (next: ClockState) => {
-    if (isAdmin) patch({ clock: next });
+  // Moves on one word: in the tab's shared list, or the tile's own.
+  const nextWord = (changes: Partial<CharadesQuestionState> = {}) => {
+    if (!shared) {
+      patch({ ...changes, wordIndex: questionState.wordIndex + 1 });
+      return;
+    }
+    const next: GameState = updateQuestionState<CharadesQuestionState>(gameState, changes);
+    sendGameStateToServer({
+      ...next,
+      sideCharades: {
+        activeTeamId: null,
+        lastTeamId: null,
+        totals: {},
+        turnScore: 0,
+        turns: 0,
+        ...gameState.sideCharades,
+        wordIndex: wordIndex + 1,
+      },
+    });
   };
-  // Starting (or redoing) a turn gives that team a fresh score and a full clock.
+
+  // Starting (or redoing) a turn gives that team a fresh score.
   const startTurn = (teamId: string) => {
     if (!isAdmin) return;
     sendGameStateToServer({
       ...updateQuestionState<CharadesQuestionState>(gameState, {
         activeTeamId: teamId,
         scores: { ...scores, [teamId]: 0 },
-        clock: startClock({ ...clock, remainingMs: clock.durationMs }),
       }),
       whoseTurn: teamId,
     });
   };
+  // Hides the word on the TV until the next turn starts.
+  const endTurn = () => {
+    if (isAdmin && activeId) patch({ activeTeamId: null });
+  };
   const gotIt = () => {
     if (!isAdmin || !activeId) return;
-    patch({
-      wordIndex: questionState.wordIndex + 1,
-      scores: { ...scores, [activeId]: (scores[activeId] ?? 0) + 1 },
-    });
+    nextWord({ scores: { ...scores, [activeId]: (scores[activeId] ?? 0) + 1 } });
   };
   const skip = () => {
-    if (isAdmin && activeId) patch({ wordIndex: questionState.wordIndex + 1 });
+    if (isAdmin && activeId) nextWord();
   };
 
   return (
     <div className="rounded-xl bg-ink p-3 text-center text-white sm:p-6">
       <p className="font-display text-3xl font-semibold text-accent sm:text-5xl xl:text-8xl">
-        <span aria-hidden="true">🙆</span> REVERSE CHARADES
+        REVERSE CHARADES
       </p>
-      <p className="mt-2 text-base text-blue-100 sm:text-xl xl:text-4xl">{prompt.category}</p>
 
       {activeTeam && (
         <p className="mt-4 text-lg sm:text-2xl xl:text-5xl">
@@ -99,7 +121,7 @@ const ReverseCharades: React.FC<QuestionProps> = ({
         </p>
       )}
 
-      {/* The word: TV only while a turn is on the clock; the host always, with
+      {/* The word: TV only during a turn; the host always, with
           the same layout either way so the host's buttons don't move. */}
       {(turnLive || isAdmin) && (
         <div className="mx-auto my-5 max-w-3xl rounded-lg border-2 border-accent/50 p-4">
@@ -110,7 +132,7 @@ const ReverseCharades: React.FC<QuestionProps> = ({
           )}
           {/* Sized by an invisible copy of the tile's longest word, so a
               longer word wrapping onto more lines never moves the buttons
-              and clock below (same trick as Put It In Order's slots). */}
+              below (same trick as Put It In Order's slots). */}
           <div className="grid font-display text-4xl font-semibold sm:text-6xl xl:text-9xl">
             <span className="invisible col-start-1 row-start-1" aria-hidden="true">
               {longestWord}
@@ -130,10 +152,6 @@ const ReverseCharades: React.FC<QuestionProps> = ({
         </p>
       )}
 
-      <div className="my-4">
-        <CountdownClock clock={clock} isAdmin={isAdmin} onChange={setClock} />
-      </div>
-
       {isAdmin && (
         <div className="mt-4 space-y-3">
           <div className="flex flex-wrap justify-center gap-2">
@@ -152,6 +170,14 @@ const ReverseCharades: React.FC<QuestionProps> = ({
               className="rounded bg-gray-200 px-6 py-3 text-lg text-gray-800 hover:bg-gray-300 disabled:opacity-50"
             >
               Skip
+            </button>
+            <button
+              type="button"
+              onClick={endTurn}
+              disabled={!activeId}
+              className="rounded bg-orange-500 px-6 py-3 text-lg text-white hover:bg-orange-600 disabled:opacity-50"
+            >
+              End turn
             </button>
           </div>
           <div className="flex flex-wrap justify-center gap-2">

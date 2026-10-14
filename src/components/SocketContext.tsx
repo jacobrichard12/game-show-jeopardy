@@ -26,6 +26,10 @@ export const useSocket = (): Socket | null => {
   return context;
 };
 
+// The socket if there is one: for pages that also work offline (the sandbox
+// runs without a server; it only uses one to load content packs).
+export const useOptionalSocket = (): Socket | null => useContext(SocketContext) ?? null;
+
 interface SocketProviderProps {
   children: React.ReactNode;
 }

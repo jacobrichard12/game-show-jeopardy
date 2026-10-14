@@ -3,8 +3,8 @@ import standardBoard from "../data/boards/standard.json";
 // Board layouts (ROADMAP C6). A board is one or more pages of columns; each
 // column is a title plus the game that plays there. The Standard board
 // (src/data/boards/standard.json) has two pages, Classic and Party; a custom
-// content pack (server/packs.ts) defines a single page, which the server puts
-// in GameState.board. No questions live here, so it's safe in the browser.
+// content pack (server/packs.ts) defines one page or several, which the
+// server puts in GameState.board. No questions live here, so it's safe in the browser.
 export interface BoardColumn {
   title: string;
   game: string; // a GameData key: "feud", "millionaire", "wheel", ...
@@ -20,6 +20,9 @@ export interface BoardLayoutPage {
   // Round 1 tile values down each column (a custom pack's "rows"); missing =
   // all of TILE_VALUES (the usual 5 rows).
   values?: number[];
+  // A side-game page has no tiles: picking its tab goes straight into that
+  // game, played in open-ended rounds (SideCharades). Custom packs only.
+  sideGame?: "charades";
 }
 
 export const STANDARD_PAGES: BoardLayoutPage[] = standardBoard.pages;
@@ -68,7 +71,9 @@ export function isCustomBoard(state: HasBoard): boolean {
 // Standard game keeps its usual question-page titles).
 export function customColumnTitle(state: HasBoard, game: string): string | undefined {
   if (!isCustomBoard(state)) return undefined;
-  return boardPages(state)[0].columns.find((column) => column.game === game)?.title;
+  return boardPages(state)
+    .flatMap((page) => page.columns)
+    .find((column) => column.game === game)?.title;
 }
 
 // The Standard board's title for a game, used as a custom column's default.

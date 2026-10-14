@@ -1,12 +1,22 @@
 import fs from "fs";
+import partyGamesJson from "../data/partyGames.json";
 import path from "path";
 import { BoardColumn, CUSTOM_PAGE_ID, MAX_ROWS, standardColumnTitle, TILE_VALUES } from "../shared/boardLayout";
 import { DECOR_IDS, DecorId, isDecorId } from "../shared/decor";
-import { GameData, GameName, getGameTitle, MillionaireQuestion, PerformMode } from "../shared/types";
+import {
+  GameData,
+  GameName,
+  getGameTitle,
+  MillionaireQuestion,
+  mixedTileKey,
+  PerformMode,
+  SIDE_CHARADES_KEY,
+} from "../shared/types";
 
 // Custom content packs (ROADMAP C5, C6): JSON files in src/data/custom/, each
-// defining a one-page board: up to 6 columns, each a title + a game type +
-// optional hand-written questions. Tiles a column doesn't fill come from the
+// defining a board: one page of up to 6 columns ("columns"), or several tabbed
+// pages ("pages"), each column a title + a game type + optional hand-written
+// questions. Tiles a column doesn't fill come from the
 // normal sources (Feud CSVs, OpenTDB, the banks). Read by the server only, so
 // pack questions reach a browser only through a real game. The format is
 // documented in PROJECT_CONTEXT.md §10.
@@ -38,18 +48,28 @@ export interface LoadedPack extends PackSummary {
   // The lobby title screen: "title" (default: the pack's name) + "subtitle",
   // and "decor" (floating symbols, shared/decor.ts).
   titleScreen: { title: string; subtitle?: string; decor?: DecorId };
-  // The board, left to right (titles defaulted; invalid columns dropped).
+  // The board's pages (tabs), each its columns left to right (titles
+  // defaulted; invalid columns dropped). A one-page pack is one page labeled
+  // with the pack's name.
+  // A side-game page has no columns: its tab goes straight into that game
+  // (Reverse Charades), with the page's own words or the whole bank.
+  pages: { label: string; columns: BoardColumn[]; sideGame?: "charades"; words?: string[] }[];
+  // Every page's columns, in order.
   columns: BoardColumn[];
   // Tiles down each column (1–5; round 1 = 100…rows×100, round 2 doubled).
   rows: number;
   // false = a single round: no Double Jeopardy, round 2 questions unused.
   doubleJeopardy: boolean;
+  // true = the TV never shows the join code ("hideJoinCode").
+  hideJoinCode: boolean;
   // game -> slot key (as used by the banks) -> question
   tiles: Partial<Record<PackGame, Record<string, unknown>>>;
   errors: string[];
 }
 
-export const MAX_COLUMNS = 6; // about the most a TV shows legibly
+export const MAX_COLUMNS = 6; // about the most a TV shows legibly (per page)
+export const MAX_PAGES = 4;
+export const MAX_PAGE_LABEL_LENGTH = 30;
 export const MAX_TITLE_LENGTH = 60;
 export const MAX_SUBTITLE_LENGTH = 120;
 
@@ -130,9 +150,12 @@ function toQuestion(game: PackGame, e: any): { question?: unknown; error?: strin
       return { question: pick(e, ["mode", "word", "taboo", "seconds"]) };
     }
     case "charades":
-      if (!isText(e.category)) return { error: "needs a category" };
-      if (!isTextList(e.words)) return { error: "needs words: [ … ]" };
+      if (e.category !== undefined && !isText(e.category)) return { error: "category must be text (or leave it out)" };
       if (!optionalNumber(e.seconds)) return { error: "seconds must be a positive number" };
+      // No words: the tile plays from the pack's Reverse Charades side-game
+      // list (sharing its place), or the whole bank if there's no side game.
+      if (e.words === undefined) return { question: { ...pick(e, ["category", "seconds"]), words: [], shared: true } };
+      if (!isTextList(e.words)) return { error: "words must be a list of words (or leave it out to share the side game's)" };
       return { question: pick(e, ["category", "words", "seconds"]) };
     case "scavenger":
       if (!isText(e.item)) return { error: "needs an item" };
@@ -169,9 +192,11 @@ export function parsePack(id: string, json: unknown): LoadedPack {
     id,
     name: id,
     titleScreen: { title: id },
+    pages: [],
     columns: [],
     rows: MAX_ROWS,
     doubleJeopardy: true,
+    hideJoinCode: false,
     tiles: {},
     errors: [],
   };
@@ -206,14 +231,14 @@ export function parsePack(id: string, json: unknown): LoadedPack {
     ...(decor ? { decor } : {}),
   };
 
+  const formatKeys = ["name", "title", "subtitle", "decor", "rows", "doubleJeopardy", "hideJoinCode", "columns", "pages"];
   Object.keys(data).forEach((key) => {
-    if (["name", "title", "subtitle", "decor", "rows", "doubleJeopardy", "columns"].includes(key)) return;
-    if (key === "pages") pack.errors.push('"pages": a custom pack is one page; list its "columns" directly');
-    else if (PACK_GAMES.includes(key as PackGame))
+    if (formatKeys.includes(key)) return;
+    if (PACK_GAMES.includes(key as PackGame))
       pack.errors.push(`"${key}": questions now go inside a column (see template.json)`);
     else
       pack.errors.push(
-        `"${key}" isn't part of the format (use "name", "title", "subtitle", "rows", "doubleJeopardy" and "columns")`
+        `"${key}" isn't part of the format (use "name", "title", "subtitle", "decor", "rows", "doubleJeopardy", "hideJoinCode", and "columns" or "pages")`
       );
   });
 
@@ -223,35 +248,94 @@ export function parsePack(id: string, json: unknown): LoadedPack {
       pack.rows = data.rows;
     else pack.errors.push(`"rows" must be a whole number from 1 to ${MAX_ROWS} (using ${MAX_ROWS})`);
   }
-  const topRound1 = pack.rows * 100;
 
   if (data.doubleJeopardy !== undefined) {
     if (typeof data.doubleJeopardy === "boolean") pack.doubleJeopardy = data.doubleJeopardy;
     else pack.errors.push('"doubleJeopardy" must be true or false (using true)');
   }
 
-  if (!Array.isArray(data.columns) || data.columns.length === 0) {
-    pack.errors.push(`needs "columns": a list of 1–${MAX_COLUMNS} columns`);
-    return pack;
+  if (data.hideJoinCode !== undefined) {
+    if (typeof data.hideJoinCode === "boolean") pack.hideJoinCode = data.hideJoinCode;
+    else pack.errors.push('"hideJoinCode" must be true or false (using false)');
   }
-  if (data.columns.length > MAX_COLUMNS)
-    pack.errors.push(`${data.columns.length} columns: only the first ${MAX_COLUMNS} are used (TV width)`);
 
-  // Games that have their own column, so a mixed tile of that game would
-  // collide with the column's own tile (they share the game's bank).
-  const columnGames = new Set(
-    data.columns.slice(0, MAX_COLUMNS).map((column: any) => column?.game)
-  );
+  // One page ("columns") or several tabbed pages ("pages": [{ label, columns }]).
+  let pageSpecs: { label: string; columns: unknown; where: string; sideGame?: unknown; words?: unknown }[];
+  if (data.pages !== undefined) {
+    if (data.columns !== undefined) pack.errors.push('use "columns" (one page) or "pages", not both (using "pages")');
+    if (!Array.isArray(data.pages) || data.pages.length === 0) {
+      pack.errors.push(`"pages" must be a list of 1–${MAX_PAGES} pages: [{ "label", "columns" }]`);
+      return pack;
+    }
+    if (data.pages.length > MAX_PAGES)
+      pack.errors.push(`${data.pages.length} pages: only the first ${MAX_PAGES} are used`);
+    pageSpecs = data.pages.slice(0, MAX_PAGES).map((page: any, p: number) => {
+      const where = `pages[${p}]`;
+      let label = pack.name;
+      if (isText(page?.label)) {
+        if (page.label.trim().length > MAX_PAGE_LABEL_LENGTH)
+          pack.errors.push(`${where}: "label" is over ${MAX_PAGE_LABEL_LENGTH} characters (shortened)`);
+        label = page.label.trim().slice(0, MAX_PAGE_LABEL_LENGTH);
+      } else {
+        pack.errors.push(`${where}: needs a "label" (the tab's name)`);
+        label = `Page ${p + 1}`;
+      }
+      return { label, columns: page?.columns, where: `${where}.`, sideGame: page?.sideGame, words: page?.words };
+    });
+  } else {
+    pageSpecs = [{ label: pack.name, columns: data.columns, where: "" }];
+  }
 
-  data.columns.slice(0, MAX_COLUMNS).forEach((column: any, c) => {
-    const where = `columns[${c}]`;
+  pageSpecs.forEach((spec) => {
+    if (spec.sideGame !== undefined) {
+      const where = spec.where.slice(0, -1);
+      if (spec.sideGame !== "charades") {
+        pack.errors.push(`${where}: "sideGame" must be "charades" (page skipped)`);
+        return;
+      }
+      if (pack.pages.some((page) => page.sideGame === "charades")) {
+        pack.errors.push(`${where}: only one Reverse Charades side game per pack (page skipped)`);
+        return;
+      }
+      if (spec.columns !== undefined) pack.errors.push(`${where}: a side-game page has no "columns" (ignored)`);
+      let words: string[] | undefined;
+      if (spec.words !== undefined) {
+        if (isTextList(spec.words)) words = Array.from(new Set(spec.words.map((w) => w.trim())));
+        else pack.errors.push(`${where}: "words" must be a list of words (using the whole Reverse Charades bank)`);
+      }
+      pack.pages.push({ label: spec.label, columns: [], sideGame: "charades", ...(words ? { words } : {}) });
+      return;
+    }
+    const columns = parseColumns(pack, spec.columns, spec.where);
+    if (columns.length > 0) pack.pages.push({ label: spec.label, columns });
+  });
+  pack.columns = pack.pages.flatMap((page) => page.columns);
+  return pack;
+}
+
+// Parses one page's columns into the pack (questions into pack.tiles),
+// returning the valid ones.
+function parseColumns(pack: LoadedPack, raw: unknown, prefix: string): BoardColumn[] {
+  const page: BoardColumn[] = [];
+  if (!Array.isArray(raw) || raw.length === 0) {
+    pack.errors.push(`${prefix || ""}needs "columns": a list of 1–${MAX_COLUMNS} columns`);
+    return page;
+  }
+  if (raw.length > MAX_COLUMNS)
+    pack.errors.push(`${prefix}${raw.length} columns: only the first ${MAX_COLUMNS} are used (TV width)`);
+  const topRound1 = pack.rows * 100;
+
+  raw.slice(0, MAX_COLUMNS).forEach((column: any, c) => {
+    const where = `${prefix}columns[${c}]`;
     const game = column?.game as PackGame;
     if (!PACK_GAMES.includes(game)) {
       pack.errors.push(`${where}: "game" must be one of ${PACK_GAMES.join(", ")}`);
       return;
     }
-    if (pack.columns.some((existing) => existing.game === game)) {
-      pack.errors.push(`${where}: ${game} is already a column (one column per game type)`);
+    // Across all pages: a game's state and question bank are shared.
+    const taken = [...pack.pages.flatMap((p) => p.columns), ...page];
+    if (taken.some((existing) => existing.game === game)) {
+      pack.errors.push(`${where}: ${game} is already a column (one column per game type, across all pages)`);
       return;
     }
     if (column.title !== undefined && !isText(column.title))
@@ -259,7 +343,8 @@ export function parsePack(id: string, json: unknown): LoadedPack {
     const title = isText(column.title)
       ? column.title.trim()
       : standardColumnTitle(game) ?? getGameTitle(game as GameName);
-    pack.columns.push({ title, game });
+    const entry: BoardColumn = { title, game };
+    page.push(entry);
 
     if (column.questions === undefined) return; // all normal questions
     if (!Array.isArray(column.questions)) {
@@ -268,64 +353,61 @@ export function parsePack(id: string, json: unknown): LoadedPack {
     }
     const usedSlots = new Set<number>();
     const mixed: Record<string, string> = {};
-    column.questions.forEach((entry: any, i: number) => {
+    column.questions.forEach((q: any, i: number) => {
       const qWhere = `${where} (${game}) questions[${i}]`;
       // A tile can play as another game ("type"), e.g. a Scavenger Sprint
-      // challenge in a Head to Head column.
-      const playAs = (entry?.type ?? game) as PackGame;
+      // challenge in a Head to Head column. Its question is stored under its
+      // own column (mixedTileKey), so it never collides with that game's own
+      // column, even one on another page.
+      const playAs = (q?.type ?? game) as PackGame;
       if (!PACK_GAMES.includes(playAs)) {
         pack.errors.push(`${qWhere}: "type" must be one of ${PACK_GAMES.join(", ")}`);
         return;
       }
-      if (playAs !== game && columnGames.has(playAs)) {
-        pack.errors.push(`${qWhere}: "type": "${playAs}" can't be used here because ${playAs} has its own column on this board`);
-        return;
-      }
-      const key = slotKeyFor(entry?.round, entry?.value);
+      const key = slotKeyFor(q?.round, q?.value);
       if (key === null) {
         pack.errors.push(`${qWhere}: needs round 1 with value 100–500, or round 2 with value 200–1000 (steps of 100 / 200)`);
         return;
       }
-      if (entry.round === 2 && !pack.doubleJeopardy) {
+      if (q.round === 2 && !pack.doubleJeopardy) {
         pack.errors.push(`${qWhere}: round 2 isn't played ("doubleJeopardy": false)`);
         return;
       }
-      if (entry.value > topRound1 * entry.round) {
+      if (q.value > topRound1 * q.round) {
         pack.errors.push(
-          `${qWhere}: round ${entry.round} ${entry.value} isn't on this ${pack.rows}-row board (round 1 goes up to ${topRound1}, round 2 up to ${topRound1 * 2})`
+          `${qWhere}: round ${q.round} ${q.value} isn't on this ${pack.rows}-row board (round 1 goes up to ${topRound1}, round 2 up to ${topRound1 * 2})`
         );
         return;
       }
-      const { question, error } = toQuestion(playAs, entry);
+      const { question, error } = toQuestion(playAs, q);
       if (error) {
         pack.errors.push(`${qWhere}: ${error}`);
         return;
       }
       if (usedSlots.has(key)) {
-        pack.errors.push(`${qWhere}: round ${entry.round} ${entry.value} is already used by an earlier question`);
-        return;
-      }
-      const tiles = (pack.tiles[playAs] ??= {});
-      if (tiles[key] !== undefined) {
-        pack.errors.push(
-          `${qWhere}: round ${entry.round} ${entry.value} as ${playAs} clashes with another column's ${playAs} tile`
-        );
+        pack.errors.push(`${qWhere}: round ${q.round} ${q.value} is already used by an earlier question`);
         return;
       }
       usedSlots.add(key);
-      tiles[key] = question;
+      const tiles = (pack.tiles[playAs] ??= {});
+      tiles[playAs === game ? String(key) : mixedTileKey(game, key)] = question;
       if (playAs !== game) mixed[String(key)] = playAs;
     });
-    if (Object.keys(mixed).length > 0) pack.columns[pack.columns.length - 1].tiles = mixed;
+    if (Object.keys(mixed).length > 0) entry.tiles = mixed;
   });
-  return pack;
+  return page;
 }
 
-// The pack's board as GameState.board: one page.
+// The pack's board as GameState.board: its pages as tabs ("custom",
+// "custom-2", …; the first id marks a custom board).
 export function packBoard(pack: LoadedPack) {
-  return [
-    { id: CUSTOM_PAGE_ID, label: pack.name, columns: pack.columns, values: TILE_VALUES.slice(0, pack.rows) },
-  ];
+  return pack.pages.map((page, i) => ({
+    id: i === 0 ? CUSTOM_PAGE_ID : `${CUSTOM_PAGE_ID}-${i + 1}`,
+    label: page.label,
+    columns: page.columns,
+    values: TILE_VALUES.slice(0, pack.rows),
+    ...(page.sideGame ? { sideGame: page.sideGame } : {}),
+  }));
 }
 
 const packFiles = (): string[] => {
@@ -350,9 +432,11 @@ export function loadPack(id: string): LoadedPack | null {
       id,
       name: id,
       titleScreen: { title: id },
+      pages: [],
       columns: [],
       rows: MAX_ROWS,
       doubleJeopardy: true,
+      hideJoinCode: false,
       tiles: {},
       errors: [`not valid JSON: ${(error as Error).message}`],
     };
@@ -378,5 +462,36 @@ export function applyPack(gameData: GameData, pack: LoadedPack): GameData {
     if (!tiles) return;
     (result as any)[game] = { ...((gameData as any)[game] ?? {}), ...tiles };
   });
+  // The Reverse Charades side game's list, shuffled per room: the page's own
+  // words, or every word in the bank.
+  const side = pack.pages.find((page) => page.sideGame === "charades");
+  if (side) {
+    result.charades = {
+      ...(result.charades ?? {}),
+      [SIDE_CHARADES_KEY]: { category: side.label, words: shuffle(side.words ?? allCharadesWords()) },
+    };
+  } else if (result.charades) {
+    // Tiles meant to share a side game that isn't there get the whole bank.
+    const charades = { ...result.charades };
+    Object.keys(charades).forEach((key) => {
+      if (charades[key].shared) charades[key] = { ...charades[key], words: shuffle(allCharadesWords()), shared: false };
+    });
+    result.charades = charades;
+  }
   return result;
+}
+
+// Every word in the Reverse Charades bank (all difficulties and categories).
+export function allCharadesWords(): string[] {
+  const bank = partyGamesJson.charades as Record<string, { words: string[] }[]>;
+  return Array.from(new Set(Object.values(bank).flat().flatMap((prompt) => prompt.words)));
+}
+
+function shuffle<T>(items: T[]): T[] {
+  const out = [...items];
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [out[i], out[j]] = [out[j], out[i]];
+  }
+  return out;
 }

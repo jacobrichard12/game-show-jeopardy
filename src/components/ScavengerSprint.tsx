@@ -45,7 +45,7 @@ const ScavengerSprint: React.FC<QuestionProps> = ({
   return (
     <div className="rounded-xl bg-ink p-3 text-center text-white sm:p-6">
       <p className="font-display text-xl font-semibold uppercase tracking-widest text-accent sm:text-3xl xl:text-6xl">
-        🏃 Find it and bring it to the host!
+        Find it and bring it to the host!
       </p>
       {isAdmin ? (
         // Same box before and after the reveal so the host's buttons stay put.

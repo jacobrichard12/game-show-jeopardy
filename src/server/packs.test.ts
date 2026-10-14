@@ -1,4 +1,4 @@
-import { applyPack, listPacks, loadPack, packBoard, parsePack, slotKeyFor } from "./packs";
+import { allCharadesWords, applyPack, listPacks, loadPack, packBoard, parsePack, slotKeyFor } from "./packs";
 import { GameData } from "../shared/types";
 
 const ladder = [1, 2, 3].map((n) => ({
@@ -97,30 +97,31 @@ describe("parsePack", () => {
       { title: "Head to Head", game: "head", tiles: { 200: "scavenger", 300: "minute", 101: "scavenger" } },
     ]);
     expect(pack.tiles.head![100]).toEqual({ title: "Staring contest", players: 1, adminInfo: "" });
-    expect(pack.tiles.scavenger).toEqual({ 200: { item: "A rosary" }, 101: { item: "A Bible" } });
+    // Mixed tiles are stored under their own column (mixedTileKey).
+    expect(pack.tiles.scavenger).toEqual({ "head:200": { item: "A rosary" }, "head:101": { item: "A Bible" } });
     // A Minute challenge without a video is title only.
-    expect(pack.tiles.minute![300]).toEqual({ title: "Stack Attack", link: "", materials: [], description: "" });
+    expect(pack.tiles.minute!["head:300"]).toEqual({ title: "Stack Attack", link: "", materials: [], description: "" });
   });
 
-  it("refuses mixed tiles that would collide", () => {
+  it("keeps mixed tiles apart from each other and from the game's own column", () => {
     const pack = parsePack("p", {
       columns: [
         col("head", [
-          { round: 1, value: 100, type: "feud", prompt: "x", answers: [{ answer: "a", points: 1 }] },
+          { round: 1, value: 100, type: "feud", prompt: "Mixed", answers: [{ answer: "a", points: 1 }] },
           { round: 1, value: 200, type: "scavenger", item: "A" },
           { round: 1, value: 200, title: "Same tile", players: 1 },
           { round: 1, value: 300, type: "trivia" },
         ]),
         col("act", [{ round: 1, value: 200, type: "scavenger", item: "B" }]),
-        col("feud"),
+        col("feud", [{ round: 1, value: 100, prompt: "Own", answers: [{ answer: "b", points: 1 }] }]),
       ],
     });
     expect(pack.errors).toEqual([
-      expect.stringContaining('"type": "feud" can\'t be used here because feud has its own column'),
       expect.stringContaining("round 1 200 is already used by an earlier question"),
       expect.stringContaining('"type" must be one of'),
-      expect.stringContaining("round 1 200 as scavenger clashes with another column's scavenger tile"),
     ]);
+    expect(pack.tiles.scavenger).toEqual({ "head:200": { item: "A" }, "act:200": { item: "B" } });
+    expect(Object.keys(pack.tiles.feud!)).toEqual(["100", "head:100"]);
   });
 
   it("allows a column with no questions (all normal questions)", () => {
@@ -177,10 +178,100 @@ describe("parsePack", () => {
     });
     expect(pack.columns).toEqual([]);
     expect(pack.errors).toEqual([
-      expect.stringContaining('"pages": a custom pack is one page'),
       expect.stringContaining('"feud": questions now go inside a column'),
       expect.stringContaining('"trivia" isn\'t part of the format'),
-      expect.stringContaining('needs "columns"'),
+      expect.stringContaining('"pages" must be a list'),
+    ]);
+  });
+
+  it("takes a Reverse Charades side-game page: no tiles, a long shuffled word list", () => {
+    const pack = parsePack("p", {
+      pages: [
+        { label: "Main", columns: [col("feud")] },
+        { label: "Side", sideGame: "charades" },
+        { label: "Own words", sideGame: "charades", words: ["a"] },
+        { label: "Bad", sideGame: "wheel" },
+      ],
+    });
+    expect(pack.errors).toEqual([
+      expect.stringContaining("pages[2]: only one Reverse Charades side game"),
+      expect.stringContaining('pages[3]: "sideGame" must be "charades"'),
+    ]);
+    expect(pack.pages[1]).toEqual({ label: "Side", columns: [], sideGame: "charades" });
+    expect(packBoard(pack)[1]).toMatchObject({ id: "custom-2", label: "Side", columns: [], sideGame: "charades" });
+
+    // Without its own words it uses the whole bank, shuffled per room.
+    const side = applyPack({ charades: {} } as unknown as GameData, pack).charades!.side;
+    expect(side.category).toBe("Side");
+    expect([...side.words].sort()).toEqual([...allCharadesWords()].sort());
+    expect(allCharadesWords().length).toBeGreaterThan(500);
+
+    const own = parsePack("p", {
+      pages: [
+        { label: "Main", columns: [col("feud")] },
+        { label: "Side", sideGame: "charades", words: ["Halo", "Choir", "Halo"] },
+      ],
+    });
+    expect(own.errors).toEqual([]);
+    expect([...applyPack({ charades: {} } as unknown as GameData, own).charades!.side.words].sort()).toEqual([
+      "Choir",
+      "Halo",
+    ]);
+  });
+
+  it("lets a Reverse Charades tile share the side game's words (no category needed)", () => {
+    const withSide = parsePack("p", {
+      pages: [
+        { label: "Main", columns: [col("head", [{ round: 1, value: 400, type: "charades" }])] },
+        { label: "Side", sideGame: "charades", words: ["Halo", "Choir"] },
+      ],
+    });
+    expect(withSide.errors).toEqual([]);
+    expect(withSide.tiles.charades!["head:400"]).toEqual({ words: [], shared: true });
+    // Stays shared: the game reads the side list and its place.
+    expect(applyPack({ charades: {} } as unknown as GameData, withSide).charades!["head:400"].shared).toBe(true);
+
+    // Without a side game, it gets the whole bank instead.
+    const alone = parsePack("p", { columns: [col("head", [{ round: 1, value: 400, type: "charades" }])] });
+    const tile = applyPack({ charades: {} } as unknown as GameData, alone).charades!["head:400"];
+    expect(tile.shared).toBe(false);
+    expect(tile.words.length).toBe(allCharadesWords().length);
+  });
+
+  it("can hide the join code on the TV", () => {
+    expect(parsePack("p", { columns: [col("head")] }).hideJoinCode).toBe(false);
+    expect(parsePack("p", { hideJoinCode: true, columns: [col("head")] }).hideJoinCode).toBe(true);
+    const bad = parsePack("p", { hideJoinCode: "yes", columns: [col("head")] });
+    expect(bad.hideJoinCode).toBe(false);
+    expect(bad.errors).toEqual([expect.stringContaining('"hideJoinCode" must be true or false')]);
+  });
+
+  it("takes several tabbed pages, one column per game across all of them", () => {
+    const pack = parsePack("p", {
+      name: "Night",
+      rows: 3,
+      pages: [
+        { label: "Main", columns: [col("feud"), col("head", [{ round: 1, value: 300, type: "charades", category: "Saints", words: ["A"] }])] },
+        { label: "Charades", columns: [col("charades"), col("feud")] },
+        { columns: [col("wheel")] },
+      ],
+    });
+    expect(pack.errors).toEqual([
+      expect.stringContaining('pages[2]: needs a "label"'),
+      expect.stringContaining("pages[1].columns[1]: feud is already a column"),
+    ]);
+    expect(pack.pages.map((page) => [page.label, page.columns.map((c) => c.game)])).toEqual([
+      ["Main", ["feud", "head"]],
+      ["Charades", ["charades"]],
+      ["Page 3", ["wheel"]],
+    ]);
+    expect(pack.columns.map((c) => c.game)).toEqual(["feud", "head", "charades", "wheel"]);
+    // The Head to Head charades tile doesn't take the Charades page's $300.
+    expect(Object.keys(pack.tiles.charades!)).toEqual(["head:300"]);
+    expect(packBoard(pack).map((page) => [page.id, page.label, page.values])).toEqual([
+      ["custom", "Main", [100, 200, 300]],
+      ["custom-2", "Charades", [100, 200, 300]],
+      ["custom-3", "Page 3", [100, 200, 300]],
     ]);
   });
 

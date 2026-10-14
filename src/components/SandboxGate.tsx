@@ -1,29 +1,12 @@
 import React, { useEffect, useState } from "react";
 import Sandbox from "./Sandbox";
-import TitlePreview from "./TitlePreview";
+import { readStoredToken, storeToken } from "./sandboxToken";
 import { useSocket } from "./SocketContext";
 
 // /sandbox is only for the host (ROADMAP S1): the server checks the venue's
 // ADMIN_TOKEN before the page renders (always allowed when none is set, as in
 // local dev). This hides the page, not its code; the bundle holds only
 // filler content (S2), so that's enough.
-const STORAGE_KEY = "sandboxAdminToken";
-
-// Per tab, so closing the tab forgets the token.
-const readStoredToken = (): string => {
-  try {
-    return window.sessionStorage.getItem(STORAGE_KEY) ?? "";
-  } catch {
-    return "";
-  }
-};
-const storeToken = (token: string) => {
-  try {
-    window.sessionStorage.setItem(STORAGE_KEY, token);
-  } catch {
-    // Best-effort; the host just re-enters it next time.
-  }
-};
 
 type GateStatus = "checking" | "locked" | "open";
 
@@ -54,10 +37,7 @@ const SandboxGate: React.FC = () => {
     };
   }, [socket, check]);
 
-  // /sandbox?title previews the lobby title screen instead (TitlePreview).
-  if (status === "open") {
-    return new URLSearchParams(window.location.search).has("title") ? <TitlePreview /> : <Sandbox />;
-  }
+  if (status === "open") return <Sandbox />;
 
   if (status === "checking") {
     return (
