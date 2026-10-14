@@ -46,6 +46,36 @@ describe("Reverse Charades sharing the tab's list", () => {
     expect(screen.getAllByLabelText("Current word")[1]).toHaveTextContent("Pew");
   });
 
+  it("moves on a word when a turn ends or another team starts mid-turn", () => {
+    const sent: GameState[] = [];
+    const { unmount } = render(
+      <ReverseCharades isAdmin gameState={sharedTile()} sendGameStateToServer={(gs) => sent.push(gs)} />
+    );
+    fireEvent.click(screen.getByRole("button", { name: "End turn" }));
+    let after = sent[sent.length - 1];
+    expect(after.sideCharades!.wordIndex).toBe(2);
+    expect((after.currentGame.questionState as any).activeTeamId).toBeNull();
+    unmount();
+
+    render(<ReverseCharades isAdmin gameState={sharedTile()} sendGameStateToServer={(gs) => sent.push(gs)} />);
+    fireEvent.click(screen.getByRole("button", { name: "Start Team B's turn" }));
+    after = sent[sent.length - 1];
+    expect(after.sideCharades!.wordIndex).toBe(2);
+    expect((after.currentGame.questionState as any).activeTeamId).toBe("team-2");
+    expect(after.whoseTurn).toBe("team-2");
+  });
+
+  it("moves on the tile's own word list too", () => {
+    const sent: GameState[] = [];
+    const ownTile = sharedTile({
+      gameData: { charades: { 400: { words: ["Cat", "Dog"] } } },
+      currentGame: { ...sharedTile().currentGame, column: undefined },
+    } as unknown as Partial<GameState>);
+    render(<ReverseCharades isAdmin gameState={ownTile} sendGameStateToServer={(gs) => sent.push(gs)} />);
+    fireEvent.click(screen.getByRole("button", { name: "End turn" }));
+    expect((sent[sent.length - 1].currentGame.questionState as any).wordIndex).toBe(1);
+  });
+
   it("doesn't show a bank question's category", () => {
     const bankTile = sharedTile({
       gameData: { charades: { 400: { category: "Animals", words: ["Cat"] } } },

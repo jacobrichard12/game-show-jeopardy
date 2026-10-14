@@ -60,16 +60,17 @@ const ReverseCharades: React.FC<QuestionProps> = ({
   const showWinner = allPlayed && !turnLive;
   const winners = showWinner ? bestTeams(scores) : [];
 
-  const patch = (changes: Partial<CharadesQuestionState>) =>
-    sendGameStateToServer(updateQuestionState<CharadesQuestionState>(gameState, changes));
-  // Moves on one word: in the tab's shared list, or the tile's own.
-  const nextWord = (changes: Partial<CharadesQuestionState> = {}) => {
+  // Applies the changes and moves on one word: in the tab's shared list, or
+  // the tile's own.
+  const withNextWord = (changes: Partial<CharadesQuestionState> = {}): GameState => {
     if (!shared) {
-      patch({ ...changes, wordIndex: questionState.wordIndex + 1 });
-      return;
+      return updateQuestionState<CharadesQuestionState>(gameState, {
+        ...changes,
+        wordIndex: questionState.wordIndex + 1,
+      });
     }
     const next: GameState = updateQuestionState<CharadesQuestionState>(gameState, changes);
-    sendGameStateToServer({
+    return {
       ...next,
       sideCharades: {
         activeTeamId: null,
@@ -80,23 +81,22 @@ const ReverseCharades: React.FC<QuestionProps> = ({
         ...gameState.sideCharades,
         wordIndex: wordIndex + 1,
       },
-    });
+    };
   };
+  const nextWord = (changes: Partial<CharadesQuestionState> = {}) => sendGameStateToServer(withNextWord(changes));
 
-  // Starting (or redoing) a turn gives that team a fresh score.
+  // Starting (or redoing) a turn gives that team a fresh score. Switching
+  // teams mid-turn also moves on a word: the old one has been seen.
   const startTurn = (teamId: string) => {
     if (!isAdmin) return;
-    sendGameStateToServer({
-      ...updateQuestionState<CharadesQuestionState>(gameState, {
-        activeTeamId: teamId,
-        scores: { ...scores, [teamId]: 0 },
-      }),
-      whoseTurn: teamId,
-    });
+    const changes = { activeTeamId: teamId, scores: { ...scores, [teamId]: 0 } };
+    const next = turnLive ? withNextWord(changes) : updateQuestionState<CharadesQuestionState>(gameState, changes);
+    sendGameStateToServer({ ...next, whoseTurn: teamId });
   };
-  // Hides the word on the TV until the next turn starts.
+  // Hides the word on the TV and moves on one, so the next team gets a word
+  // nobody has seen.
   const endTurn = () => {
-    if (isAdmin && activeId) patch({ activeTeamId: null });
+    if (isAdmin && activeId) nextWord({ activeTeamId: null });
   };
   const gotIt = () => {
     if (!isAdmin || !activeId) return;

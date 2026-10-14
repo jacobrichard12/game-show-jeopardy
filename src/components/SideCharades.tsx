@@ -54,11 +54,19 @@ const SideCharades: React.FC<SideCharadesProps> = ({ isAdmin, gameState, sendGam
   const update = (changes: Partial<SideCharadesState>) => {
     if (isAdmin) sendGameStateToServer({ ...gameState, sideCharades: { ...state, ...changes } });
   };
+  // Switching teams mid-turn moves on a word: the old one has been seen.
   const startTurn = (teamId: string) =>
-    update({ activeTeamId: teamId, lastTeamId: teamId, turnScore: 0, turns: state.turns + 1 });
-  // Hides the word on the TV until the next turn starts.
+    update({
+      activeTeamId: teamId,
+      lastTeamId: teamId,
+      turnScore: 0,
+      turns: state.turns + 1,
+      wordIndex: state.wordIndex + (turnLive ? 1 : 0),
+    });
+  // Hides the word on the TV and moves on one, so the next team gets a word
+  // nobody has seen.
   const endTurn = () => {
-    if (state.activeTeamId) update({ activeTeamId: null });
+    if (state.activeTeamId) update({ activeTeamId: null, wordIndex: state.wordIndex + 1 });
   };
   const gotIt = () => {
     if (!state.activeTeamId) return;

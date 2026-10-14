@@ -11,7 +11,7 @@ const base = (overrides: Partial<GameState> = {}): GameState =>
     isDoubleJeopardy: false,
     answered: {},
     doubleJeopardyAnswered: {},
-    gameData: { charades: { [SIDE_CHARADES_KEY]: { category: "Reverse Charades", words: ["Halo", "Choir", "Pew"] } } },
+    gameData: { charades: { [SIDE_CHARADES_KEY]: { category: "Reverse Charades", words: ["Halo", "Choir", "Pew", "Organ"] } } },
     ...overrides,
   } as unknown as GameState);
 
@@ -38,23 +38,41 @@ describe("SideCharades", () => {
     state = sent[sent.length - 1];
     expect(state.sideCharades).toMatchObject({ wordIndex: 2, turnScore: 1, totals: { "team-1": 1 } });
 
-    // End turn hides the word on the TV until the next team starts.
+    // End turn hides the word on the TV until the next team starts, and moves
+    // on a word: the TV showed this one.
     rerender(<SideCharades isAdmin gameState={state} sendGameStateToServer={(gs) => sent.push(gs)} />);
     fireEvent.click(screen.getByRole("button", { name: "End turn" }));
     state = sent[sent.length - 1];
-    expect(state.sideCharades).toMatchObject({ activeTeamId: null, lastTeamId: "team-1" });
+    expect(state.sideCharades).toMatchObject({ activeTeamId: null, lastTeamId: "team-1", wordIndex: 3 });
     const tv = render(<SideCharades isAdmin={false} gameState={state} sendGameStateToServer={() => {}} />);
     expect(tv.getByText("Get ready…")).toBeInTheDocument();
     tv.unmount();
 
-    // Team B's turn: totals carry over, words continue from the same place.
+    // Team B's turn: totals carry over, words continue from the next unseen one.
     rerender(<SideCharades isAdmin gameState={state} sendGameStateToServer={(gs) => sent.push(gs)} />);
     fireEvent.click(screen.getByRole("button", { name: "Start Team B's turn" }));
     state = sent[sent.length - 1];
-    expect(state.sideCharades).toMatchObject({ activeTeamId: "team-2", turns: 2, wordIndex: 2, totals: { "team-1": 1 } });
+    expect(state.sideCharades).toMatchObject({ activeTeamId: "team-2", turns: 2, wordIndex: 3, totals: { "team-1": 1 } });
     rerender(<SideCharades isAdmin gameState={state} sendGameStateToServer={(gs) => sent.push(gs)} />);
     expect(screen.getByText("Round 1")).toBeInTheDocument();
-    expect(screen.getByLabelText("Current word")).toHaveTextContent("Pew");
+    expect(screen.getByLabelText("Current word")).toHaveTextContent("Organ");
+  });
+
+  it("gives a new word when another team starts mid-turn", () => {
+    const sent: GameState[] = [];
+    const live = base({
+      sideCharades: { activeTeamId: "team-1", lastTeamId: "team-1", wordIndex: 1, totals: {}, turnScore: 0, turns: 1 },
+    });
+    render(<SideCharades isAdmin gameState={live} sendGameStateToServer={(gs) => sent.push(gs)} />);
+    fireEvent.click(screen.getByRole("button", { name: "Start Team B's turn" }));
+    expect(sent[sent.length - 1].sideCharades).toMatchObject({ activeTeamId: "team-2", wordIndex: 2 });
+  });
+
+  it("keeps the first word for the first turn", () => {
+    const sent: GameState[] = [];
+    render(<SideCharades isAdmin gameState={base()} sendGameStateToServer={(gs) => sent.push(gs)} />);
+    fireEvent.click(screen.getByRole("button", { name: "Start Team A's turn" }));
+    expect(sent[sent.length - 1].sideCharades).toMatchObject({ wordIndex: 0 });
   });
 
   it("shows the TV a get-ready screen, not the word, between turns", () => {
