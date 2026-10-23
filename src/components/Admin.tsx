@@ -19,6 +19,7 @@ import TimerControls from "./TimerControls";
 import GameSetupModal from "./GameSetupModal";
 import SettingsModal from "./SettingsModal";
 import { getStoredAdminKey, useSocket } from "./SocketContext";
+import TokenInput from "./TokenInput";
 import { useTheme } from "./useTheme";
 
 type AdminStatus = "joining" | "authorized" | "denied" | "not_found";
@@ -240,7 +241,9 @@ export const AdminHost: React.FC<AdminHostProps> = ({
   const handleBackButton = () => {
     if (!gameState) return;
 
-    const updatedGameState = { ...gameState };
+    // Leaving a tile also puts the timer away (it would otherwise cover the
+    // board); Toggle Timer brings it back, paused, in the corner.
+    const updatedGameState = { ...gameState, showTimer: false, timerPlaying: false, timerFullScreen: false };
     updatedGameState.currentGame = {
       gameName: GameName.BOARD,
       gameTitle: "GameBoard",
@@ -504,18 +507,7 @@ const Admin: React.FC = () => {
               That token was rejected — try again.
             </p>
           )}
-          <input
-            type="password"
-            autoComplete="off"
-            value={tokenInput}
-            onChange={(e) => setTokenInput(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") handleSubmitToken();
-            }}
-            className="w-full border rounded p-2 mb-4"
-            placeholder="Admin token"
-            autoFocus
-          />
+          <TokenInput value={tokenInput} onChange={setTokenInput} onEnter={handleSubmitToken} className="mb-4" />
           <button
             type="button"
             onClick={handleSubmitToken}

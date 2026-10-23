@@ -502,10 +502,20 @@ describe("Sandbox", () => {
       revealToTv();
 
       const tvItems = () => within(tv()).getAllByRole("listitem");
-      expect(tvItems()[0]).toHaveTextContent(/^1$/); // numbered chip, answer hidden
+      // What the TV shows: the layer that isn't invisible.
+      const shown = (item: HTMLElement) =>
+        Array.from(item.children)
+          .filter((layer) => !layer.classList.contains("invisible"))
+          .map((layer) => layer.textContent)
+          .join("");
+      expect(shown(tvItems()[0])).toBe("1"); // numbered chip, answer hidden
+      // Both layers are always laid out, so a reveal can't change the row's
+      // size (the TV scales to fit; a size change rescaled the screen).
+      const before = tvItems()[0].textContent;
 
       click(within(host()).getAllByRole("listitem")[0]);
-      expect(tvItems()[0]).not.toHaveTextContent(/^1$/); // now shows the answer + points
+      expect(shown(tvItems()[0])).not.toBe("1"); // now shows the answer + points
+      expect(tvItems()[0].textContent).toBe(before);
     });
 
     it("the host sees the prompt from the start, so showing it doesn't move the host's buttons", () => {
@@ -545,15 +555,20 @@ describe("Sandbox", () => {
       chooseGame("Who Wants To Be A Millionaire");
       revealToTv();
 
-      expect(within(tv()).getAllByText("???")).toHaveLength(4);
+      const shownMarks = () => within(tv()).queryAllByText("???").filter((el) => !el.classList.contains("invisible"));
+      expect(shownMarks()).toHaveLength(4);
+      // The answers are laid out under the "???" from the start, so revealing
+      // doesn't change the TV's layout (it scales to fit; that rescaled it).
+      const tvText = tv().textContent;
       // The host already sees the answers, so revealing doesn't change the
       // host panel's text (which is what made the buttons jump).
-      expect(within(host()).queryByText("???")).not.toBeInTheDocument();
+      expect(within(host()).queryAllByText("???").filter((el) => !el.classList.contains("invisible"))).toHaveLength(0);
       const hostText = host().textContent;
       for (let i = 0; i < 4; i++) {
         click(screen.getByRole("button", { name: "Reveal Next Answer" }));
       }
-      expect(within(tv()).queryByText("???")).not.toBeInTheDocument();
+      expect(shownMarks()).toHaveLength(0);
+      expect(tv().textContent).toBe(tvText);
       expect(host().textContent).toBe(hostText);
 
       expect(screen.getByRole("button", { name: "Highlight Correct Answer" })).toBeDisabled();

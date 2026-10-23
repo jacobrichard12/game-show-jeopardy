@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import GameSetupForm, { defaultSetup, setupPayload, usePackList } from "./GameSetupForm";
+import TokenInput from "./TokenInput";
 import { storeAdminKey, useSocket } from "./SocketContext";
 
 // Landing page for hosts: create a new game (gated by the venue's
@@ -53,18 +54,7 @@ const CreateGame: React.FC = () => {
         {error && (
           <p className="text-sm text-red-600 mb-4 text-center">{error}</p>
         )}
-        <input
-          type="password"
-          autoComplete="off"
-          value={adminToken}
-          onChange={(e) => setAdminToken(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") handleCreate();
-          }}
-          className="w-full border rounded p-2 mb-4"
-          placeholder="Admin token"
-          autoFocus
-        />
+        <TokenInput value={adminToken} onChange={setAdminToken} onEnter={handleCreate} className="mb-4" />
         <GameSetupForm value={setup} onChange={setSetup} packs={packs} onSubmit={handleCreate} />
         <button
           type="button"

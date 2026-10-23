@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import Sandbox from "./Sandbox";
 import SandboxDemo from "./SandboxDemo";
 import { readStoredToken, storeToken } from "./sandboxToken";
+import TokenInput from "./TokenInput";
 import { useSocket } from "./SocketContext";
 
 // /sandbox is only for the host (ROADMAP S1): the server checks the venue's
@@ -69,19 +70,7 @@ const SandboxGate: React.FC<{ page?: "games" | "demo" }> = ({ page = "games" }) 
             That token was rejected — try again.
           </p>
         )}
-        <input
-          type="password"
-          autoComplete="off"
-          value={tokenInput}
-          onChange={(e) => setTokenInput(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") submit();
-          }}
-          className="w-full border rounded p-2 mb-4"
-          placeholder="Admin token"
-          aria-label="Admin token"
-          autoFocus
-        />
+        <TokenInput value={tokenInput} onChange={setTokenInput} onEnter={submit} className="mb-4" />
         <button
           type="button"
           onClick={submit}

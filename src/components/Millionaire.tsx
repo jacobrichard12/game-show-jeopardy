@@ -215,22 +215,27 @@ const Millionaire: React.FC<MillionaireProps> = ({
               }
             >
               <span className="font-display font-semibold text-accent mr-3">{prefix[index].toUpperCase()}</span>
-              {isRevealed ? (
-                answer
-              ) : isAdmin ? (
-                // The host sees unrevealed answers faintly, as the same text
-                // they'll become, so revealing doesn't reflow the panel.
-                <span className="opacity-60">{answer}</span>
-              ) : (
-                // The TV shows "???" over the invisible answer, stacked in one
-                // grid cell, so the button is already its final size.
-                <span className="inline-grid">
-                  <span className="invisible col-start-1 row-start-1" aria-hidden="true">
-                    {answer}
-                  </span>
-                  <span className="col-start-1 row-start-1">???</span>
+              {/* The answer and "???" are stacked in one grid cell, both
+                  always laid out, only one visible, so the button wraps the
+                  same before and after a reveal (the TV scales the whole game
+                  to fit; any height change rescales the screen). The host
+                  sees unrevealed answers faintly instead of "???". */}
+              <span className="inline-grid">
+                <span
+                  className={`col-start-1 row-start-1 ${
+                    isRevealed ? "" : isAdmin ? "opacity-60" : "invisible"
+                  }`}
+                  aria-hidden={(!isRevealed && !isAdmin) || undefined}
+                >
+                  {answer}
                 </span>
-              )}
+                <span
+                  className={`col-start-1 row-start-1 ${isRevealed || isAdmin ? "invisible" : ""}`}
+                  aria-hidden={isRevealed || isAdmin || undefined}
+                >
+                  ???
+                </span>
+              </span>
             </button>
           );
         })}

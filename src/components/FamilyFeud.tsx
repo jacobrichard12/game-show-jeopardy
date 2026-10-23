@@ -188,26 +188,41 @@ const FamilyFeud: React.FC<FamilyFeudProps> = ({
           {questionData.answers.map((answer, index) => (
             <li
               key={index}
-              className={`p-2 sm:p-4 xl:p-6 border-2 border-black/50 rounded-lg font-display font-semibold text-base sm:text-xl md:text-2xl xl:text-5xl text-white flex items-center justify-between ${
+              className={`grid p-2 sm:p-4 xl:p-6 border-2 border-black/50 rounded-lg font-display font-semibold text-base sm:text-xl md:text-2xl xl:text-5xl text-white ${
                 revealedAnswers[index]
                   ? "bg-gradient-to-b from-sky-400 to-tile animate-flip-in"
                   : "bg-tile"
               } ${isAdmin ? "cursor-pointer hover:brightness-125" : ""}`}
               onClick={() => (isAdmin ? handleReveal(index) : null)}
             >
-              {revealedAnswers[index] || isAdmin ? (
+              {/* The answer + points and the number badge are stacked in one
+                  grid cell, both always laid out, only one visible. So a
+                  reveal never changes the row's height (the TV scales the
+                  whole game to fit; any height change rescales the screen). */}
+              <span
+                className={`col-start-1 row-start-1 flex items-center justify-between ${
+                  revealedAnswers[index] || isAdmin ? "" : "invisible"
+                }`}
+                aria-hidden={!(revealedAnswers[index] || isAdmin) || undefined}
+              >
                 <span>{answer.answer}</span>
-              ) : (
-                <span className="mx-auto rounded-full bg-accent px-4 text-ink">
-                  {index + 1}
-                </span>
-              )}
-              {/* Show points if answer is revealed */}
-              {revealedAnswers[index] && (
-                <span className="ml-4 rounded bg-ink px-3 text-accent text-base sm:text-xl md:text-2xl xl:text-5xl">
+                <span
+                  className={`ml-4 rounded bg-ink px-3 text-accent text-base sm:text-xl md:text-2xl xl:text-5xl ${
+                    revealedAnswers[index] ? "" : "invisible"
+                  }`}
+                  aria-hidden={!revealedAnswers[index] || undefined}
+                >
                   {answer.points}
                 </span>
-              )}
+              </span>
+              <span
+                className={`col-start-1 row-start-1 flex items-center justify-center ${
+                  revealedAnswers[index] || isAdmin ? "invisible" : ""
+                }`}
+                aria-hidden={revealedAnswers[index] || isAdmin || undefined}
+              >
+                <span className="rounded-full bg-accent px-4 text-ink">{index + 1}</span>
+              </span>
             </li>
           ))}
         </ul>
