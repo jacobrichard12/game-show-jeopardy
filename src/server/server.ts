@@ -8,13 +8,15 @@ import { createRoomGameData, fetchMillionairePool, MillionairePool } from "./dat
 import { shouldSweepRoom, SWEEP_INTERVAL_MS } from "./roomSweep";
 import { applyPack, listPacks, LoadedPack, loadPack, packBoard, PackSummary } from "./packs";
 import { toThemeId } from "../shared/themes";
+import { Access, accessFor, GUEST_MAX_ROOMS, parseGuestTokens } from "./access";
 
 interface ServerToClientEvents {
   gameCreated: (data: { code: string; adminKey: string; gameState: GameState }) => void;
   gameCreateError: (data: { reason: string }) => void;
   // Names only, for the create-game dropdown; pack questions never leave the server.
   packList: (data: { packs: PackSummary[] }) => void;
-  adminTokenResult: (data: { ok: boolean }) => void;
+  // `guest`: a guest pass (built-in questions only, no content packs).
+  adminTokenResult: (data: { ok: boolean; guest?: boolean }) => void;
   sandboxPackResult: (data: { ok: boolean; reason?: string; pack?: SandboxPack }) => void;
   reconfigureError: (data: { reason: string }) => void;
   gameJoined: (data: { code: string; gameState: GameState }) => void;
@@ -35,7 +37,9 @@ interface ClientToServerEvents {
     packId?: string;
     theme?: string;
   }) => void;
-  listPacks: () => void;
+  // Pack names, for an admin: the admin token, or this socket hosting a
+  // game an admin created. Guests and visitors get an empty list.
+  listPacks: (data?: { adminToken?: string }) => void;
   // Lobby only: rebuild the game with a new setup, keeping the room code.
   reconfigureGame: (data: {
     code: string;
@@ -58,6 +62,8 @@ interface ClientToServerEvents {
 interface SocketData {
   code?: string;
   isAdmin?: boolean;
+  // Hosting a game created with the admin token: may use content packs.
+  packAccess?: boolean;
 }
 
 const app = express();
@@ -74,6 +80,12 @@ if (!ADMIN_TOKEN) {
     "but set ADMIN_TOKEN before hosting this on the public internet."
   );
 }
+
+// Guest passes (access.ts): host with the built-in questions only.
+const guestTokens = parseGuestTokens(process.env.GUEST_TOKENS);
+guestTokens.errors.forEach((e) => console.warn(`GUEST_TOKENS: ${e}; skipped.`));
+if (guestTokens.passes.length) console.log(`${guestTokens.passes.length} guest pass(es) configured.`);
+const access = (token: unknown): Access | null => accessFor(token, ADMIN_TOKEN, guestTokens.passes, Date.now());
 
 const io = new Server<ClientToServerEvents, ServerToClientEvents, {}, SocketData>(server, {
   // Bound incoming payload size — the largest legitimate message is a full
@@ -116,7 +128,12 @@ interface Room {
   // Custom content pack chosen at creation (file name in src/data/custom);
   // re-read on reset so the pack survives "Play again".
   packId?: string;
+  // Created with a guest pass: that pass may reclaim it, and it can't use
+  // content packs.
+  guestToken?: string;
 }
+
+const GUEST_NO_PACKS = "Guest host tokens use the built-in questions; content packs need the admin token.";
 
 const requestedPackId = (value: unknown): string | undefined =>
   typeof value === "string" && value ? value : undefined;
@@ -245,26 +262,28 @@ io.on("connection", (socket) => {
   // anyone who finds the URL. The creator is automatically that room's admin.
   // Pack names for the create-game dropdown. Unauthenticated like the page
   // itself: it exposes names only, never questions.
-  socket.on("listPacks", () => {
-    socket.emit("packList", { packs: listPacks() });
+  socket.on("listPacks", (data) => {
+    const allowed = access(data?.adminToken) === "admin" || !!socket.data.packAccess;
+    socket.emit("packList", { packs: allowed ? listPacks() : [] });
   });
 
   // Lets /sandbox check the token before showing itself. Same rule as
   // createGame: with no ADMIN_TOKEN set, everyone is allowed.
+  // Guest passes get in too, with the sample questions only (no packs).
   socket.on("verifyAdminToken", (data) => {
-    const ok = !ADMIN_TOKEN || data?.adminToken === ADMIN_TOKEN;
-    if (!ok) console.warn(`Rejected sandbox token from ${socket.id}`);
-    socket.emit("adminTokenResult", { ok });
+    const level = access(data?.adminToken);
+    if (!level) console.warn(`Rejected sandbox token from ${socket.id}`);
+    socket.emit("adminTokenResult", { ok: !!level, ...(level === "guest" ? { guest: true } : {}) });
   });
 
   // The sandbox tries out a content pack: just the pack's own questions (no
   // normal banks; the sandbox keeps its sample questions for the rest) and
   // its layout. Questions only leave the server behind the admin token.
   socket.on("sandboxPack", (data) => {
-    const ok = !ADMIN_TOKEN || data?.adminToken === ADMIN_TOKEN;
+    const ok = access(data?.adminToken) === "admin";
     if (!ok) {
       console.warn(`Rejected sandboxPack from ${socket.id}`);
-      socket.emit("sandboxPackResult", { ok: false, reason: "Invalid admin token." });
+      socket.emit("sandboxPackResult", { ok: false, reason: "Content packs need the admin token." });
       return;
     }
     const pack = typeof data?.packId === "string" ? loadPack(data.packId) : null;
@@ -294,7 +313,7 @@ io.on("connection", (socket) => {
     const room = code ? rooms.get(code) : undefined;
     if (!room || socket.data.code !== code || !socket.data.isAdmin) {
       console.warn(`Rejected reconfigureGame from unauthorized client: ${socket.id}`);
-      socket.emit("unauthorized", { reason: "Invalid or missing admin access for this game." });
+      socket.emit("unauthorized", { reason: "Invalid or missing host access for this game." });
       return;
     }
     if (room.gameState.started) {
@@ -302,6 +321,10 @@ io.on("connection", (socket) => {
       return;
     }
     const packId = requestedPackId(data?.packId);
+    if (packId && room.guestToken) {
+      socket.emit("reconfigureError", { reason: GUEST_NO_PACKS });
+      return;
+    }
     const { pack, problem } = usablePack(packId, code);
     if (problem) {
       socket.emit("reconfigureError", { reason: problem });
@@ -328,14 +351,31 @@ io.on("connection", (socket) => {
 
   socket.on("createGame", async (data) => {
     const providedToken = data?.adminToken;
-    const isAuthorized = !ADMIN_TOKEN || providedToken === ADMIN_TOKEN;
-    if (!isAuthorized) {
+    const level = access(providedToken);
+    if (!level) {
       console.warn(`Rejected createGame from unauthenticated client: ${socket.id}`);
-      socket.emit("gameCreateError", { reason: "Invalid admin token." });
+      socket.emit("gameCreateError", { reason: "Invalid host token." });
       return;
     }
 
     const packId = requestedPackId(data?.packId);
+    const guestToken = level === "guest" ? (providedToken as string) : undefined;
+    if (guestToken) {
+      if (packId) {
+        socket.emit("gameCreateError", { reason: GUEST_NO_PACKS });
+        return;
+      }
+      let open = 0;
+      rooms.forEach((r) => {
+        if (r.guestToken === guestToken) open++;
+      });
+      if (open >= GUEST_MAX_ROOMS) {
+        socket.emit("gameCreateError", {
+          reason: `This guest pass already has ${GUEST_MAX_ROOMS} games open. Use one of them; idle games close after a day.`,
+        });
+        return;
+      }
+    }
     const code = generateRoomCode();
     const { pack, problem } = usablePack(packId, code);
     if (problem) {
@@ -351,22 +391,24 @@ io.on("connection", (socket) => {
       pack,
       data?.theme
     );
-    const room: Room = { code, gameState, adminKey, lastActivity: Date.now(), packId };
+    const room: Room = { code, gameState, adminKey, lastActivity: Date.now(), packId, guestToken };
     rooms.set(code, room);
 
     leaveCurrentRoom(socket);
     socket.data.code = code;
     socket.data.isAdmin = true;
+    socket.data.packAccess = !guestToken;
     socket.join(code);
 
-    console.log(`Room ${code} created by ${socket.id}${pack ? ` with pack "${pack.id}"` : ""}`);
+    console.log(`Room ${code} created by ${socket.id}${pack ? ` with pack "${pack.id}"` : ""}${guestToken ? " (guest pass)" : ""}`);
     socket.emit("gameCreated", { code, adminKey, gameState });
     socket.emit("adminAuthResult", { isAdmin: true });
   });
 
   // Join an existing room, as a display/spectator by default. Passing the
   // room's adminKey (cached from creation) or the venue's ADMIN_TOKEN
-  // (break-glass override) grants admin rights for this room instead.
+  // (break-glass override) grants admin rights for this room instead; a
+  // guest pass does so only for the games it created.
   socket.on("joinGame", async (data) => {
     const code = data?.code?.toUpperCase();
     const room = code ? rooms.get(code) : undefined;
@@ -375,13 +417,16 @@ io.on("connection", (socket) => {
       return;
     }
 
+    const level = data.adminToken ? access(data.adminToken) : null;
     const isAdmin =
       (!!data.adminKey && data.adminKey === room.adminKey) ||
-      (!!data.adminToken && !!ADMIN_TOKEN && data.adminToken === ADMIN_TOKEN);
+      (!!ADMIN_TOKEN && level === "admin") ||
+      (level === "guest" && room.guestToken === data.adminToken);
 
     leaveCurrentRoom(socket);
     socket.data.code = room.code;
     socket.data.isAdmin = isAdmin;
+    socket.data.packAccess = isAdmin && !room.guestToken;
     socket.join(room.code);
     room.lastActivity = Date.now();
 
@@ -396,7 +441,7 @@ io.on("connection", (socket) => {
     const room = code ? rooms.get(code) : undefined;
     if (!room || socket.data.code !== code || !socket.data.isAdmin) {
       console.warn(`Rejected gameStateUpdate from unauthorized client: ${socket.id}`);
-      socket.emit("unauthorized", { reason: "Invalid or missing admin access for this game." });
+      socket.emit("unauthorized", { reason: "Invalid or missing host access for this game." });
       return;
     }
     if (!isPlausibleGameState(data.gameState)) {
@@ -414,7 +459,7 @@ io.on("connection", (socket) => {
     const room = code ? rooms.get(code) : undefined;
     if (!room || socket.data.code !== code || !socket.data.isAdmin) {
       console.warn(`Rejected resetGameState from unauthorized client: ${socket.id}`);
-      socket.emit("unauthorized", { reason: "Invalid or missing admin access for this game." });
+      socket.emit("unauthorized", { reason: "Invalid or missing host access for this game." });
       return;
     }
 
@@ -443,7 +488,7 @@ io.on("connection", (socket) => {
 app.use(express.static("build")); // Serve React app from the 'build' folder
 
 // react-router uses client-side (BrowserRouter) routing, so a direct load or
-// refresh of a route like /admin has no matching static file — express.static
+// refresh of a route like /host has no matching static file — express.static
 // alone 404s on it. Fall back to index.html for any other GET so the client
 // router can take over and render the right route. This runs after
 // express.static, so real static assets (JS/CSS/images) are still served

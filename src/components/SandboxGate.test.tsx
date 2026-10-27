@@ -58,7 +58,7 @@ describe("SandboxGate", () => {
     expect(screen.queryByText("SANDBOX PAGE")).toBeNull();
     expect(screen.queryByText(/rejected/)).toBeNull(); // nothing typed yet
 
-    const input = () => screen.getByLabelText("Admin token");
+    const input = () => screen.getByLabelText("Host token");
     fireEvent.change(input(), { target: { value: "wrong" } });
     fireEvent.click(screen.getByRole("button", { name: "Continue" }));
     flush();

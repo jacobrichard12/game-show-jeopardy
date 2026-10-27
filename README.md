@@ -17,7 +17,7 @@ The board has two pages, each tile worth 100–500 points, plus a Double Jeopard
 | | **Put It In Order:** sort 4–5 items (by year, size, …) |
 | | **Reverse Charades:** the whole team acts, one person guesses |
 
-Also: a YouTube countdown timer overlay, sound effects on the TV, team scores always on screen, and a `/sandbox` page for trying every game without starting a real one.
+Also: a YouTube countdown timer overlay, sound effects on the TV, team scores always on screen, a "We'll be right back" pause screen, custom content packs for an event (see *Content*), and sandbox pages for trying the games without starting a real one.
 
 ## Quick start
 
@@ -28,7 +28,7 @@ npm install
 npm run server-start      # client on http://localhost:3000, server on :4000
 ```
 
-1. Open **http://localhost:3000/admin**, pick the number of teams and create a game. You get a 4-letter room code. (Leave the token blank unless you've set `ADMIN_TOKEN`.)
+1. Open **http://localhost:3000/host**, pick the number of teams and create a game. You get a 4-letter room code. (Leave the host token blank unless you've set `ADMIN_TOKEN`; then enter it, or a guest pass.)
 2. Open **http://localhost:3000/watch/CODE** in another window or on the TV, and click once so the browser allows sound.
 3. Start the game from the host window. The TV follows everything the host does.
 
@@ -39,20 +39,37 @@ To try the games without a room, open **http://localhost:3000/sandbox**: it show
 | Page | For |
 |---|---|
 | `/` | Join screen: host a game or enter a room code |
-| `/admin` | Create a game (needs `ADMIN_TOKEN` if one is set) |
-| `/admin/CODE` | Host control panel |
+| `/host` | Create a game with a host token: the admin token or a guest pass (when `ADMIN_TOKEN` is set) |
+| `/host/CODE` | Host control panel |
 | `/watch/CODE` | TV display (read-only) |
-| `/sandbox` | Test bench for every game, with placeholder questions (always on in dev; in production only if `REACT_APP_SANDBOX=true` at build). Asks for the admin token when `ADMIN_TOKEN` is set |
+| `/sandbox` | Test bench for every game, tile by tile, with placeholder questions (always on in dev; in production only if `REACT_APP_SANDBOX=true` at build). Asks for a host token when `ADMIN_TOKEN` is set; content packs load for the admin token only |
+| `/sandbox/demo` | A whole game in one window, host page and TV side by side, without a room. Same access as `/sandbox` |
 
 ## Configuration
 
 | Variable | Default | Purpose |
 |---|---|---|
 | `ADMIN_TOKEN` | unset | Password required to create a game. **Set it on any public deployment**; unset, anyone can create games. |
+| `GUEST_TOKENS` | unset | Guest passes, for letting someone try the app (see below). The admin token keeps full access. |
 | `PORT` | `4000` | Server port. |
 | `CLIENT_ORIGIN` | `http://localhost:3000` | Allowed origin for the dev client (CORS). |
 | `REACT_APP_SOCKET_URL` | same origin (prod), `http://localhost:4000` (dev) | Where the browser connects. Set at build time. |
 | `REACT_APP_SANDBOX` | unset | `true` includes `/sandbox` in a production build. |
+
+### Guest passes
+
+`GUEST_TOKENS` is a list of passes separated by commas, spaces or new lines. Each pass is `token` or `token@YYYY-MM-DD`:
+
+```
+GUEST_TOKENS=acme-demo-7f3k9q@2026-12-31, friend-pass-2m8x
+```
+
+- **token:** at least 6 characters; anything except spaces, commas and `@`. Make it long enough not to be guessed.
+- **@YYYY-MM-DD** (optional): the last day the pass works, through the end of that day (UTC). Without a date it never expires.
+- Malformed entries are skipped, with a warning in the server log.
+- Remove a pass from the list to revoke it. Changing the variable restarts the server.
+
+The **host token** field (on `/host`, the sandbox and the reclaim prompt) takes either the admin token or a guest pass. Guests host games with the built-in questions only (no content packs, which also stay hidden from them), have up to 5 games open per pass, and can reclaim only the games they created. They can also use the sandbox pages with placeholder questions.
 
 ## Development
 
@@ -73,7 +90,9 @@ Questions live in `src/data/`:
 - `partyGames.json`: all six party games.
 - Millionaire questions are fetched from [Open Trivia DB](https://opentdb.com) when the server starts.
 
-Each game needs at least 4 easy, 4 medium and 2 hard entries. `content-prompts/` has ready-made AI prompts for writing party-game content, and `scripts/` has the import tools for Feud and the word games. Third-party data licenses are in `src/data/THIRD_PARTY_NOTICES.md`.
+Each game needs at least 4 easy, 4 medium and 2 hard entries.
+
+**Content packs** (`src/data/custom/*.json`) give an event its own board: its questions, title screen and layout, up to 4 pages (a page can be a side game such as Reverse Charades). The host picks one on Create Game. Start from `template.json`, and run `npm run check-pack` to validate. Files starting with `_` are drafts and aren't loaded. Pack questions are sent only to games that use the pack, never to guests. `content-prompts/` has ready-made AI prompts for writing party-game content, and `scripts/` has the import tools for Feud and the word games. Third-party data licenses are in `src/data/THIRD_PARTY_NOTICES.md`.
 
 ## Deployment
 

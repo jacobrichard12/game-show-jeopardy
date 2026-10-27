@@ -116,7 +116,7 @@ describe("Sandbox with a content pack", () => {
     render(<Sandbox />);
     act(() => listeners.packList({ packs: [{ id: "night", name: "Night" }] }));
     choose("Content", "night");
-    act(() => listeners.sandboxPackResult({ ok: false, reason: "Invalid admin token." }));
-    expect(screen.getByText("Invalid admin token.")).toBeInTheDocument();
+    act(() => listeners.sandboxPackResult({ ok: false, reason: "Content packs need the admin token." }));
+    expect(screen.getByText("Content packs need the admin token.")).toBeInTheDocument();
   });
 });

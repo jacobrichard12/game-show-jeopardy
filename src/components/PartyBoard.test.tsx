@@ -148,7 +148,7 @@ describe("party board on the host panel", () => {
     );
     expect(screen.getByText("Item (host only)")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Show item" })).toBeInTheDocument();
-    expect(screen.queryByText("Admin child content")).not.toBeInTheDocument();
+    expect(screen.queryByText("Host content")).not.toBeInTheDocument();
   });
 });
 

@@ -79,9 +79,24 @@ describe("CreateGame content pack", () => {
 
   it("asks for packs and hides the dropdown when there are none", () => {
     render(<CreateGame />);
-    expect(mockSocket.emit).toHaveBeenCalledWith("listPacks");
+    expect(mockSocket.emit).toHaveBeenCalledWith("listPacks", undefined);
     act(() => listeners.packList({ packs: [] }));
     expect(screen.queryByLabelText("Content pack")).toBeNull();
+  });
+
+  it("asks again with the typed token, so packs show only for the admin token", () => {
+    jest.useFakeTimers();
+    try {
+      render(<CreateGame />);
+      fireEvent.change(screen.getByLabelText("Host token"), { target: { value: "secret" } });
+      expect(mockSocket.emit).not.toHaveBeenCalledWith("listPacks", { adminToken: "secret" });
+      act(() => {
+        jest.advanceTimersByTime(300);
+      });
+      expect(mockSocket.emit).toHaveBeenCalledWith("listPacks", { adminToken: "secret" });
+    } finally {
+      jest.useRealTimers();
+    }
   });
 
   it("defaults to None and sends the chosen pack", () => {

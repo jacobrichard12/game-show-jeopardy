@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 
-// The admin-token field (Create Game, reclaiming a game, the sandbox gate):
+// The host-token field (Create Game, reclaiming a game, the sandbox gate).
+// A host token is either the admin token or a guest pass (server/access.ts):
 // hidden as you type, with an eye button to show it and check for typos.
 // Not inside a <form>, so Chrome doesn't offer to save it (see Admin.tsx).
 const TokenInput: React.FC<{
@@ -24,8 +25,8 @@ const TokenInput: React.FC<{
           if (e.key === "Enter") onEnter();
         }}
         className="w-full rounded border p-2 pr-10"
-        placeholder="Admin token"
-        aria-label="Admin token"
+        placeholder="Host token"
+        aria-label="Host token"
         autoFocus
       />
       <button

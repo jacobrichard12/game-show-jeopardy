@@ -63,7 +63,7 @@ const SandboxGate: React.FC<{ page?: "games" | "demo" }> = ({ page = "games" }) 
       <div className="bg-white p-6 sm:p-8 rounded shadow-lg w-full max-w-sm">
         <h1 className="text-xl font-bold mb-4 text-center">Sandbox</h1>
         <p className="text-sm text-gray-600 mb-4 text-center">
-          The test bench is for the host. Enter the admin token to continue.
+          The test bench is for the host. Enter your host token to continue.
         </p>
         {rejected && (
           <p className="text-sm text-red-600 mb-4 text-center">

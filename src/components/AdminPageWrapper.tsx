@@ -121,7 +121,7 @@ const AdminPageWrapper: React.FC<AdminPageWrapperProps> = ({
             sendGameStateToServer={sendGameStateToServer}
           />
         ) : (
-          <div>Admin child content</div>
+          <div>Host content</div>
         );
       }
     }
@@ -157,7 +157,7 @@ const AdminPageWrapper: React.FC<AdminPageWrapperProps> = ({
             couple of lines on narrow screens; not needed once they fit in
             one row alongside this title at sm: and up. */}
         <div className="text-center mb-4 pt-16 sm:pt-0">
-          <h1 className="text-2xl font-bold mb-2">Admin Page - Board</h1>
+          <h1 className="text-2xl font-bold mb-2">Host Page - Board</h1>
           {/* Tabs only when the board has more than one page (Standard, or
               a pack with "pages"). */}
           {pageTabs.length > 1 && (
@@ -222,7 +222,7 @@ const AdminPageWrapper: React.FC<AdminPageWrapperProps> = ({
             one row at sm: and up. */}
         <div className="text-center mb-4 pt-16 sm:pt-0">
           <h1 className="text-2xl font-bold mb-2">
-            Admin Page - {gameState.currentGame.gameName} -{" "}
+            Host Page - {gameState.currentGame.gameName} -{" "}
             {gameState.currentGame.value}
           </h1>
           {!gameState.currentGame.questionState.promptVisible && (

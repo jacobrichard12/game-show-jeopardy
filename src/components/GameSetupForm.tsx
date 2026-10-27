@@ -38,19 +38,31 @@ export interface PackOption {
   name: string;
 }
 
-// The server's content packs (names only), asked for once per socket.
-export function usePackList(): PackOption[] {
+// The server's content packs (names only). Listed only for an admin: the
+// admin token typed on Create Game, or a host of a game an admin created
+// (the lobby's Game setup, no token). Guests get none.
+export function usePackList(adminToken?: string): PackOption[] {
   const socket = useSocket();
   const [packs, setPacks] = useState<PackOption[]>([]);
   useEffect(() => {
     if (!socket) return;
     const handlePackList = (data: { packs: PackOption[] }) => setPacks(data.packs);
     socket.on("packList", handlePackList);
-    socket.emit("listPacks");
     return () => {
       socket.off("packList", handlePackList);
     };
   }, [socket]);
+  // Asks again as the token is typed, once typing pauses.
+  useEffect(() => {
+    if (!socket) return;
+    const ask = () => socket.emit("listPacks", adminToken ? { adminToken } : undefined);
+    if (!adminToken) {
+      ask();
+      return;
+    }
+    const timer = setTimeout(ask, 300);
+    return () => clearTimeout(timer);
+  }, [socket, adminToken]);
   return packs;
 }
 

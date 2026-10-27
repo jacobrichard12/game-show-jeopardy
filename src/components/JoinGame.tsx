@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-// Landing page ("/"): pick a role. "Host a Game" goes to /admin to create
+// Landing page ("/"): pick a role. "Host a Game" goes to /host to create
 // one; "Join a Game" reveals a code entry and goes to /watch/:code to
 // spectate a game someone else is hosting.
 const JoinGame: React.FC = () => {
@@ -23,7 +23,7 @@ const JoinGame: React.FC = () => {
         {!showJoinForm ? (
           <div className="flex flex-col space-y-3">
             <button
-              onClick={() => navigate("/admin")}
+              onClick={() => navigate("/host")}
               className="w-full bg-blue-500 text-white py-3 rounded hover:bg-blue-600 font-semibold"
             >
               Host a Game

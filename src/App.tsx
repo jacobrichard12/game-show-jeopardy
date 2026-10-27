@@ -16,8 +16,8 @@ const SANDBOX_ENABLED =
 // Each room is its own isolated game, addressed by a short code:
 //  /            - enter a code to watch a game (display/spectator)
 //  /watch/:code - the display for that specific game
-//  /admin       - create a new game (ADMIN_TOKEN-gated)
-//  /admin/:code - the host panel for that specific game
+//  /host        - create a new game (admin token or guest pass)
+//  /host/:code  - the host panel for that specific game
 // There's no more single global game state — Admin and Display each own
 // the room they're scoped to via the URL, joining it over the socket.
 const App: React.FC = () => {
@@ -26,8 +26,8 @@ const App: React.FC = () => {
       <Routes>
         <Route path="/" element={<JoinGame />} />
         <Route path="/watch/:code" element={<Display />} />
-        <Route path="/admin" element={<CreateGame />} />
-        <Route path="/admin/:code" element={<Admin />} />
+        <Route path="/host" element={<CreateGame />} />
+        <Route path="/host/:code" element={<Admin />} />
         {SANDBOX_ENABLED && <Route path="/sandbox" element={<SandboxGate />} />}
         {SANDBOX_ENABLED && <Route path="/sandbox/demo" element={<SandboxGate page="demo" />} />}
       </Routes>

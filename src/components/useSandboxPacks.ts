@@ -31,7 +31,8 @@ export function useSandboxPacks(onLoaded: (pack: SandboxPack | null) => void) {
     };
     socket.on("packList", handleList);
     socket.on("sandboxPackResult", handlePack);
-    socket.emit("listPacks");
+    // Packs are listed for the admin token only (a guest pass gets none).
+    socket.emit("listPacks", { adminToken: readStoredToken() });
     return () => {
       socket.off("packList", handleList);
       socket.off("sandboxPackResult", handlePack);

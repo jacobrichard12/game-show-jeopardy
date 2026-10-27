@@ -10,7 +10,7 @@ Party game-show app: one host laptop + one TV, deployed on Railway. React (CRA) 
 ## Commands
 - Type-check: `npx tsc --noEmit -p tsconfig.json` and `npx tsc --noEmit -p tsconfig.server.json`
 - Tests: `CI=true npx react-scripts test --watchAll=false`
-- Dev: client **:3001**, server **:4000** (port 3000 is taken on the owner's machine). Commands, port fallback and checks: `PROJECT_CONTEXT.md` §3 *Local dev ports*. Always tell the owner the URLs it's running at. Host at `/admin`, TV at `/watch/CODE`, test bench at `/sandbox`
+- Dev: client **:3001**, server **:4000** (port 3000 is taken on the owner's machine). Commands, port fallback and checks: `PROJECT_CONTEXT.md` §3 *Local dev ports*. Always tell the owner the URLs it's running at. Host at `/host`, TV at `/watch/CODE`, test bench at `/sandbox`
 
 Run the type-checks and tests before and after changes; if they're red on arrival, say so.
 

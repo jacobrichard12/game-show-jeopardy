@@ -5,14 +5,15 @@ import TokenInput from "./TokenInput";
 import { storeAdminKey, useSocket } from "./SocketContext";
 
 // Landing page for hosts: create a new game (gated by the venue's
-// ADMIN_TOKEN, same as before) and get redirected to /admin/:code to run it.
+// ADMIN_TOKEN, same as before) and get redirected to /host/:code to run it.
 const CreateGame: React.FC = () => {
   const socket = useSocket();
   const navigate = useNavigate();
   const [adminToken, setAdminToken] = useState("");
   // Teams, theme and content pack (the same form as the lobby's Game setup).
   const [setup, setSetup] = useState(defaultSetup);
-  const packs = usePackList();
+  // Content packs show once the admin token is entered (not for guests).
+  const packs = usePackList(adminToken);
   const [error, setError] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
 
@@ -21,7 +22,7 @@ const CreateGame: React.FC = () => {
 
     const handleCreated = (data: { code: string; adminKey: string }) => {
       storeAdminKey(data.code, data.adminKey);
-      navigate(`/admin/${data.code}`);
+      navigate(`/host/${data.code}`);
     };
     const handleCreateError = (data: { reason: string }) => {
       setCreating(false);
@@ -48,8 +49,8 @@ const CreateGame: React.FC = () => {
       <div className="bg-white p-6 sm:p-8 rounded shadow-lg w-full max-w-sm">
         <h1 className="text-xl font-bold mb-4 text-center">Host a Game</h1>
         <p className="text-sm text-gray-600 mb-4 text-center">
-          Enter the admin token for this event. Leave blank if the host
-          hasn't set one (local/LAN play).
+          Enter your host token. Leave it blank if none is set (local/LAN
+          play).
         </p>
         {error && (
           <p className="text-sm text-red-600 mb-4 text-center">{error}</p>

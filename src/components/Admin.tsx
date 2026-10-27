@@ -471,7 +471,7 @@ const Admin: React.FC = () => {
         <h1 className="text-2xl font-bold mb-2">Game not found</h1>
         <p className="text-gray-600">
           No game is running with code "{code}". It may have expired, or
-          create a new one from /admin.
+          create a new one from /host.
         </p>
       </div>
     );
@@ -497,10 +497,10 @@ const Admin: React.FC = () => {
           handler avoids the native submit event entirely.
         */}
         <div className="bg-white p-6 sm:p-8 rounded shadow-lg w-full max-w-sm">
-          <h1 className="text-xl font-bold mb-4 text-center">Admin Access</h1>
+          <h1 className="text-xl font-bold mb-4 text-center">Host Access</h1>
           <p className="text-sm text-gray-600 mb-4 text-center">
-            This browser isn't recognized as the admin for game "{code}".
-            Enter the venue's admin token to reclaim control.
+            This browser isn't recognized as the host for game "{code}".
+            Enter your host token to reclaim control.
           </p>
           {hasAttempted && (
             <p className="text-sm text-red-600 mb-4 text-center">
