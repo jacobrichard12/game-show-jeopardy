@@ -3,8 +3,8 @@
 Party game-show app: one host laptop + one TV, deployed on Railway. React (CRA) + Express/Socket.IO, in-memory rooms, no database.
 
 **Docs (each fact lives in one place):**
-- `PROJECT_CONTEXT.md`: how it works: architecture, socket protocol, state shape, content formats, deploy mechanics, gotchas.
-- `ROADMAP.md`: owner decisions, what to build next, parked items, session log. **Update it before you finish a session** (tick items, record discoveries, append a short log entry).
+- `PROJECT_CONTEXT.md` (local only, gitignored; not in the public repo): how it works: architecture, socket protocol, state shape, content formats, deploy mechanics, gotchas.
+- `ROADMAP.md` (local only, gitignored; not in the public repo): owner decisions, what to build next, parked items, session log. **Update it before you finish a session** (tick items, record discoveries, append a short log entry).
 - `README.md`: human-facing overview and quick start.
 
 ## Commands

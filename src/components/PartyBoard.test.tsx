@@ -208,7 +208,7 @@ describe("a smaller custom board", () => {
       board: [
         {
           id: "custom",
-          label: "Exult",
+          label: "Night Games",
           columns: [
             { title: "Family Feud", game: "feud" },
             { title: "Head to Head", game: "head" },

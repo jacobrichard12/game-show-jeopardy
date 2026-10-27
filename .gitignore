@@ -22,3 +22,13 @@
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# Content packs are private (event questions): kept on the owner's machine
+# only. The template is the public example. .railwayignore still uploads
+# them on deploy.
+/src/data/custom/*
+!/src/data/custom/template.json
+
+# Architecture/deploy notes and the roadmap: kept on the owner's machine only.
+/PROJECT_CONTEXT.md
+/ROADMAP.md

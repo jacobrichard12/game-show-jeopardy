@@ -232,7 +232,7 @@ describe("a mixed tile", () => {
         board: [
           {
             id: "custom",
-            label: "Exult",
+            label: "Night Games",
             columns: [{ title: "Head to Head", game: "feud", tiles: { 100: "scavenger" } }],
           },
         ],

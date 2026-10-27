@@ -77,11 +77,11 @@ describe("lobby title screen", () => {
     rerender(
       <TitlePage
         isAdmin={false}
-        gameState={{ ...base, titleScreen: { title: "Exult Game Show", subtitle: "Welcome to the Exult Conference!" } }}
+        gameState={{ ...base, titleScreen: { title: "Night Games Show", subtitle: "Welcome to game night!" } }}
         sendGameStateToServer={() => {}}
       />
     );
-    expect(screen.getByRole("heading", { name: "Exult Game Show" })).toBeInTheDocument();
-    expect(screen.getByText("Welcome to the Exult Conference!")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Night Games Show" })).toBeInTheDocument();
+    expect(screen.getByText("Welcome to game night!")).toBeInTheDocument();
   });
 });

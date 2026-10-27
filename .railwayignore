@@ -1,0 +1,3 @@
+# `railway up` skips .gitignore'd files. Content packs are gitignored to keep
+# them out of the public repo, but the live server needs them: upload them.
+!/src/data/custom/*.json

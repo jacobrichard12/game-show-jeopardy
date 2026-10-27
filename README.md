@@ -100,6 +100,4 @@ Hosted on [Railway](https://railway.app). Deploys are manual (`railway up` from 
 
 ## More docs
 
-- `PROJECT_CONTEXT.md`: architecture, socket protocol, game state, content formats, deploy details.
-- `ROADMAP.md`: decisions, planned work, session log.
 - `CLAUDE.md`: rules for AI coding agents working in this repo.
